@@ -3,18 +3,18 @@ import { useContext } from "react";
 import { StateContext } from "@/contexts";
 import { Color, EntityComponent } from "@/types";
 
-export const Protagonist: EntityComponent = ({ height, width, x, y }) => {
-  const { inputs } = useContext(StateContext);
+export const Protagonist: EntityComponent = ({ dimensions, position }) => {
+  const { inputs, universe } = useContext(StateContext);
 
   const color: Color = inputs.get("a") ? "blue" : "green";
 
   return (
     <rect
       fill={`var(--color-${color})`}
-      height={height}
-      width={width}
-      x={x - width / 2}
-      y={y - height}
+      height={dimensions.y}
+      width={dimensions.x}
+      x={position.x}
+      y={universe.dimensions.y - position.y - dimensions.y}
     />
   );
 };

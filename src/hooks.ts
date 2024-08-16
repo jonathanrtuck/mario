@@ -1,8 +1,10 @@
 import React, { useEffect } from "react";
 
-import { FRAME_DURATION, INITIAL_STATE, KEY_BINDING, KEYS } from "@/constants";
+import { FPS, INITIAL_STATE, KEY_BINDING, KEYS } from "@/constants";
 import { getState } from "@/state";
 import { Key, State } from "@/types";
+
+const FRAME_DURATION = 1000 / FPS; // ms
 
 export const useState = (): State => {
   const [state, setState] = React.useState<State>(INITIAL_STATE);

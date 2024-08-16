@@ -1,5 +1,5 @@
 import { KEYS } from "@/constants";
-import { Key, State, Velocity } from "@/types";
+import { Key, State } from "@/types";
 
 const clamp = (num: number, min: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
@@ -10,9 +10,9 @@ export const getState =
     const entities: State["entities"] = [];
     const inputs: State["inputs"] = new Map();
 
+    /*
     for (let i = 0; i !== prevState.entities.length; i++) {
       const entity = prevState.entities[i];
-      let velocity: Velocity = entity.velocity;
 
       const isMoving = true; // @todo
 
@@ -39,6 +39,7 @@ export const getState =
         y: entity.y + velocity.vertical,
       });
     }
+		*/
 
     for (let i = 0; i !== KEYS.length; i++) {
       const key = KEYS[i];
@@ -55,8 +56,6 @@ export const getState =
 
     return {
       ...prevState,
-      entities,
-      index: prevState.index + 1,
       inputs,
     };
   };

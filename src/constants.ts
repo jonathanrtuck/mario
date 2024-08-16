@@ -1,4 +1,4 @@
-import { Entity, Key, State, Velocity } from "@/types";
+import { Entity, Key, State } from "@/types";
 
 export const COLORS = [
   "black",
@@ -14,28 +14,46 @@ export const COLORS = [
   "yellow-dark",
 ] as const;
 export const ENTITY_TYPES = ["Protagonist"] as const;
-export const FRAME_DURATION = 16; // ms
+export const FPS = 60;
 export const INITIAL_STATE: State = {
-  entities: [
-    new Entity({
-      height: 1.75,
+  entities: Array.from<Entity>([
+    {
+      acceleration: {
+        x: 3,
+        y: 3,
+        z: 0,
+      },
+      deceleration: {
+        x: 6,
+        y: 0,
+        z: 0,
+      },
+      dimensions: {
+        x: 1,
+        y: 1.75,
+        z: 0,
+      },
+      friction: 0.5,
       id: "protagonist",
       mass: 75,
+      position: {
+        x: 4,
+        y: 3,
+        z: 0,
+      },
       type: "Protagonist",
-      velocity: new Velocity({
-        maxHorizontal: 0.1664, // 10.4 m/s / fps
-        maxVertical: 0.53333333, // 66.6666 m/s / 2 / fps
-      }),
-      width: 1,
-      x: 32 / 2,
-      y: 8, // 15,
-    }),
-  ].toSorted((a, b) => a.zIndex - b.zIndex),
-  gravity: {
-    horizontal: 0,
-    vertical: 0.0784, // 9.8/2 m/s^2
-  },
-  index: 0,
+      velocity: {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+      vmax: {
+        x: 10.4,
+        y: 66.6666,
+        z: 0,
+      },
+    },
+  ]).toSorted((a, b) => a.dimensions.z - b.dimensions.z),
   inputs: new Map([
     ["a", false],
     ["b", false],
@@ -44,11 +62,27 @@ export const INITIAL_STATE: State = {
     ["right", false],
     ["up", false],
   ]),
-  minX: 0,
-  minY: -3,
+  universe: {
+    acceleration: {
+      x: 0,
+      y: 9.8,
+      z: 0,
+    },
+    dimensions: {
+      x: 1024,
+      y: 36,
+      z: 2,
+    },
+  },
   viewport: {
-    height: 18,
-    width: 32,
+    dimensions: {
+      x: 32,
+      y: 18,
+    },
+    position: {
+      x: 0,
+      y: 0,
+    },
   },
 };
 export const IS_DEBUG_MODE = process.env.NODE_ENV === "development";
