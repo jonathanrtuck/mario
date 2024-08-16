@@ -3,12 +3,12 @@ import { ComponentType } from "react";
 import { COLORS, ENTITY_TYPES, KEYS } from "@/constants";
 
 export class Acceleration {
-  direction: number; // angle 0–360
-  magnitude: number; // m/s^2
+  horizontal: number; // m/[frame duration]^2
+  vertical: number; // m/[frame duration]^2
 
-  constructor({ direction = 0, magnitude = 0 }: Partial<Acceleration>) {
-    this.direction = direction;
-    this.magnitude = magnitude;
+  constructor({ horizontal = 0, vertical = 0 }: Partial<Acceleration>) {
+    this.horizontal = horizontal;
+    this.vertical = vertical;
   }
 }
 
@@ -78,11 +78,20 @@ export type State = {
 };
 
 export class Velocity {
-  direction: number; // angle 0–360
-  magnitude: number; // m/s
+  horizontal: number; // m/[frame duration]
+  maxHorizontal: number; // m/[frame duration]
+  maxVertical: number; // m/[frame duration]
+  vertical: number; // m/[frame duration]
 
-  constructor({ direction = 0, magnitude = 0 }: Partial<Velocity>) {
-    this.direction = direction;
-    this.magnitude = magnitude;
+  constructor({
+    horizontal = 0,
+    maxHorizontal = 0,
+    maxVertical = 0,
+    vertical = 0,
+  }: Partial<Velocity>) {
+    this.horizontal = horizontal;
+    this.maxHorizontal = maxHorizontal;
+    this.maxVertical = maxVertical;
+    this.vertical = vertical;
   }
 }

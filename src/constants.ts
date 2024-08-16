@@ -1,4 +1,4 @@
-import { Entity, Key, State } from "@/types";
+import { Entity, Key, State, Velocity } from "@/types";
 
 export const COLORS = [
   "black",
@@ -22,14 +22,18 @@ export const INITIAL_STATE: State = {
       id: "protagonist",
       mass: 75,
       type: "Protagonist",
+      velocity: new Velocity({
+        maxHorizontal: 0.1664, // 10.4 m/s / fps
+        maxVertical: 0.53333333, // 66.6666 m/s / 2 / fps
+      }),
       width: 1,
       x: 32 / 2,
       y: 8, // 15,
     }),
   ].toSorted((a, b) => a.zIndex - b.zIndex),
   gravity: {
-    direction: 180,
-    magnitude: 9.8,
+    horizontal: 0,
+    vertical: 0.0784, // 9.8/2 m/s^2
   },
   index: 0,
   inputs: new Map([
