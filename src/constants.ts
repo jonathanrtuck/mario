@@ -20,7 +20,7 @@ export const INITIAL_STATE: State = {
     {
       acceleration: {
         x: 3,
-        y: 3.3333,
+        y: 3,
         z: 0,
       },
       deceleration: {

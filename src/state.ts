@@ -35,30 +35,53 @@ export const getState = (
         velocityX = 0;
       }
 
-      // decelerate if moving left but no longer holding left
-      if (velocityX < 0 && !inputs.get("left")) {
-        velocityX += Math.min(entity.deceleration.x * seconds, -velocityX);
-      }
-
-      // decelerate if moving right but no longer holding right
-      if (velocityX > 0 && !inputs.get("right")) {
-        velocityX -= Math.min(entity.deceleration.x * seconds, velocityX);
-      }
-
-      // accelerate accordingly if holding left or right
-      if (inputs.get("left") !== inputs.get("right")) {
-        velocityX +=
-          entity.acceleration.x * seconds * (inputs.get("left") ? -1 : 1);
-      }
-
+      // @todo use collision detection for this
       // if on the ground
       if (positionY <= 0) {
+        const friction = entity.friction; // @todo combined with colliding entity's friction
+
         velocityY = 0;
 
-        // if pressed b (jump) since last frame
-        if (!prevState.inputs.get("b") && inputs.get("b")) {
-          // @todo convert some horizontal velocity to additional vertical velocity
+        // @todo use friction
+        // decelerate if moving left but no longer holding left
+        if (velocityX < 0 && !inputs.get("left")) {
+          velocityX += Math.min(entity.deceleration.x * seconds, -velocityX);
+        }
+
+        // @todo use friction
+        // decelerate if moving right but no longer holding right
+        if (velocityX > 0 && !inputs.get("right")) {
+          velocityX -= Math.min(entity.deceleration.x * seconds, velocityX);
+        }
+
+        // @todo use friction?
+        // accelerate accordingly if holding left or right
+        if (inputs.get("left") !== inputs.get("right")) {
+          velocityX +=
+            entity.acceleration.x * seconds * (inputs.get("left") ? -1 : 1);
+        }
+
+        // if pressed b (jump)
+        if (inputs.get("b")) {
           velocityY += entity.acceleration.y;
+
+          // if pressed since last frame
+          if (!prevState.inputs.get("b")) {
+            // convert some horizontal velocity to additional vertical velocity
+            if (velocityX < -prevState.universe.acceleration.x * seconds) {
+              const delta = -velocityX * friction;
+
+              velocityX += delta;
+              velocityY += delta;
+            }
+
+            if (velocityX > prevState.universe.acceleration.x * seconds) {
+              const delta = velocityX * friction;
+
+              velocityX -= delta;
+              velocityY += delta;
+            }
+          }
         }
       }
     }
