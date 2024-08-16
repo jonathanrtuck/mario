@@ -1,61 +1,86 @@
 import { KEYS } from "@/constants";
 import { Key, State } from "@/types";
 
-const clamp = (num: number, min: number, max: number): number =>
+const clamp = (min: number, num: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
 
-export const getState =
-  (keydowns: Set<Key>, keyups: Set<Key>) =>
-  (prevState: State): State => {
-    const entities: State["entities"] = [];
-    const inputs: State["inputs"] = new Map();
+export const getState = (
+  prevState: State,
+  duration: number,
+  keys: Set<Key>
+): State => {
+  const seconds = 1 / (1000 / duration);
 
-    /*
-    for (let i = 0; i !== prevState.entities.length; i++) {
-      const entity = prevState.entities[i];
+  const inputs: State["inputs"] = new Map();
+  for (let i = 0; i !== KEYS.length; i++) {
+    const key = KEYS[i];
 
-      const isMoving = true; // @todo
+    inputs.set(key, keys.has(key));
+  }
 
-      if (isMoving) {
-        velocity = {
-          ...entity.velocity,
-          horizontal: clamp(
-            entity.velocity.horizontal - prevState.gravity.horizontal,
-            -entity.velocity.maxHorizontal,
-            entity.velocity.maxHorizontal
-          ),
-          vertical: clamp(
-            entity.velocity.vertical + prevState.gravity.vertical,
-            -entity.velocity.maxVertical,
-            entity.velocity.maxVertical
-          ),
-        };
+  const entities: State["entities"] = new Array(prevState.entities.length);
+  for (let i = 0; i !== prevState.entities.length; i++) {
+    const entity = prevState.entities[i];
+
+    let positionX = entity.position.x + entity.velocity.x * seconds;
+    let positionY = entity.position.y + entity.velocity.y * seconds;
+    let velocityX =
+      entity.velocity.x + prevState.universe.acceleration.x * seconds;
+    let velocityY =
+      entity.velocity.y + prevState.universe.acceleration.y * seconds;
+
+    if (entity.type === "Protagonist") {
+      // stop if hit edge of universe
+      if (positionX <= 0 || positionX >= prevState.universe.dimensions.x) {
+        velocityX = 0;
       }
 
-      entities.push({
-        ...entity,
-        velocity,
-        x: entity.x + velocity.horizontal,
-        y: entity.y + velocity.vertical,
-      });
+      // decelerate if moving left but no longer holding left
+      if (velocityX < 0 && !inputs.get("left")) {
+        velocityX += Math.min(entity.deceleration.x * seconds, -velocityX);
+      }
+
+      // decelerate if moving right but no longer holding right
+      if (velocityX > 0 && !inputs.get("right")) {
+        velocityX -= Math.min(entity.deceleration.x * seconds, velocityX);
+      }
+
+      // accelerate accordingly if holding left or right
+      if (inputs.get("left") !== inputs.get("right")) {
+        velocityX +=
+          entity.acceleration.x * seconds * (inputs.get("left") ? -1 : 1);
+      }
+
+      // if on the ground
+      if (positionY <= 0) {
+        velocityY = 0;
+
+        // if pressed b (jump) since last frame
+        if (!prevState.inputs.get("b") && inputs.get("b")) {
+          // @todo convert some horizontal velocity to additional vertical velocity
+          velocityY += entity.acceleration.y;
+        }
+      }
     }
-		*/
 
-    for (let i = 0; i !== KEYS.length; i++) {
-      const key = KEYS[i];
-
-      inputs.set(
-        key,
-        keydowns.has(key) ||
-          ((prevState.inputs.get(key) ?? false) && !keyups.has(key))
-      );
-    }
-
-    keydowns.clear();
-    keyups.clear();
-
-    return {
-      ...prevState,
-      inputs,
+    entities[i] = {
+      ...entity,
+      position: {
+        ...entity.position,
+        x: clamp(0, positionX, prevState.universe.dimensions.x),
+        y: clamp(0, positionY, prevState.universe.dimensions.y),
+      },
+      velocity: {
+        ...entity.velocity,
+        x: clamp(-entity.vmax.x, velocityX, entity.vmax.x),
+        y: clamp(-entity.vmax.y, velocityY, entity.vmax.y),
+      },
     };
+  }
+
+  return {
+    ...prevState,
+    entities,
+    inputs,
   };
+};

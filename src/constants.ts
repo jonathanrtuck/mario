@@ -20,7 +20,7 @@ export const INITIAL_STATE: State = {
     {
       acceleration: {
         x: 3,
-        y: 3,
+        y: 3.3333,
         z: 0,
       },
       deceleration: {
@@ -29,16 +29,16 @@ export const INITIAL_STATE: State = {
         z: 0,
       },
       dimensions: {
-        x: 1,
-        y: 1.75,
+        x: 0.1,
+        y: 0.175,
         z: 0,
       },
       friction: 0.5,
       id: "protagonist",
-      mass: 75,
+      mass: 1.5,
       position: {
-        x: 4,
-        y: 3,
+        x: 0.4,
+        y: 0.3,
         z: 0,
       },
       type: "Protagonist",
@@ -48,8 +48,8 @@ export const INITIAL_STATE: State = {
         z: 0,
       },
       vmax: {
-        x: 10.4,
-        y: 66.6666,
+        x: 3.6,
+        y: 19.6,
         z: 0,
       },
     },
@@ -65,19 +65,19 @@ export const INITIAL_STATE: State = {
   universe: {
     acceleration: {
       x: 0,
-      y: 9.8,
+      y: -12,
       z: 0,
     },
     dimensions: {
-      x: 1024,
-      y: 36,
+      x: 96,
+      y: 3.6,
       z: 2,
     },
   },
   viewport: {
     dimensions: {
-      x: 32,
-      y: 18,
+      x: 3.2,
+      y: 1.8,
     },
     position: {
       x: 0,

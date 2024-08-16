@@ -3,6 +3,8 @@ import { useContext } from "react";
 import { StateContext } from "@/contexts";
 import { Color, EntityComponent } from "@/types";
 
+import styles from "./Protagonist.module.css";
+
 export const Protagonist: EntityComponent = ({ dimensions, position }) => {
   const { inputs, universe } = useContext(StateContext);
 
@@ -10,6 +12,7 @@ export const Protagonist: EntityComponent = ({ dimensions, position }) => {
 
   return (
     <rect
+      className={styles.root}
       fill={`var(--color-${color})`}
       height={dimensions.y}
       width={dimensions.x}
