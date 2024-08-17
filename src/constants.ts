@@ -15,12 +15,13 @@ export const COLORS = [
 ] as const;
 export const ENTITY_TYPES = ["Protagonist"] as const;
 export const FPS = 60;
+export const GRID_DIMENSION = 0.775; // m
 export const INITIAL_STATE: State = {
   entities: Array.from<Entity>([
     {
       acceleration: {
-        x: 3,
-        y: 3,
+        x: 8,
+        y: 15.2,
         z: 0,
       },
       deceleration: {
@@ -29,16 +30,16 @@ export const INITIAL_STATE: State = {
         z: 0,
       },
       dimensions: {
-        x: 0.1,
-        y: 0.175,
+        x: GRID_DIMENSION * 1,
+        y: GRID_DIMENSION * 1, // GRID_DIMENSION * 2 when big
         z: 0,
       },
       friction: 0.5,
       id: "protagonist",
-      mass: 1.5,
+      mass: 70,
       position: {
-        x: 0.4,
-        y: 0.3,
+        x: GRID_DIMENSION * 2,
+        y: GRID_DIMENSION * 4,
         z: 0,
       },
       type: "Protagonist",
@@ -65,23 +66,24 @@ export const INITIAL_STATE: State = {
   universe: {
     acceleration: {
       x: 0,
-      y: -12,
+      y: -9.8 * 4,
       z: 0,
     },
+    color: "blue",
     dimensions: {
-      x: 10,
-      y: 3.6,
+      x: GRID_DIMENSION * 16 * 10,
+      y: GRID_DIMENSION * 15,
       z: 2,
     },
   },
   viewport: {
     dimensions: {
-      x: 3.2,
-      y: 1.8,
+      x: GRID_DIMENSION * 16,
+      y: GRID_DIMENSION * 15.33333,
     },
     position: {
       x: 0,
-      y: 0,
+      y: GRID_DIMENSION * 1.66666,
     },
   },
 };

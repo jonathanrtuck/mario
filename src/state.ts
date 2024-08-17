@@ -127,26 +127,9 @@ export const getState = (
           velocityX += entity.acceleration.x * seconds;
         }
 
-        // if pressed b (jump)
-        if (inputs.get("b")) {
+        // if pressed b (jump) since last frame
+        if (inputs.get("b") && !prevState.inputs.get("b")) {
           velocityY += entity.acceleration.y;
-
-          // if pressed since last frame
-          if (!prevState.inputs.get("b")) {
-            // convert some horizontal velocity to additional vertical velocity
-            if (velocityX < -prevState.universe.acceleration.x * seconds) {
-              const delta = -velocityX * (friction / 2);
-
-              // velocityX += delta;
-              velocityY += delta;
-            }
-            if (velocityX > prevState.universe.acceleration.x * seconds) {
-              const delta = velocityX * (friction / 2);
-
-              // velocityX -= delta;
-              velocityY += delta;
-            }
-          }
         }
       }
     }

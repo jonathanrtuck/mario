@@ -58,6 +58,7 @@ export type State = {
       y: number;
       z: number;
     };
+    color: Color;
     dimensions: {
       x: number; // m (>= 0)
       y: number;

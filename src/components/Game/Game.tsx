@@ -18,6 +18,7 @@ export const Game: FunctionComponent = () => {
         preserveAspectRatio="xMidYMid meet"
         style={{
           aspectRatio: `${viewport.dimensions.x} / ${viewport.dimensions.y}`,
+          backgroundColor: `var(--color-${universe.color})`,
         }}
         version="1.1"
         viewBox={`${viewport.position.x} ${
