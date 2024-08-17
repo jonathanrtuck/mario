@@ -1,10 +1,8 @@
 import React, { useEffect, useTransition } from "react";
 
-import { FPS, INITIAL_STATE, KEY_BINDING, KEYS } from "@/constants";
+import { INITIAL_STATE, KEY_BINDING, KEYS } from "@/constants";
 import { getState } from "@/state";
 import { Key, State } from "@/types";
-
-const FRAME_DURATION = Math.round(1000 / FPS); // ms
 
 export const useState = (): State => {
   const [, startTransition] = useTransition();
@@ -12,7 +10,7 @@ export const useState = (): State => {
 
   useEffect(() => {
     let animationFrameRequest: ReturnType<typeof requestAnimationFrame>;
-    let nextFrameMs: number = Date.now() + FRAME_DURATION;
+    let prevMs: number = Date.now();
     const keydowns = new Set<Key>();
     const keyups = new Set<Key>();
 
@@ -39,23 +37,17 @@ export const useState = (): State => {
     // @recursive
     const tick = () => {
       const ms = Date.now();
+      const elapsedMs = ms - prevMs;
 
-      if (ms >= nextFrameMs) {
-        const duration = ms - nextFrameMs + FRAME_DURATION;
+      startTransition(() => {
+        setState((prevState) => getState(prevState, elapsedMs, keydowns));
+      });
 
-        nextFrameMs = ms + FRAME_DURATION;
-
-        startTransition(() => {
-          setState((prevState) => getState(prevState, duration, keydowns));
-        });
-
-        for (const key of keyups) {
-          keydowns.delete(key);
-        }
-
-        keyups.clear();
+      for (const key of keyups) {
+        keydowns.delete(key);
       }
-
+      keyups.clear();
+      prevMs = ms;
       animationFrameRequest = requestAnimationFrame(tick);
     };
 

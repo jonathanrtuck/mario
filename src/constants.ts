@@ -14,7 +14,6 @@ export const COLORS = [
   "yellow-dark",
 ] as const;
 export const ENTITY_TYPES = ["Protagonist"] as const;
-export const FPS = 60;
 export const GRID_DIMENSION = 0.775; // m
 export const INITIAL_STATE: State = {
   entities: Array.from<Entity>([
@@ -83,7 +82,7 @@ export const INITIAL_STATE: State = {
     },
     position: {
       x: 0,
-      y: GRID_DIMENSION * 1.66666,
+      y: 0, //  GRID_DIMENSION * 1.66666,
     },
   },
 };
@@ -97,3 +96,4 @@ export const KEY_BINDING: Record<Key, Set<string>> = {
   up: new Set(["ArrowUp"]), // nothing
 };
 export const KEYS = ["a", "b", "down", "left", "right", "up"] as const;
+export const PIXEL_DIMENSION = GRID_DIMENSION / 16;
