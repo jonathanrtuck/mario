@@ -1,6 +1,6 @@
 import React, { useEffect, useTransition } from "react";
 
-import { INITIAL_STATE, KEY_BINDING, KEYS } from "@/constants";
+import { INITIAL_STATE, IS_DEBUG_MODE, KEY_BINDING, KEYS } from "@/constants";
 import { getState } from "@/state";
 import { Key, State } from "@/types";
 
@@ -11,6 +11,8 @@ export const useState = (): State => {
   useEffect(() => {
     let animationFrameRequest: ReturnType<typeof requestAnimationFrame>;
     let prevMs: number = Date.now();
+    let msSincePrevSecond: number = 0;
+    let numFrames: number = 0;
     const keydowns = new Set<Key>();
     const keyups = new Set<Key>();
 
@@ -38,6 +40,19 @@ export const useState = (): State => {
     const tick = () => {
       const ms = Date.now();
       const elapsedMs = ms - prevMs;
+
+      if (IS_DEBUG_MODE) {
+        msSincePrevSecond += elapsedMs;
+        numFrames += 1;
+
+        if (msSincePrevSecond >= 1000) {
+          // eslint-disable-next-line no-console
+          console.debug("fps", numFrames);
+
+          msSincePrevSecond = 0;
+          numFrames = 0;
+        }
+      }
 
       startTransition(() => {
         setState((prevState) => getState(prevState, elapsedMs, keydowns));
