@@ -2,45 +2,33 @@ import { ComponentType } from "react";
 
 import { COLORS, ENTITY_TYPES, KEYS } from "@/constants";
 
+export type Acceleration = {
+  x: number; // m/s^2 (>= 0)
+  y: number;
+  z: number;
+};
+
 export type Color = (typeof COLORS)[number];
 
+export type Dimensions = {
+  x: number; // m (>= 0)
+  y: number;
+  z: number;
+};
+
 export type Entity = {
-  dimensions: {
-    x: number; // m (>= 0)
-    y: number;
-    z: number;
-  };
+  dimensions: Dimensions;
   friction?: number; // 0–1 (coefficient)
   id: ID;
   mass: number; // kg (>= 0. `Infinity` for unmovable)
-  position: {
-    x: number; // m (>= 0)
-    y: number;
-    z: number;
-  };
+  position: Position;
   type: EntityType;
 } & (
   | {
-      acceleration: {
-        x: number; // m/s^2 (>= 0)
-        y: number;
-        z: number;
-      };
-      deceleration: {
-        x: number; // m/s^2 (>= 0)
-        y: number;
-        z: number;
-      };
-      velocity: {
-        x: number; // m/s (>= 0. - -> left, + -> right)
-        y: number; // (- -> down, + -> up)
-        z: number; // (- -> backward, + -> forward)
-      };
-      vmax: {
-        x: number; // m/s (>= 0)
-        y: number;
-        z: number;
-      };
+      acceleration: Acceleration;
+      deceleration: Acceleration;
+      velocity: Velocity;
+      vmax: Velocity;
     }
   | {}
 );
@@ -53,30 +41,28 @@ export type ID = string;
 
 export type Key = (typeof KEYS)[number];
 
+export type Position = {
+  x: number; // m (>= 0)
+  y: number;
+  z: number;
+};
+
 export type State = {
   entities: Entity[];
   inputs: Map<Key, boolean>;
   universe: {
-    acceleration: {
-      x: number; // m/s^2 (gravity. >= 0)
-      y: number;
-      z: number;
-    };
+    acceleration: Acceleration; // gravity
     color: Color;
-    dimensions: {
-      x: number; // m (>= 0)
-      y: number;
-      z: number;
-    };
+    dimensions: Dimensions;
   };
   viewport: {
-    dimensions: {
-      x: number; // m (>= 0)
-      y: number;
-    };
-    position: {
-      x: number; // m (>= 0)
-      y: number;
-    };
+    dimensions: Dimensions;
+    position: Position;
   };
+};
+
+export type Velocity = {
+  x: number; // m/s (>= 0. - -> left, + -> right)
+  y: number; // (- -> down, + -> up)
+  z: number; // (- -> backward, + -> forward)
 };

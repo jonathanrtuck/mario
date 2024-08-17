@@ -86,7 +86,7 @@ export const INITIAL_STATE: State = {
     {
       acceleration: {
         x: 8,
-        y: 15.2,
+        y: 15.3,
         z: 0,
       },
       deceleration: {
@@ -145,10 +145,12 @@ export const INITIAL_STATE: State = {
     dimensions: {
       x: GRID_DIMENSION * 16,
       y: GRID_DIMENSION * 15.33333,
+      z: 3,
     },
     position: {
       x: 0,
       y: GRID_DIMENSION * 1.66666,
+      z: 1,
     },
   },
 };
