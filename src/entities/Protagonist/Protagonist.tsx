@@ -1,19 +1,17 @@
 import { useContext } from "react";
 
 import { StateContext } from "@/contexts";
-import { Color, EntityComponent } from "@/types";
+import { EntityComponent } from "@/types";
 
 import styles from "./Protagonist.module.css";
 
 export const Protagonist: EntityComponent = ({ dimensions, position }) => {
-  const { inputs, universe } = useContext(StateContext);
-
-  const color: Color = inputs.get("a") ? "blue" : "green";
+  const { universe } = useContext(StateContext);
 
   return (
     <rect
       className={styles.root}
-      fill={`var(--color-${color})`}
+      fill="var(--color-green)"
       height={dimensions.y}
       width={dimensions.x}
       x={position.x}

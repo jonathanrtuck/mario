@@ -69,7 +69,7 @@ export const INITIAL_STATE: State = {
       z: 0,
     },
     dimensions: {
-      x: 96,
+      x: 10,
       y: 3.6,
       z: 2,
     },
