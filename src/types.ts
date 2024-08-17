@@ -5,22 +5,12 @@ import { COLORS, ENTITY_TYPES, KEYS } from "@/constants";
 export type Color = (typeof COLORS)[number];
 
 export type Entity = {
-  acceleration: {
-    x: number; // m/s^2 (>= 0)
-    y: number;
-    z: number;
-  };
-  deceleration: {
-    x: number; // m/s^2 (>= 0)
-    y: number;
-    z: number;
-  };
   dimensions: {
     x: number; // m (>= 0)
     y: number;
     z: number;
   };
-  friction: number; // 0–1 (coefficient)
+  friction?: number; // 0–1 (coefficient)
   id: ID;
   mass: number; // kg (>= 0. `Infinity` for unmovable)
   position: {
@@ -29,17 +19,31 @@ export type Entity = {
     z: number;
   };
   type: EntityType;
-  velocity: {
-    x: number; // m/s (>= 0. - -> left, + -> right)
-    y: number; // (- -> down, + -> up)
-    z: number; // (- -> backward, + -> forward)
-  };
-  vmax: {
-    x: number; // m/s (>= 0)
-    y: number;
-    z: number;
-  };
-};
+} & (
+  | {
+      acceleration: {
+        x: number; // m/s^2 (>= 0)
+        y: number;
+        z: number;
+      };
+      deceleration: {
+        x: number; // m/s^2 (>= 0)
+        y: number;
+        z: number;
+      };
+      velocity: {
+        x: number; // m/s (>= 0. - -> left, + -> right)
+        y: number; // (- -> down, + -> up)
+        z: number; // (- -> backward, + -> forward)
+      };
+      vmax: {
+        x: number; // m/s (>= 0)
+        y: number;
+        z: number;
+      };
+    }
+  | {}
+);
 
 export type EntityComponent = ComponentType<Omit<Entity, "type">>;
 

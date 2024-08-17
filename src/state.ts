@@ -24,22 +24,33 @@ export const getState = (
   for (let i = 0; i !== prevState.entities.length; i++) {
     const entity = prevState.entities[i];
 
-    let positionX = entity.position.x + entity.velocity.x * seconds;
-    let positionY = entity.position.y + entity.velocity.y * seconds;
-    let velocityX =
-      entity.velocity.x + prevState.universe.acceleration.x * seconds;
-    let velocityY =
-      entity.velocity.y + prevState.universe.acceleration.y * seconds;
+    let positionX = entity.position.x;
+    let positionY = entity.position.y;
+    let velocityX = 0;
+    let velocityY = 0;
+
+    if ("velocity" in entity) {
+      positionX += entity.velocity.x * seconds;
+      positionY += entity.velocity.y * seconds;
+      velocityX = entity.velocity.x;
+      velocityY = entity.velocity.y;
+    }
+
+    // universal gravitation only affects entities with mass, but consider entities with infinite mass unmovable
+    if (entity.mass !== 0 && entity.mass !== Infinity) {
+      velocityX += prevState.universe.acceleration.x * seconds;
+      velocityY += prevState.universe.acceleration.y * seconds;
+    }
 
     // only need to check for collision if entity has velocity
     // @todo use collision detection (check against positions of other entities of same position.z)
-    let isCollisionBottom = entity.velocity.y !== 0 && Boolean(false);
-    let isCollisionLeft = entity.velocity.x !== 0 && Boolean(false);
-    let isCollisionRight = entity.velocity.x !== 0 && Boolean(false);
-    let isCollisionTop = entity.velocity.y !== 0 && Boolean(false);
+    let isCollisionBottom = Boolean(false);
+    let isCollisionLeft = Boolean(false);
+    let isCollisionRight = Boolean(false);
+    let isCollisionTop = Boolean(false);
 
-    // protagonist can also collide with viewport edges
-    if (entity.type === "Protagonist") {
+    // character can also collide with viewport edges
+    if (entity.type === "Mario") {
       isCollisionBottom = isCollisionBottom || positionY <= 0; // @todo remove this and die if positionY <= 0
       isCollisionLeft = isCollisionLeft || positionX <= viewport.position.x;
       isCollisionRight =
@@ -77,7 +88,7 @@ export const getState = (
       }
     }
 
-    if (entity.type === "Protagonist") {
+    if (entity.type === "Mario") {
       const entityCenterX = positionX + entity.dimensions.x / 2;
       const viewportCenterX = viewport.position.x + viewport.dimensions.x / 2;
       const maxViewportPositionX =
@@ -107,28 +118,42 @@ export const getState = (
 
         // @todo use friction
         // decelerate if moving left but no longer holding left
-        if (velocityX < 0 && !inputs.get("left")) {
+        if (velocityX < 0 && !inputs.get("left") && "deceleration" in entity) {
           velocityX += Math.min(entity.deceleration.x * seconds, -velocityX);
         }
         // @todo use friction
         // decelerate if moving right but no longer holding right
-        if (velocityX > 0 && !inputs.get("right")) {
+        if (velocityX > 0 && !inputs.get("right") && "deceleration" in entity) {
           velocityX -= Math.min(entity.deceleration.x * seconds, velocityX);
         }
 
         // @todo use friction?
         // accelerate if holding left
-        if (!isCollisionLeft && inputs.get("left") && !inputs.get("right")) {
+        if (
+          !isCollisionLeft &&
+          inputs.get("left") &&
+          !inputs.get("right") &&
+          "acceleration" in entity
+        ) {
           velocityX -= entity.acceleration.x * seconds;
         }
         // @todo use friction?
         // accelerate if holding right
-        if (!isCollisionRight && inputs.get("right") && !inputs.get("left")) {
+        if (
+          !isCollisionRight &&
+          inputs.get("right") &&
+          !inputs.get("left") &&
+          "acceleration" in entity
+        ) {
           velocityX += entity.acceleration.x * seconds;
         }
 
         // if pressed b (jump) since last frame
-        if (inputs.get("b") && !prevState.inputs.get("b")) {
+        if (
+          inputs.get("b") &&
+          !prevState.inputs.get("b") &&
+          "acceleration" in entity
+        ) {
           velocityY += entity.acceleration.y;
         }
       }
@@ -137,14 +162,20 @@ export const getState = (
     entities[i] = {
       ...entity,
       position: {
-        ...entity.position,
         x: positionX,
         y: positionY,
+        z: entity.position.z,
       },
       velocity: {
-        ...entity.velocity,
-        x: clamp(-entity.vmax.x, velocityX, entity.vmax.x),
-        y: clamp(-entity.vmax.y, velocityY, entity.vmax.y),
+        x:
+          "vmax" in entity
+            ? clamp(-entity.vmax?.x, velocityX, entity.vmax?.x)
+            : velocityX,
+        y:
+          "vmax" in entity
+            ? clamp(-entity.vmax?.y, velocityY, entity.vmax?.y)
+            : velocityY,
+        z: "velocity" in entity ? entity.velocity.z : 0,
       },
     };
   }

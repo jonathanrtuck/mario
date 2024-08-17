@@ -9,14 +9,80 @@ export const COLORS = [
   "green",
   "green-dark",
   "green-light",
-  "transparent",
+  "red",
   "white",
   "yellow-dark",
 ] as const;
-export const ENTITY_TYPES = ["Protagonist"] as const;
+export const ENTITY_TYPES = ["Bush", "Cloud", "Hill", "Mario", "Wall"] as const;
 export const GRID_DIMENSION = 0.775; // m
 export const INITIAL_STATE: State = {
   entities: Array.from<Entity>([
+    // clouds
+    {
+      dimensions: {
+        x: GRID_DIMENSION * 3,
+        y: GRID_DIMENSION * 2,
+        z: 0,
+      },
+      id: "cloud-1",
+      mass: 0,
+      position: {
+        x: GRID_DIMENSION * 9,
+        y: GRID_DIMENSION * 12,
+        z: -1,
+      },
+      type: "Cloud",
+    },
+    // hills
+    {
+      dimensions: {
+        x: GRID_DIMENSION * 5,
+        y: GRID_DIMENSION * 3,
+        z: 0,
+      },
+      id: "hill-1",
+      mass: 0,
+      position: {
+        x: GRID_DIMENSION * 0,
+        y: GRID_DIMENSION * 4,
+        z: -1,
+      },
+      type: "Hill",
+    },
+    // bushes
+    {
+      dimensions: {
+        x: GRID_DIMENSION * 5,
+        y: GRID_DIMENSION * 1,
+        z: 0,
+      },
+      id: "bush-1",
+      mass: 0,
+      position: {
+        x: GRID_DIMENSION * 11,
+        y: GRID_DIMENSION * 4,
+        z: -1,
+      },
+      type: "Bush",
+    },
+    // walls
+    {
+      dimensions: {
+        x: GRID_DIMENSION * 69,
+        y: GRID_DIMENSION * 4,
+        z: 0,
+      },
+      friction: 0.5,
+      id: "wall-1",
+      mass: Infinity,
+      position: {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+      type: "Wall",
+    },
+    // mario
     {
       acceleration: {
         x: 8,
@@ -34,14 +100,14 @@ export const INITIAL_STATE: State = {
         z: 0,
       },
       friction: 0.5,
-      id: "protagonist",
+      id: "mario",
       mass: 70,
       position: {
         x: GRID_DIMENSION * 2,
         y: GRID_DIMENSION * 4,
         z: 0,
       },
-      type: "Protagonist",
+      type: "Mario",
       velocity: {
         x: 0,
         y: 0,
@@ -82,7 +148,7 @@ export const INITIAL_STATE: State = {
     },
     position: {
       x: 0,
-      y: 0, //  GRID_DIMENSION * 1.66666,
+      y: GRID_DIMENSION * 1.66666,
     },
   },
 };
