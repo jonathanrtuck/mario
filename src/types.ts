@@ -35,11 +35,19 @@ export type Entity = {
 
 export type EntityComponent = ComponentType<Omit<Entity, "type">>;
 
+export type EntityConfiguration = {
+  Component: EntityComponent;
+  Defs?: ComponentType;
+  type: EntityType;
+};
+
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export type ID = string;
 
 export type Key = (typeof KEYS)[number];
+
+export type Pixels = number[][];
 
 export type Position = {
   x: number; // m (>= 0)

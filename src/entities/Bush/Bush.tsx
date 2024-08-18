@@ -10,16 +10,17 @@ export const Bush: EntityComponent = ({ dimensions, id, position }) => {
   const x = position.x;
   const y = universe.dimensions.y - position.y - dimensions.y;
 
+  const variation = "large"; // @todo
+
   return (
-    <g id={id}>
-      <rect
-        fill="var(--color-green-light)"
-        height={dimensions.y}
-        width={dimensions.x}
-        x={x + PIXEL_DIMENSION * 0}
-        y={y + PIXEL_DIMENSION * 0}
-      />
-    </g>
+    <rect
+      fill={`url(#Bush-pattern--${variation})`}
+      height={dimensions.y}
+      id={id}
+      width={dimensions.x}
+      x={x + PIXEL_DIMENSION * 0}
+      y={y + PIXEL_DIMENSION * 0}
+    />
   );
 };
 

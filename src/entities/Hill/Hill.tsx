@@ -10,10 +10,12 @@ export const Hill: EntityComponent = ({ dimensions, id, position }) => {
   const x = position.x;
   const y = universe.dimensions.y - position.y - dimensions.y;
 
+  const variation = "large"; // @todo
+
   return (
     <g id={id}>
       <rect
-        fill="var(--color-green)"
+        fill={`url(#Hill-pattern--${variation})`}
         height={dimensions.y}
         width={dimensions.x}
         x={x + PIXEL_DIMENSION * 0}

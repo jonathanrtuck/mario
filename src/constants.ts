@@ -12,7 +12,7 @@ import {
   getViewport,
   getWall,
 } from "@/helpers";
-import { Entity, Key, State } from "@/types";
+import { Pixels, Entity, EntityType, Key, State } from "@/types";
 
 export const COLORS = [
   "transparent",
@@ -27,6 +27,7 @@ export const COLORS = [
   "green-light",
   "yellow-dark",
 ] as const;
+
 export const ENTITY_TYPES = [
   "Block",
   "Brick",
@@ -39,7 +40,9 @@ export const ENTITY_TYPES = [
   "QuestionBlock",
   "Wall",
 ] as const;
+
 export const GRID_DIMENSION = 0.775; // m
+
 export const INITIAL_STATE: State = {
   // @see https://nesmaps.com/maps/SuperMarioBrothers/SuperMarioBrosWorld1-1Map.html
   entities: Array.from<Entity>([
@@ -241,7 +244,9 @@ export const INITIAL_STATE: State = {
   universe: getUniverse(210, 15, "blue"),
   viewport: getViewport(0, 1.66666, 16, 15.33333),
 };
+
 export const IS_DEBUG_MODE = process.env.NODE_ENV === "development";
+
 export const KEY_BINDING: Record<Key, Set<string>> = {
   a: new Set(["z"]), // run
   b: new Set(["x"]), // jump
@@ -250,5 +255,7 @@ export const KEY_BINDING: Record<Key, Set<string>> = {
   right: new Set(["ArrowRight"]),
   up: new Set(["ArrowUp"]), // nothing
 };
+
 export const KEYS = ["a", "b", "down", "left", "right", "up"] as const;
+
 export const PIXEL_DIMENSION = GRID_DIMENSION / 16;

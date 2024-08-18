@@ -10,10 +10,12 @@ export const Cloud: EntityComponent = ({ dimensions, id, position }) => {
   const x = position.x;
   const y = universe.dimensions.y - position.y - dimensions.y;
 
+  const variation = "small"; // @todo
+
   return (
     <g id={id}>
       <rect
-        fill="var(--color-white)"
+        fill={`url(#Cloud-pattern--${variation})`}
         height={dimensions.y}
         width={dimensions.x}
         x={x + PIXEL_DIMENSION * 0}
