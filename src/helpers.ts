@@ -29,10 +29,10 @@ export const getBush = (
 export const getCloud = (
   gridX: number,
   gridY: number,
-  type: "small" | "large"
+  type: "small" | "medium" | "large"
 ): Entity => ({
   dimensions: {
-    x: GRID_DIMENSION * (type === "large" ? 5 : 3),
+    x: GRID_DIMENSION * (type === "large" ? 5 : type === "medium" ? 4 : 3),
     y: GRID_DIMENSION * 2,
     z: 0,
   },

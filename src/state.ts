@@ -135,7 +135,7 @@ const getPosition =
     }
 
     if (collisions.right) {
-      y = Math.min(
+      x = Math.min(
         x,
         collisions.right === true
           ? state.viewport.position.x +
