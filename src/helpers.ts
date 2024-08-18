@@ -1,10 +1,46 @@
 import { GRID_DIMENSION } from "@/constants";
 import { Color, Entity, Universe, Viewport } from "@/types";
 
+let blockIndex = 0;
+let brickIndex = 0;
 let bushIndex = 0;
 let cloudIndex = 0;
 let hillIndex = 0;
+let pipeIndex = 0;
+let questionBlockIndex = 0;
 let wallIndex = 0;
+
+export const getBlock = (gridX: number, gridY: number): Entity => ({
+  dimensions: {
+    x: GRID_DIMENSION * 1,
+    y: GRID_DIMENSION * 1,
+    z: 0,
+  },
+  id: `block-${blockIndex++}`,
+  mass: Infinity,
+  position: {
+    x: GRID_DIMENSION * gridX,
+    y: GRID_DIMENSION * gridY,
+    z: 0,
+  },
+  type: "Block",
+});
+
+export const getBrick = (gridX: number, gridY: number): Entity => ({
+  dimensions: {
+    x: GRID_DIMENSION * 1,
+    y: GRID_DIMENSION * 1,
+    z: 0,
+  },
+  id: `brick-${brickIndex++}`,
+  mass: Infinity,
+  position: {
+    x: GRID_DIMENSION * gridX,
+    y: GRID_DIMENSION * gridY,
+    z: 0,
+  },
+  type: "Brick",
+});
 
 export const getBush = (
   gridX: number,
@@ -44,6 +80,22 @@ export const getCloud = (
     z: -1,
   },
   type: "Cloud",
+});
+
+export const getFlag = (gridX: number, gridY: number): Entity => ({
+  dimensions: {
+    x: GRID_DIMENSION * 1,
+    y: GRID_DIMENSION * 10,
+    z: 0,
+  },
+  id: `flag-${brickIndex++}`,
+  mass: Infinity,
+  position: {
+    x: GRID_DIMENSION * gridX,
+    y: GRID_DIMENSION * gridY,
+    z: 0,
+  },
+  type: "Flag",
 });
 
 export const getHill = (
@@ -105,6 +157,42 @@ export const getMario = (
     y: 19.6,
     z: 0,
   },
+});
+
+export const getPipe = (
+  gridX: number,
+  gridY: number,
+  gridHeight: number
+): Entity => ({
+  dimensions: {
+    x: GRID_DIMENSION * 2,
+    y: GRID_DIMENSION * gridHeight,
+    z: 0,
+  },
+  id: `pipe-${pipeIndex++}`,
+  mass: Infinity,
+  position: {
+    x: GRID_DIMENSION * gridX,
+    y: GRID_DIMENSION * gridY,
+    z: 0,
+  },
+  type: "Pipe",
+});
+
+export const getQuestionBlock = (gridX: number, gridY: number): Entity => ({
+  dimensions: {
+    x: GRID_DIMENSION * 1,
+    y: GRID_DIMENSION * 1,
+    z: 0,
+  },
+  id: `question-block-${questionBlockIndex++}`,
+  mass: Infinity,
+  position: {
+    x: GRID_DIMENSION * gridX,
+    y: GRID_DIMENSION * gridY,
+    z: 0,
+  },
+  type: "QuestionBlock",
 });
 
 export const getUniverse = (

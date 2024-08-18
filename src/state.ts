@@ -1,4 +1,4 @@
-import { KEYS } from "@/constants";
+import { GRID_DIMENSION, KEYS } from "@/constants";
 import { Entity, Key, State, Velocity } from "@/types";
 
 type Collision = Entity | null | true;
@@ -37,51 +37,61 @@ const getCollisions =
         continue;
       }
 
-      const bottom = entity.position.y;
       const left = entity.position.x;
       const right = entity.position.x + entity.dimensions.x;
-      const top = entity.position.y + entity.dimensions.y;
-      const otherBottom = otherEntity.position.y;
-      const otherLeft = otherEntity.position.x;
       const otherRight = otherEntity.position.x + otherEntity.dimensions.x;
-      const otherTop = otherEntity.position.y + otherEntity.dimensions.y;
 
       if (left > otherRight || right < left) {
         continue;
       }
 
+      const bottom = entity.position.y;
+      const top = entity.position.y + entity.dimensions.y;
+      const otherBottom = otherEntity.position.y;
+      const otherTop = otherEntity.position.y + otherEntity.dimensions.y;
+
       if (bottom > otherTop || top < otherBottom) {
         continue;
       }
 
+      const otherLeft = otherEntity.position.x;
+
       if (
         bottom <= otherTop &&
+        bottom > otherTop - GRID_DIMENSION / 2 &&
         bottom > otherBottom &&
-        (left < otherRight || right > otherLeft)
+        ((left > otherLeft && left < otherRight) ||
+          (right > otherLeft && right < otherRight))
       ) {
         collisions.bottom = otherEntity;
       }
 
       if (
         left <= otherRight &&
+        left > otherRight - GRID_DIMENSION / 2 &&
         left > otherLeft &&
-        (bottom > otherTop || top < otherBottom)
+        ((bottom > otherBottom && bottom < otherTop) ||
+          (top > otherBottom && top < otherTop))
       ) {
         collisions.left = otherEntity;
       }
 
       if (
         right >= otherLeft &&
+        right < otherLeft + GRID_DIMENSION / 2 &&
         right < otherRight &&
-        (bottom > otherTop || top < otherBottom)
+        ((bottom > otherBottom && bottom < otherTop) ||
+          (top > otherBottom && top < otherTop))
       ) {
         collisions.right = otherEntity;
       }
 
       if (
         top >= otherBottom &&
+        top < otherBottom + GRID_DIMENSION / 2 &&
         top < otherTop &&
-        (left < otherRight || right > otherLeft)
+        ((left > otherLeft && left < otherRight) ||
+          (right > otherLeft && right < otherRight))
       ) {
         collisions.top = otherEntity;
       }
@@ -195,6 +205,7 @@ const getVelocity =
       }
 
       if (entity.type === "Mario") {
+        console.debug(collisions);
         // if on the ground
         if (collisions.bottom) {
           const friction = entity.friction; // @todo combined with colliding entity's friction

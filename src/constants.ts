@@ -1,8 +1,13 @@
 import {
+  getBlock,
+  getBrick,
   getBush,
   getCloud,
+  getFlag,
   getHill,
   getMario,
+  getPipe,
+  getQuestionBlock,
   getUniverse,
   getViewport,
   getWall,
@@ -22,7 +27,18 @@ export const COLORS = [
   "white",
   "yellow-dark",
 ] as const;
-export const ENTITY_TYPES = ["Bush", "Cloud", "Hill", "Mario", "Wall"] as const;
+export const ENTITY_TYPES = [
+  "Block",
+  "Brick",
+  "Bush",
+  "Cloud",
+  "Flag",
+  "Hill",
+  "Mario",
+  "Pipe",
+  "QuestionBlock",
+  "Wall",
+] as const;
 export const GRID_DIMENSION = 0.775; // m
 export const INITIAL_STATE: State = {
   // @see https://nesmaps.com/maps/SuperMarioBrothers/SuperMarioBrosWorld1-1Map.html
@@ -69,6 +85,7 @@ export const INITIAL_STATE: State = {
     getBush(167, 4, "small"),
     getBush(205, 4, "small"),
     getBush(215, 4, "small"),
+    getQuestionBlock(16, 8),
     getWall(0, 0, 69, 4),
     getWall(71, 0, 15, 4),
     getWall(89, 0, 64, 4),
