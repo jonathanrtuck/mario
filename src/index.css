@@ -8,6 +8,7 @@
   --color-green-dark: rgb(121, 121, 36);
   --color-green-light: rgb(164, 216, 67);
   --color-red: rgb(231, 62, 37);
+  --color-transparent: rgba(0, 0, 0, 0);
   --color-white: rgb(255, 255, 255);
   --color-yellow-dark: rgb(227, 169, 76);
 }

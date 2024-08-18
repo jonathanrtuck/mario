@@ -205,7 +205,6 @@ const getVelocity =
       }
 
       if (entity.type === "Mario") {
-        console.debug(collisions);
         // if on the ground
         if (collisions.bottom) {
           const friction = entity.friction; // @todo combined with colliding entity's friction
