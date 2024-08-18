@@ -218,7 +218,7 @@ const getVelocity =
             !inputs.get("right") &&
             "acceleration" in entity
           ) {
-            x -= entity.acceleration.x * seconds;
+            x -= entity.acceleration.x * seconds * (inputs.get("a") ? 2 : 1);
           }
           // @todo use friction?
           // accelerate if holding right
@@ -228,7 +228,7 @@ const getVelocity =
             !inputs.get("left") &&
             "acceleration" in entity
           ) {
-            x += entity.acceleration.x * seconds;
+            x += entity.acceleration.x * seconds * (inputs.get("a") ? 2 : 1);
           }
 
           // if pressed b (jump) since last frame
@@ -243,8 +243,11 @@ const getVelocity =
       }
 
       if ("vmax" in entity) {
-        x = clamp(-entity.vmax?.x, x, entity.vmax?.x);
-        y = clamp(-entity.vmax?.y, y, entity.vmax?.y);
+        const vmaxX = entity.vmax?.x * (inputs.get("a") ? 2 : 1);
+        const vmaxY = entity.vmax?.y;
+
+        x = clamp(-vmaxX, x, vmaxX);
+        y = clamp(-vmaxY, y, vmaxY);
       }
 
       return { x, y, z: entity.velocity.z };
