@@ -1,6 +1,3 @@
-.root {
-  background-color: rgb(255, 255, 255);
-  display: block;
-  max-height: 100%;
-  max-width: 100%;
+.root:focus {
+  outline: 0;
 }

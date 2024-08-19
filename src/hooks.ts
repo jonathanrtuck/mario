@@ -1,14 +1,16 @@
-import React, { useEffect, useTransition } from "react";
+import { RefObject, useEffect, useTransition } from "react";
 
-import { INITIAL_STATE, IS_DEBUG_MODE, KEY_BINDING, KEYS } from "@/constants";
-import { getState } from "@/state";
-import { Key, State } from "@/types";
+import { IS_DEBUG_MODE, KEY_BINDING, KEYS } from "@/constants";
+import { Key } from "@/types";
 
-export const useState = (): State => {
+export const useGame = (ref: RefObject<HTMLCanvasElement>): void => {
   const [, startTransition] = useTransition();
-  const [state, setState] = React.useState<State>(INITIAL_STATE);
 
   useEffect(() => {
+    const canvas = ref.current;
+
+    canvas?.focus();
+
     let animationFrameRequest: ReturnType<typeof requestAnimationFrame>;
     let prevMs: number = Date.now();
     let msSincePrevSecond: number = 0;
@@ -36,6 +38,7 @@ export const useState = (): State => {
         }
       }
     };
+
     // @recursive
     const tick = () => {
       const ms = Date.now();
@@ -55,7 +58,7 @@ export const useState = (): State => {
       }
 
       startTransition(() => {
-        setState((prevState) => getState(prevState, elapsedMs, keydowns));
+        //
       });
 
       for (const key of keyups) {
@@ -67,15 +70,15 @@ export const useState = (): State => {
     };
 
     animationFrameRequest = requestAnimationFrame(tick);
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("keyup", onKeyUp);
+
+    canvas?.addEventListener("keydown", onKeyDown);
+    canvas?.addEventListener("keyup", onKeyUp);
 
     return () => {
       cancelAnimationFrame(animationFrameRequest);
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("keyup", onKeyUp);
-    };
-  }, []);
 
-  return state;
+      canvas?.removeEventListener("keydown", onKeyDown);
+      canvas?.removeEventListener("keyup", onKeyUp);
+    };
+  }, [ref]);
 };
