@@ -5,6 +5,6 @@ import { BushDefs } from "./BushDefs";
 
 export const ENTITY_BUSH: EntityConfiguration = {
   Component: Bush,
-  Defs: BushDefs,
+  // Defs: BushDefs,
   type: "Bush",
 };

@@ -17,8 +17,16 @@ export type Dimensions = {
 };
 
 export type Entity = {
+  /*
+  collidableSides: {
+    bottom: boolean;
+    left: boolean;
+    right: boolean;
+    top: boolean;
+  };
+  */
   dimensions: Dimensions;
-  friction?: number; // 0–1 (coefficient)
+  friction?: number; // 0–1 (coefficient) @todo remove?
   id: ID;
   mass: number; // kg (>= 0. `Infinity` for unmovable)
   position: Position;

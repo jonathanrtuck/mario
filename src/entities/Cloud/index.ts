@@ -5,6 +5,6 @@ import { CloudDefs } from "./CloudDefs";
 
 export const ENTITY_CLOUD: EntityConfiguration = {
   Component: Cloud,
-  Defs: CloudDefs,
+  // Defs: CloudDefs,
   type: "Cloud",
 };

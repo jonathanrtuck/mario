@@ -12,7 +12,7 @@ import {
   getViewport,
   getWall,
 } from "@/helpers";
-import { Pixels, Entity, EntityType, Key, State } from "@/types";
+import { Entity, Key, State } from "@/types";
 
 export const COLORS = [
   "transparent",

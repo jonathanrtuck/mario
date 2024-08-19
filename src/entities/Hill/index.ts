@@ -5,6 +5,6 @@ import { HillDefs } from "./HillDefs";
 
 export const ENTITY_HILL: EntityConfiguration = {
   Component: Hill,
-  Defs: HillDefs,
+  // Defs: HillDefs,
   type: "Hill",
 };

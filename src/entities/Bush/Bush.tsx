@@ -14,7 +14,8 @@ export const Bush: EntityComponent = ({ dimensions, id, position }) => {
 
   return (
     <rect
-      fill={`url(#Bush-pattern--${variation})`}
+      // fill={`url(#Bush-pattern--${variation})`}
+      fill="var(--color-green-light)"
       height={dimensions.y}
       id={id}
       width={dimensions.x}
