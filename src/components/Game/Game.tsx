@@ -1,13 +1,21 @@
-import { FunctionComponent, useRef } from "react";
+import { FunctionComponent, useEffect, useRef } from "react";
 
-import { useGame } from "@/hooks";
+import { Game as GameClass } from "@/classes";
 
 import styles from "./Game.module.css";
 
 export const Game: FunctionComponent = () => {
   const rootRef = useRef<HTMLCanvasElement>(null);
 
-  useGame(rootRef);
+  useEffect(() => {
+    if (rootRef.current) {
+      const game = new GameClass(rootRef.current);
+
+      return () => {
+        game.destroy();
+      };
+    }
+  }, []);
 
   return <canvas className={styles.root} ref={rootRef} tabIndex={-1} />;
 };
