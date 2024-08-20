@@ -12,17 +12,17 @@ export type Color = Uint8ClampedArray;
 
 export type ColorIndex = number;
 
-export type Dimensions = {
-  x: number; // m (>= 0)
-  y: number;
-  z: number;
-};
-
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export type ID = string;
 
 export type Key = (typeof KEYS)[number];
+
+export type Lengths = {
+  x: number; // m (>= 0)
+  y: number;
+  z: number;
+};
 
 export type Pattern = (typeof PATTERNS)[number];
 
@@ -46,7 +46,7 @@ export type State = {
 export type Universe = {
   acceleration: Acceleration; // gravity
   color: ColorIndex;
-  dimensions: Dimensions;
+  lengths: Lengths;
 };
 
 export type Velocity = {
@@ -56,6 +56,6 @@ export type Velocity = {
 };
 
 export type Viewport = {
-  dimensions: Dimensions;
+  lengths: Lengths;
   position: Position;
 };

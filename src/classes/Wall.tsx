@@ -32,12 +32,12 @@ export class Wall extends Entity {
     gridHeight: number
   ) {
     super({
-      dimensions: {
+      fill: "Wall",
+      lengths: {
         x: GRID_DIMENSION * gridWidth,
         y: GRID_DIMENSION * gridHeight,
         z: 0,
       },
-      fill: "Wall",
       mass: 0,
       position: {
         x: GRID_DIMENSION * gridX,

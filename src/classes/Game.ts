@@ -9,7 +9,7 @@ import {
   PIXEL_SCALE,
 } from "@/constants";
 import { Bitmap, Key, Pattern } from "@/types";
-import { getRGBA } from "@/utils";
+import { getIsCollisionByDimension, getRGBA } from "@/utils";
 
 import { Mario } from "./Mario";
 import { State } from "./State";
@@ -48,14 +48,14 @@ export class Game {
           z: 0,
         },
         color: 5,
-        dimensions: {
+        lengths: {
           x: GRID_DIMENSION * 210,
           y: GRID_DIMENSION * 15,
           z: 2,
         },
       },
       viewport: {
-        dimensions: {
+        lengths: {
           x: GRID_DIMENSION * 16,
           y: GRID_DIMENSION * 15,
           z: 3,
@@ -173,9 +173,9 @@ export class Game {
 
     this.context.reset();
     this.context.canvas.height =
-      (this.state.viewport.dimensions.y / PIXEL_DIMENSION) * PIXEL_SCALE;
+      (this.state.viewport.lengths.y / PIXEL_DIMENSION) * PIXEL_SCALE;
     this.context.canvas.width =
-      (this.state.viewport.dimensions.x / PIXEL_DIMENSION) * PIXEL_SCALE;
+      (this.state.viewport.lengths.x / PIXEL_DIMENSION) * PIXEL_SCALE;
     this.context.canvas.style.backgroundColor = getRGBA(
       this.state.universe.color
     );
@@ -202,24 +202,40 @@ export class Game {
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
 
-      this.context.fillStyle =
-        (typeof entity.fill === "number"
-          ? getRGBA(entity.fill)
-          : this.patterns[entity.fill]) ?? "rgba(0,0,0,0)";
+      // only render entities within viewport
+      if (
+        getIsCollisionByDimension(
+          this.state.viewport.position.x,
+          this.state.viewport.lengths.x,
+          entity.position.x,
+          entity.lengths.x
+        ) &&
+        getIsCollisionByDimension(
+          this.state.viewport.position.y,
+          this.state.viewport.lengths.y,
+          entity.position.y,
+          entity.lengths.y
+        )
+      ) {
+        this.context.fillStyle =
+          (typeof entity.fill === "number"
+            ? getRGBA(entity.fill)
+            : this.patterns[entity.fill]) ?? "rgba(0,0,0,0)";
 
-      this.context.fillRect(
-        ((entity.position.x - this.state.viewport.position.x) /
-          PIXEL_DIMENSION) *
-          PIXEL_SCALE,
-        ((this.state.viewport.dimensions.y +
-          this.state.viewport.position.y -
-          entity.position.y -
-          entity.dimensions.y) /
-          PIXEL_DIMENSION) *
-          PIXEL_SCALE,
-        (entity.dimensions.x / PIXEL_DIMENSION) * PIXEL_SCALE,
-        (entity.dimensions.y / PIXEL_DIMENSION) * PIXEL_SCALE
-      );
+        this.context.fillRect(
+          ((entity.position.x - this.state.viewport.position.x) /
+            PIXEL_DIMENSION) *
+            PIXEL_SCALE,
+          ((this.state.viewport.lengths.y +
+            this.state.viewport.position.y -
+            entity.position.y -
+            entity.lengths.y) /
+            PIXEL_DIMENSION) *
+            PIXEL_SCALE,
+          (entity.lengths.x / PIXEL_DIMENSION) * PIXEL_SCALE,
+          (entity.lengths.y / PIXEL_DIMENSION) * PIXEL_SCALE
+        );
+      }
     }
 
     this.prevRenderMs = now;

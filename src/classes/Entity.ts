@@ -2,7 +2,7 @@ import {
   Acceleration,
   Bitmap,
   ColorIndex,
-  Dimensions,
+  Lengths,
   EntityType,
   Pattern,
   Position,
@@ -18,8 +18,8 @@ export class Entity {
     top: boolean;
   };
   deceleration?: Acceleration;
-  dimensions: Dimensions;
   fill: ColorIndex | Pattern;
+  lengths: Lengths;
   mass: number; // kg (>= 0. `Infinity` for unmovable)
   position: Position;
   type: EntityType;
@@ -32,8 +32,8 @@ export class Entity {
     acceleration,
     collidableSides,
     deceleration,
-    dimensions,
     fill,
+    lengths,
     mass,
     position,
     type,
@@ -43,8 +43,8 @@ export class Entity {
     acceleration?: Entity["acceleration"];
     collidableSides?: Entity["collidableSides"];
     deceleration?: Entity["deceleration"];
-    dimensions: Entity["dimensions"];
     fill: Entity["fill"];
+    lengths: Entity["lengths"];
     mass: Entity["mass"]; // kg (>= 0. `Infinity` for unmovable)
     position: Entity["position"];
     type: Entity["type"];
@@ -54,8 +54,8 @@ export class Entity {
     this.acceleration = acceleration;
     this.collidableSides = collidableSides;
     this.deceleration = deceleration;
-    this.dimensions = dimensions;
     this.fill = fill;
+    this.lengths = lengths;
     this.mass = mass;
     this.position = position;
     this.type = type;
