@@ -3,12 +3,7 @@ import { GRID_DIMENSION } from "@/constants";
 import { Entity } from "./Entity";
 
 export class QuestionBlock extends Entity {
-  /*
-  static patterns = {
-    // prettier-ignore
-    QuestionBlock: [],
-  };
-  */
+  static patterns: typeof Entity.patterns = {};
 
   collidableSides = {
     bottom: true,

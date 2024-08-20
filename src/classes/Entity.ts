@@ -14,6 +14,8 @@ export abstract class Entity {
   abstract mass: number; // kg (>= 0. `Infinity` for unmovable)
   abstract position: Position;
 
+  static patterns?: Partial<Record<Pattern, Bitmap>>;
+
   acceleration?: Acceleration;
   collidableSides?: {
     bottom: boolean;
@@ -22,7 +24,6 @@ export abstract class Entity {
     top: boolean;
   };
   deceleration?: Acceleration;
-  patterns?: Partial<Record<Pattern, Bitmap>>;
   velocity?: Velocity;
   vmax?: Velocity;
 }

@@ -30,7 +30,12 @@ export const KEY_BINDING: Record<Key, Set<string>> = {
 
 export const KEYS = ["a", "b", "down", "left", "right", "up"] as const;
 
-export const PATTERNS = ["Wall"] as const;
+export const PATTERNS = [
+  "BushLarge",
+  "CloudSmall",
+  "HillLarge",
+  "Wall",
+] as const;
 
 export const PIXEL_DIMENSION = GRID_DIMENSION / 16;
 

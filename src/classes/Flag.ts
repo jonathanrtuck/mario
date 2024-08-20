@@ -3,12 +3,7 @@ import { GRID_DIMENSION } from "@/constants";
 import { Entity } from "./Entity";
 
 export class Flag extends Entity {
-  /*
-  static patterns = {
-    // prettier-ignore
-    Flag: [],
-  };
-  */
+  static patterns: typeof Entity.patterns = {};
 
   collidableSides = {
     bottom: true,

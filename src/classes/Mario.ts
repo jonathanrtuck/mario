@@ -3,6 +3,8 @@ import { GRID_DIMENSION } from "@/constants";
 import { Entity } from "./Entity";
 
 export class Mario extends Entity {
+  static patterns: typeof Entity.patterns = {};
+
   acceleration = {
     x: 8,
     y: 15.3,

@@ -24,7 +24,16 @@ import { State } from "./State";
 import { Wall } from "./Wall";
 
 const BITMAPS_BY_PATTERN: Partial<Record<Pattern, Bitmap>> = {
-  ...Wall.patterns,
+  ...("patterns" in Block ? Block.patterns : {}),
+  ...("patterns" in Brick ? Brick.patterns : {}),
+  ...("patterns" in Bush ? Bush.patterns : {}),
+  ...("patterns" in Cloud ? Cloud.patterns : {}),
+  ...("patterns" in Flag ? Flag.patterns : {}),
+  ...("patterns" in Hill ? Hill.patterns : {}),
+  ...("patterns" in Mario ? Mario.patterns : {}),
+  ...("patterns" in Pipe ? Pipe.patterns : {}),
+  ...("patterns" in QuestionBlock ? QuestionBlock.patterns : {}),
+  ...("patterns" in Wall ? Wall.patterns : {}),
 };
 const PATTERN_KEYS = Object.keys(BITMAPS_BY_PATTERN) as Pattern[];
 const PATTERN_VALUES = Object.values(BITMAPS_BY_PATTERN);
@@ -373,24 +382,6 @@ export class Game {
       this.state.universe.color
     );
 
-    // keep patterns aligned to universe, not viewport
-    for (let i = 0; i !== PATTERNS.length; i++) {
-      const pattern = this.patterns[PATTERNS[i]];
-
-      if (pattern) {
-        pattern.setTransform(
-          new DOMMatrix([
-            1,
-            0,
-            0,
-            1,
-            (this.state.viewport.position.x / PIXEL_DIMENSION) * PIXEL_SCALE,
-            (this.state.viewport.position.y / PIXEL_DIMENSION) * PIXEL_SCALE,
-          ])
-        );
-      }
-    }
-
     // render entities
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
@@ -414,8 +405,8 @@ export class Game {
           (typeof entity.fill === "number"
             ? getRGBA(entity.fill)
             : this.patterns[entity.fill]) ?? "rgba(0,0,0,0)";
-
-        this.context.fillRect(
+        this.context.save();
+        this.context.translate(
           ((entity.position.x - this.state.viewport.position.x) /
             PIXEL_DIMENSION) *
             PIXEL_SCALE,
@@ -424,10 +415,15 @@ export class Game {
             entity.position.y -
             entity.lengths.y) /
             PIXEL_DIMENSION) *
-            PIXEL_SCALE,
+            PIXEL_SCALE
+        );
+        this.context.fillRect(
+          0,
+          0,
           (entity.lengths.x / PIXEL_DIMENSION) * PIXEL_SCALE,
           (entity.lengths.y / PIXEL_DIMENSION) * PIXEL_SCALE
         );
+        this.context.restore();
       }
     }
 
