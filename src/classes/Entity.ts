@@ -1,7 +1,10 @@
 import {
   Acceleration,
+  Bitmap,
+  ColorIndex,
   Dimensions,
   EntityType,
+  Pattern,
   Position,
   Velocity,
 } from "@/types";
@@ -16,17 +19,21 @@ export class Entity {
   };
   deceleration?: Acceleration;
   dimensions: Dimensions;
+  fill: ColorIndex | Pattern;
   mass: number; // kg (>= 0. `Infinity` for unmovable)
   position: Position;
   type: EntityType;
   velocity?: Velocity;
   vmax?: Velocity;
 
+  static patterns?: Partial<Record<Pattern, Bitmap>>;
+
   constructor({
     acceleration,
     collidableSides,
     deceleration,
     dimensions,
+    fill,
     mass,
     position,
     type,
@@ -37,6 +44,7 @@ export class Entity {
     collidableSides?: Entity["collidableSides"];
     deceleration?: Entity["deceleration"];
     dimensions: Entity["dimensions"];
+    fill: Entity["fill"];
     mass: Entity["mass"]; // kg (>= 0. `Infinity` for unmovable)
     position: Entity["position"];
     type: Entity["type"];
@@ -47,6 +55,7 @@ export class Entity {
     this.collidableSides = collidableSides;
     this.deceleration = deceleration;
     this.dimensions = dimensions;
+    this.fill = fill;
     this.mass = mass;
     this.position = position;
     this.type = type;

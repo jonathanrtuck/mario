@@ -1,4 +1,4 @@
-import { COLORS, ENTITY_TYPES, KEYS } from "@/constants";
+import { ENTITY_TYPES, KEYS, PATTERNS } from "@/constants";
 
 export type Acceleration = {
   x: number; // m/s^2 (>= 0)
@@ -6,7 +6,11 @@ export type Acceleration = {
   z: number;
 };
 
-export type Color = (typeof COLORS)[number];
+export type Bitmap = Uint8ClampedArray[];
+
+export type Color = Uint8ClampedArray;
+
+export type ColorIndex = number;
 
 export type Dimensions = {
   x: number; // m (>= 0)
@@ -19,6 +23,8 @@ export type EntityType = (typeof ENTITY_TYPES)[number];
 export type ID = string;
 
 export type Key = (typeof KEYS)[number];
+
+export type Pattern = (typeof PATTERNS)[number];
 
 export type Pixels = number[][];
 
@@ -39,7 +45,7 @@ export type State = {
 
 export type Universe = {
   acceleration: Acceleration; // gravity
-  color: Color;
+  color: ColorIndex;
   dimensions: Dimensions;
 };
 

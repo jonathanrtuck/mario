@@ -11,6 +11,8 @@ export const Game: FunctionComponent = () => {
     if (rootRef.current) {
       const game = new GameClass(rootRef.current);
 
+      game.init();
+
       return () => {
         game.destroy();
       };
