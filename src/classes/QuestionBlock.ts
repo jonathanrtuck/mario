@@ -3,7 +3,27 @@ import { GRID_DIMENSION } from "@/constants";
 import { Entity } from "./Entity";
 
 export class QuestionBlock extends Entity {
-  static patterns: typeof Entity.patterns = {};
+  static patterns: typeof Entity.patterns = {
+    // prettier-ignore
+    QuestionBlock: [
+      new Uint8ClampedArray([0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0]),
+      new Uint8ClampedArray([3,10,10,10,10,10,10,10,10,10,10,10,10,10,10, 1]),
+      new Uint8ClampedArray([3,10, 1,10,10,10,10,10,10,10,10,10,10, 1,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10, 3, 3, 3, 3, 3,10,10,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10, 3, 3, 1, 1, 1, 3, 3,10,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10, 3, 3, 1,10,10, 3, 3, 1,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10, 3, 3, 1,10,10, 3, 3, 1,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10, 1, 1,10, 3, 3, 3, 1,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10,10,10, 3, 3, 1, 1, 1,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10,10,10, 3, 3, 1,10,10,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10,10,10,10, 1, 1,10,10,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10,10,10, 3, 3,10,10,10,10,10,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10,10,10, 3, 3, 1,10,10,10,10,10, 1]),
+      new Uint8ClampedArray([3,10, 1,10,10,10,10,10, 1, 1,10,10,10, 1,10, 1]),
+      new Uint8ClampedArray([3,10,10,10,10,10,10,10,10,10,10,10,10,10,10, 1]),
+      new Uint8ClampedArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
+    ],
+  };
 
   collidableSides = {
     bottom: true,
@@ -11,7 +31,7 @@ export class QuestionBlock extends Entity {
     right: true,
     top: true,
   };
-  fill: Entity["fill"] = 10; // @todo
+  fill: Entity["fill"] = "QuestionBlock";
   lengths = {
     x: GRID_DIMENSION * 1,
     y: GRID_DIMENSION * 1,

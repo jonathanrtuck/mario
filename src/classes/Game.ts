@@ -4,7 +4,6 @@ import {
   IS_DEBUG_MODE,
   KEY_BINDING,
   KEYS,
-  PATTERNS,
   PIXEL_DIMENSION,
   PIXEL_SCALE,
 } from "@/constants";

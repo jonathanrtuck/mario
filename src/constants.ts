@@ -31,9 +31,19 @@ export const KEY_BINDING: Record<Key, Set<string>> = {
 export const KEYS = ["a", "b", "down", "left", "right", "up"] as const;
 
 export const PATTERNS = [
+  "Block",
+  "Brick",
   "BushLarge",
+  "BushMedium",
+  "BushSmall",
+  "CloudLarge",
+  "CloudMedium",
   "CloudSmall",
+  "Flag",
   "HillLarge",
+  "HillSmall",
+  "Pipe",
+  "QuestionBlock",
   "Wall",
 ] as const;
 

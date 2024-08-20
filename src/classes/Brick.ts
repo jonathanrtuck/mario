@@ -3,7 +3,27 @@ import { GRID_DIMENSION } from "@/constants";
 import { Entity } from "./Entity";
 
 export class Brick extends Entity {
-  static patterns: typeof Entity.patterns = {};
+  static patterns: typeof Entity.patterns = {
+    // prettier-ignore
+    Brick: [
+      new Uint8ClampedArray([4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4]),
+      new Uint8ClampedArray([3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,1]),
+      new Uint8ClampedArray([3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,1]),
+      new Uint8ClampedArray([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),
+      new Uint8ClampedArray([3,3,3,1,3,3,3,3,3,3,3,1,3,3,3,3]),
+      new Uint8ClampedArray([3,3,3,1,3,3,3,3,3,3,3,1,3,3,3,3]),
+      new Uint8ClampedArray([3,3,3,1,3,3,3,3,3,3,3,1,3,3,3,3]),
+      new Uint8ClampedArray([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),
+      new Uint8ClampedArray([3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,1]),
+      new Uint8ClampedArray([3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,1]),
+      new Uint8ClampedArray([3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,1]),
+      new Uint8ClampedArray([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),
+      new Uint8ClampedArray([3,3,3,1,3,3,3,3,3,3,3,1,3,3,3,3]),
+      new Uint8ClampedArray([3,3,3,1,3,3,3,3,3,3,3,1,3,3,3,3]),
+      new Uint8ClampedArray([3,3,3,1,3,3,3,3,3,3,3,1,3,3,3,3]),
+      new Uint8ClampedArray([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),
+    ],
+  };
 
   collidableSides = {
     bottom: true,
@@ -11,7 +31,7 @@ export class Brick extends Entity {
     right: true,
     top: true,
   };
-  fill: Entity["fill"] = 3; // @todo
+  fill: Entity["fill"] = "Brick";
   lengths = {
     x: GRID_DIMENSION * 1,
     y: GRID_DIMENSION * 1,
