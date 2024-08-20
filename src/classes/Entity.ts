@@ -3,7 +3,6 @@ import {
   Bitmap,
   ColorIndex,
   Lengths,
-  EntityType,
   Pattern,
   Position,
   Velocity,
@@ -14,7 +13,6 @@ export abstract class Entity {
   abstract lengths: Lengths;
   abstract mass: number; // kg (>= 0. `Infinity` for unmovable)
   abstract position: Position;
-  abstract type: EntityType;
 
   acceleration?: Acceleration;
   collidableSides?: {

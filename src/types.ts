@@ -1,4 +1,4 @@
-import { ENTITY_TYPES, KEYS, PATTERNS } from "@/constants";
+import { KEYS, PATTERNS } from "@/constants";
 
 export type Acceleration = {
   x: number; // m/s^2 (>= 0)
@@ -11,8 +11,6 @@ export type Bitmap = Uint8ClampedArray[];
 export type Color = Uint8ClampedArray;
 
 export type ColorIndex = number;
-
-export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export type ID = string;
 

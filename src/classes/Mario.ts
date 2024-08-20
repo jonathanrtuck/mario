@@ -23,7 +23,6 @@ export class Mario extends Entity {
   mass = 70;
   position;
   size: "small" | "large";
-  type: Entity["type"] = "Mario";
   velocity = {
     x: 0,
     y: 0,

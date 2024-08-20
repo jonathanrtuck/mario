@@ -33,9 +33,8 @@ export class Wall extends Entity {
   };
   fill: Entity["fill"] = "Wall";
   lengths;
-  mass = 0;
+  mass = Infinity;
   position;
-  type: Entity["type"] = "Wall";
 
   constructor(
     gridX: number,
