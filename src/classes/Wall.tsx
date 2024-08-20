@@ -1,4 +1,5 @@
 import { GRID_DIMENSION } from "@/constants";
+import { EntityType } from "@/types";
 
 import { Entity } from "./Entity";
 
@@ -25,26 +26,29 @@ export class Wall extends Entity {
     ],
   };
 
+  fill: Entity["fill"] = "Wall";
+  lengths;
+  mass = 0;
+  position;
+  type: EntityType = "Wall";
+
   constructor(
     gridX: number,
     gridY: number,
     gridWidth: number,
     gridHeight: number
   ) {
-    super({
-      fill: "Wall",
-      lengths: {
-        x: GRID_DIMENSION * gridWidth,
-        y: GRID_DIMENSION * gridHeight,
-        z: 0,
-      },
-      mass: 0,
-      position: {
-        x: GRID_DIMENSION * gridX,
-        y: GRID_DIMENSION * gridY,
-        z: 0,
-      },
-      type: "Wall",
-    });
+    super();
+
+    this.lengths = {
+      x: GRID_DIMENSION * gridWidth,
+      y: GRID_DIMENSION * gridHeight,
+      z: 0,
+    };
+    this.position = {
+      x: GRID_DIMENSION * gridX,
+      y: GRID_DIMENSION * gridY,
+      z: 0,
+    };
   }
 }

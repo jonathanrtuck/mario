@@ -9,7 +9,13 @@ import {
   Velocity,
 } from "@/types";
 
-export class Entity {
+export abstract class Entity {
+  abstract fill: ColorIndex | Pattern;
+  abstract lengths: Lengths;
+  abstract mass: number; // kg (>= 0. `Infinity` for unmovable)
+  abstract position: Position;
+  abstract type: EntityType;
+
   acceleration?: Acceleration;
   collidableSides?: {
     bottom: boolean;
@@ -18,48 +24,7 @@ export class Entity {
     top: boolean;
   };
   deceleration?: Acceleration;
-  fill: ColorIndex | Pattern;
-  lengths: Lengths;
-  mass: number; // kg (>= 0. `Infinity` for unmovable)
-  position: Position;
-  type: EntityType;
+  patterns?: Partial<Record<Pattern, Bitmap>>;
   velocity?: Velocity;
   vmax?: Velocity;
-
-  static patterns?: Partial<Record<Pattern, Bitmap>>;
-
-  constructor({
-    acceleration,
-    collidableSides,
-    deceleration,
-    fill,
-    lengths,
-    mass,
-    position,
-    type,
-    velocity,
-    vmax,
-  }: {
-    acceleration?: Entity["acceleration"];
-    collidableSides?: Entity["collidableSides"];
-    deceleration?: Entity["deceleration"];
-    fill: Entity["fill"];
-    lengths: Entity["lengths"];
-    mass: Entity["mass"]; // kg (>= 0. `Infinity` for unmovable)
-    position: Entity["position"];
-    type: Entity["type"];
-    velocity?: Entity["velocity"];
-    vmax?: Entity["vmax"];
-  }) {
-    this.acceleration = acceleration;
-    this.collidableSides = collidableSides;
-    this.deceleration = deceleration;
-    this.fill = fill;
-    this.lengths = lengths;
-    this.mass = mass;
-    this.position = position;
-    this.type = type;
-    this.velocity = velocity;
-    this.vmax = vmax;
-  }
 }
