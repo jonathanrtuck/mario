@@ -1,5 +1,4 @@
 import { GRID_DIMENSION } from "@/constants";
-import { EntityType } from "@/types";
 
 import { Entity } from "./Entity";
 
@@ -26,11 +25,17 @@ export class Wall extends Entity {
     ],
   };
 
+  collidableSides = {
+    bottom: false,
+    left: true,
+    right: true,
+    top: true,
+  };
   fill: Entity["fill"] = "Wall";
   lengths;
   mass = 0;
   position;
-  type: EntityType = "Wall";
+  type: Entity["type"] = "Wall";
 
   constructor(
     gridX: number,

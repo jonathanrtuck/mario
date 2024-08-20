@@ -28,8 +28,8 @@ export class Game {
   private context: CanvasRenderingContext2D;
   private elapsedMsSincePrevSecond: number = 0;
   private fps: number = 0;
-  private keydowns: Set<Key>;
-  private keyups: Set<Key>;
+  private keydowns: Set<Key> = new Set<Key>();
+  private keyups: Set<Key> = new Set<Key>();
   private prevRenderMs: number = 0; // ms
   private prevUpdateMs: number = 0; // ms
   private patterns: Partial<Record<Pattern, CanvasPattern>> = {};
@@ -37,8 +37,6 @@ export class Game {
 
   constructor(canvas: HTMLCanvasElement) {
     this.context = canvas.getContext("2d")!;
-    this.keydowns = new Set<Key>();
-    this.keyups = new Set<Key>();
     this.state = new State({
       entities: [new Wall(0, 0, 69, 4), new Mario(2, 4, "small")],
       universe: {

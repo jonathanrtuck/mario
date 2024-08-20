@@ -1,5 +1,4 @@
 import { GRID_DIMENSION } from "@/constants";
-import { EntityType } from "@/types";
 
 import { Entity } from "./Entity";
 
@@ -8,6 +7,12 @@ export class Mario extends Entity {
     x: 8,
     y: 15.3,
     z: 0,
+  };
+  collidableSides = {
+    bottom: true,
+    left: true,
+    right: true,
+    top: true,
   };
   deceleration = {
     x: 6,
@@ -18,7 +23,7 @@ export class Mario extends Entity {
   mass = 70;
   position;
   size: "small" | "large";
-  type: EntityType = "Mario";
+  type: Entity["type"] = "Mario";
   velocity = {
     x: 0,
     y: 0,
