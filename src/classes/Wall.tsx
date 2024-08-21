@@ -32,7 +32,7 @@ export class Wall extends Entity {
     top: true,
   };
   fill: Entity["fill"] = "Wall";
-  lengths;
+  length;
   mass = Infinity;
   position;
 
@@ -44,7 +44,7 @@ export class Wall extends Entity {
   ) {
     super();
 
-    this.lengths = {
+    this.length = {
       x: GRID_DIMENSION * gridWidth,
       y: GRID_DIMENSION * gridHeight,
       z: 0,

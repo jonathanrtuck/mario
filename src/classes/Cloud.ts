@@ -129,7 +129,7 @@ export class Cloud extends Entity {
   }
   set fill(value) {}
 
-  get lengths() {
+  get length() {
     return {
       x:
         GRID_DIMENSION *
@@ -138,7 +138,7 @@ export class Cloud extends Entity {
       z: 0,
     };
   }
-  set lengths(value) {}
+  set length(value) {}
 
   constructor(gridX: number, gridY: number, size: Cloud["size"]) {
     super();
@@ -146,7 +146,7 @@ export class Cloud extends Entity {
     this.position = {
       x: GRID_DIMENSION * gridX,
       y: GRID_DIMENSION * gridY,
-      z: 0,
+      z: -1,
     };
     this.size = size;
   }

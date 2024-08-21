@@ -32,7 +32,7 @@ export class Brick extends Entity {
     top: true,
   };
   fill: Entity["fill"] = "Brick";
-  lengths = {
+  length = {
     x: GRID_DIMENSION * 1,
     y: GRID_DIMENSION * 1,
     z: 0,

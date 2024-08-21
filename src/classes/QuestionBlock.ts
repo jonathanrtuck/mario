@@ -32,7 +32,7 @@ export class QuestionBlock extends Entity {
     top: true,
   };
   fill: Entity["fill"] = "QuestionBlock";
-  lengths = {
+  length = {
     x: GRID_DIMENSION * 1,
     y: GRID_DIMENSION * 1,
     z: 0,

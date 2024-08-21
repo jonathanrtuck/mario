@@ -12,9 +12,9 @@ export class Flag extends Entity {
     top: true,
   };
   fill: Entity["fill"] = 9; // @todo
-  lengths = {
+  length = {
     x: GRID_DIMENSION * 1,
-    y: GRID_DIMENSION * 1,
+    y: GRID_DIMENSION * 10,
     z: 0,
   };
   mass = 0;

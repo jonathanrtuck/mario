@@ -37,14 +37,14 @@ export class Pipe extends Entity {
     top: true,
   };
   fill: Entity["fill"] = "Pipe";
-  lengths;
+  length;
   mass = Infinity;
   position;
 
   constructor(gridX: number, gridY: number, gridHeight: number) {
     super();
 
-    this.lengths = {
+    this.length = {
       x: GRID_DIMENSION * 2,
       y: GRID_DIMENSION * gridHeight,
       z: 0,

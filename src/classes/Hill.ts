@@ -108,14 +108,14 @@ export class Hill extends Entity {
   }
   set fill(value) {}
 
-  get lengths() {
+  get length() {
     return {
       x: GRID_DIMENSION * (this.size === "large" ? 5 : 3),
       y: GRID_DIMENSION * (this.size === "large" ? 3 : 2),
       z: 0,
     };
   }
-  set lengths(value) {}
+  set length(value) {}
 
   constructor(gridX: number, gridY: number, size: Hill["size"]) {
     super();
@@ -123,7 +123,7 @@ export class Hill extends Entity {
     this.position = {
       x: GRID_DIMENSION * gridX,
       y: GRID_DIMENSION * gridY,
-      z: 0,
+      z: -1,
     };
     this.size = size;
   }

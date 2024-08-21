@@ -41,7 +41,7 @@ export class Mario extends Entity {
     y: 0,
     z: 0,
   };
-  lengths;
+  length;
   mass = 70;
   position;
   size: "small" | "large";
@@ -69,7 +69,7 @@ export class Mario extends Entity {
   constructor(gridX: number, gridY: number, size: Mario["size"]) {
     super();
 
-    this.lengths = {
+    this.length = {
       x: GRID_DIMENSION * 0.75,
       y: GRID_DIMENSION * (size === "large" ? 2 : 1),
       z: 0,

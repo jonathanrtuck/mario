@@ -16,7 +16,7 @@ export type ID = string;
 
 export type Key = (typeof KEYS)[number];
 
-export type Lengths = {
+export type Length = {
   x: number; // m (>= 0)
   y: number;
   z: number;
@@ -35,7 +35,7 @@ export type Position = {
 export type Universe = {
   acceleration: Acceleration; // gravity
   color: ColorIndex;
-  lengths: Lengths;
+  length: Length;
 };
 
 export type Velocity = {
@@ -45,6 +45,6 @@ export type Velocity = {
 };
 
 export type Viewport = {
-  lengths: Lengths;
+  length: Length;
   position: Position;
 };

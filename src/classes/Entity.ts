@@ -2,7 +2,7 @@ import {
   Acceleration,
   Bitmap,
   ColorIndex,
-  Lengths,
+  Length,
   Pattern,
   Position,
   Velocity,
@@ -10,7 +10,7 @@ import {
 
 export abstract class Entity {
   abstract fill: ColorIndex | Pattern;
-  abstract lengths: Lengths;
+  abstract length: Length;
   abstract mass: number; // kg (>= 0. `Infinity` for unmovable)
   abstract position: Position;
 

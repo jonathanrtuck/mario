@@ -249,14 +249,14 @@ export class Game {
           z: 0,
         },
         color: 5,
-        lengths: {
+        length: {
           x: GRID_DIMENSION * 210,
           y: GRID_DIMENSION * 15,
           z: 2,
         },
       },
       viewport: {
-        lengths: {
+        length: {
           x: GRID_DIMENSION * 16,
           y: GRID_DIMENSION * 15,
           z: 3,
@@ -264,7 +264,7 @@ export class Game {
         position: {
           x: 0,
           y: GRID_DIMENSION * 2,
-          z: 1,
+          z: -1,
         },
       },
     });
@@ -374,9 +374,9 @@ export class Game {
 
     this.context.reset();
     this.context.canvas.height =
-      (this.state.viewport.lengths.y / PIXEL_DIMENSION) * PIXEL_SCALE;
+      (this.state.viewport.length.y / PIXEL_DIMENSION) * PIXEL_SCALE;
     this.context.canvas.width =
-      (this.state.viewport.lengths.x / PIXEL_DIMENSION) * PIXEL_SCALE;
+      (this.state.viewport.length.x / PIXEL_DIMENSION) * PIXEL_SCALE;
     this.context.canvas.style.backgroundColor = getRGBA(
       this.state.universe.color
     );
@@ -389,15 +389,21 @@ export class Game {
       if (
         getIsCollisionByDimension(
           this.state.viewport.position.x,
-          this.state.viewport.lengths.x,
+          this.state.viewport.length.x,
           entity.position.x,
-          entity.lengths.x
+          entity.length.x
         ) &&
         getIsCollisionByDimension(
           this.state.viewport.position.y,
-          this.state.viewport.lengths.y,
+          this.state.viewport.length.y,
           entity.position.y,
-          entity.lengths.y
+          entity.length.y
+        ) &&
+        getIsCollisionByDimension(
+          this.state.viewport.position.z,
+          this.state.viewport.length.z,
+          entity.position.z,
+          entity.length.z
         )
       ) {
         this.context.fillStyle =
@@ -409,18 +415,18 @@ export class Game {
           ((entity.position.x - this.state.viewport.position.x) /
             PIXEL_DIMENSION) *
             PIXEL_SCALE,
-          ((this.state.viewport.lengths.y +
+          ((this.state.viewport.length.y +
             this.state.viewport.position.y -
             entity.position.y -
-            entity.lengths.y) /
+            entity.length.y) /
             PIXEL_DIMENSION) *
             PIXEL_SCALE
         );
         this.context.fillRect(
           0,
           0,
-          (entity.lengths.x / PIXEL_DIMENSION) * PIXEL_SCALE,
-          (entity.lengths.y / PIXEL_DIMENSION) * PIXEL_SCALE
+          (entity.length.x / PIXEL_DIMENSION) * PIXEL_SCALE,
+          (entity.length.y / PIXEL_DIMENSION) * PIXEL_SCALE
         );
         this.context.restore();
       }
@@ -440,6 +446,11 @@ export class Game {
     const isPressingRight =
       this.keydowns.has("right") && !this.keydowns.has("left");
 
+    this.state.entities.sort(
+      // prettier-ignore
+      (a, b) => (a.position.z + a.length.z) - (b.position.z + b.length.z)
+    );
+
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
 
@@ -447,6 +458,8 @@ export class Game {
         // entity.position.x += this.state.universe.acceleration.x * seconds;
         // entity.position.y += this.state.universe.acceleration.y * seconds;
       }
+
+      // @todo move as much of this logic as possible into the Entity classes
 
       if (entity.velocity) {
         entity.position.x += entity.velocity.x * seconds;
@@ -496,11 +509,11 @@ export class Game {
       }
 
       if (entity instanceof Mario) {
-        const entityCenterX = entity.position.x + entity.lengths.x / 2;
+        const entityCenterX = entity.position.x + entity.length.x / 2;
         const viewportCenterX =
-          this.state.viewport.position.x + this.state.viewport.lengths.x / 2;
+          this.state.viewport.position.x + this.state.viewport.length.x / 2;
         const maxViewportPositionX =
-          this.state.universe.lengths.x - this.state.viewport.lengths.x;
+          this.state.universe.length.x - this.state.viewport.length.x;
 
         // follow entity with viewport
         if (
@@ -509,7 +522,7 @@ export class Game {
         ) {
           this.state.viewport.position.x = clamp(
             this.state.viewport.position.x,
-            entityCenterX - this.state.viewport.lengths.x / 2,
+            entityCenterX - this.state.viewport.length.x / 2,
             maxViewportPositionX
           );
         }
@@ -517,8 +530,8 @@ export class Game {
         const minPositionX = this.state.viewport.position.x;
         const maxPositionX =
           this.state.viewport.position.x +
-          this.state.viewport.lengths.x -
-          entity.lengths.x;
+          this.state.viewport.length.x -
+          entity.length.x;
 
         // prevent entity from overflowing viewport
         if (entity.position.x < minPositionX) {
