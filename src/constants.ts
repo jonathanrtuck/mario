@@ -42,6 +42,7 @@ export const PATTERNS = [
   "Flag",
   "HillLarge",
   "HillSmall",
+  "MarioSmallStandingRight",
   "Pipe",
   "QuestionBlock",
   "Wall",

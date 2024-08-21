@@ -240,7 +240,7 @@ export class Game {
         new Cloud(211, 13, "small"),
         new Bush(215, 4, "small"),
         new Cloud(219, 12, "large"),
-        new Mario(2, 4, "small"),
+        new Mario(2.125, 4, "small"),
       ],
       universe: {
         acceleration: {
