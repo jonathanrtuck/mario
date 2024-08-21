@@ -63,7 +63,7 @@ export class Bush extends Entity {
     ],
   };
 
-  mass = 7.5;
+  mass = Infinity;
   position;
   size: "small" | "medium" | "large";
 

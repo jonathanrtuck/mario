@@ -32,15 +32,6 @@ export type Position = {
   z: number;
 };
 
-/*
-export type State = {
-  entities: Entity[];
-  inputs: Map<Key, boolean>;
-  universe: Universe;
-  viewport: Viewport;
-};
-*/
-
 export type Universe = {
   acceleration: Acceleration; // gravity
   color: ColorIndex;

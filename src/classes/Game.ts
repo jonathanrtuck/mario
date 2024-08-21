@@ -8,7 +8,7 @@ import {
   PIXEL_SCALE,
 } from "@/constants";
 import { Bitmap, Key, Pattern } from "@/types";
-import { getIsCollisionByDimension, getRGBA } from "@/utils";
+import { clamp, getIsCollisionByDimension, getRGBA } from "@/utils";
 
 import { Block } from "./Block";
 import { Brick } from "./Brick";
@@ -245,7 +245,7 @@ export class Game {
       universe: {
         acceleration: {
           x: 0,
-          y: -9.8 * 4,
+          y: -9.8,
           z: 0,
         },
         color: 5,
@@ -432,8 +432,115 @@ export class Game {
   update = () => {
     const now = Date.now();
     const elapsedMs = now - this.prevUpdateMs;
+    const seconds = 1 / (1000 / elapsedMs);
 
     // @todo update this.state
+    for (let i = 0; i !== this.state.entities.length; i++) {
+      const entity = this.state.entities[i];
+
+      if (entity.mass !== 0 && entity.mass !== Infinity) {
+        // entity.position.x += this.state.universe.acceleration.x * seconds;
+        // entity.position.y += this.state.universe.acceleration.y * seconds;
+      }
+
+      if (entity.velocity) {
+        entity.position.x += entity.velocity.x * seconds;
+        entity.position.y += entity.velocity.y * seconds;
+
+        // decelerate if moving left but no longer holding left
+        if (
+          entity.deceleration &&
+          entity.velocity.x < 0 &&
+          !this.keydowns.has("left")
+        ) {
+          entity.velocity.x += Math.min(
+            entity.deceleration.x * seconds,
+            -entity.velocity.x
+          );
+        }
+        // decelerate if moving right but no longer holding right
+        if (
+          entity.deceleration &&
+          entity.velocity.x > 0 &&
+          !this.keydowns.has("right")
+        ) {
+          entity.velocity.x -= Math.min(
+            entity.deceleration.x * seconds,
+            entity.velocity.x
+          );
+        }
+
+        // accelerate if holding left
+        if (
+          entity.acceleration &&
+          // !collisions.left &&
+          this.keydowns.has("left") &&
+          !this.keydowns.has("right")
+        ) {
+          entity.velocity.x -=
+            entity.acceleration.x * seconds * (this.keydowns.has("a") ? 2 : 1);
+        }
+        // accelerate if holding right
+        if (
+          entity.acceleration &&
+          // !collisions.right &&
+          this.keydowns.has("right") &&
+          !this.keydowns.has("left")
+        ) {
+          entity.velocity.x +=
+            entity.acceleration.x * seconds * (this.keydowns.has("a") ? 2 : 1);
+        }
+
+        if (entity.vmax) {
+          const vmaxX = entity.vmax?.x * (this.keydowns.has("a") ? 2 : 1);
+          const vmaxY = entity.vmax?.y;
+
+          entity.velocity.x = clamp(-vmaxX, entity.velocity.x, vmaxX);
+          entity.velocity.y = clamp(-vmaxY, entity.velocity.y, vmaxY);
+        }
+      }
+
+      if (entity instanceof Mario) {
+        const entityCenterX = entity.position.x + entity.lengths.x / 2;
+        const viewportCenterX =
+          this.state.viewport.position.x + this.state.viewport.lengths.x / 2;
+        const maxViewportPositionX =
+          this.state.universe.lengths.x - this.state.viewport.lengths.x;
+
+        // follow entity with viewport
+        if (
+          entityCenterX > viewportCenterX &&
+          this.state.viewport.position.x < maxViewportPositionX
+        ) {
+          this.state.viewport.position.x = clamp(
+            this.state.viewport.position.x,
+            entityCenterX - this.state.viewport.lengths.x / 2,
+            maxViewportPositionX
+          );
+        }
+
+        const minPositionX = this.state.viewport.position.x;
+        const maxPositionX =
+          this.state.viewport.position.x +
+          this.state.viewport.lengths.x -
+          entity.lengths.x;
+
+        // prevent entity from overflowing viewport
+        if (entity.position.x < minPositionX) {
+          entity.position.x = minPositionX;
+
+          if (entity.velocity.x < 0) {
+            entity.velocity.x = 0;
+          }
+        } else if (entity.position.x > maxPositionX) {
+          entity.position.x = maxPositionX;
+
+          if (entity.velocity.x > 0) {
+            entity.velocity.x = 0;
+          }
+        }
+      }
+    }
 
     for (const key of this.keyups) {
       this.keydowns.delete(key);
