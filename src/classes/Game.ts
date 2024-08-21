@@ -60,19 +60,19 @@ export class Game {
         new Cloud(9, 12, "small"),
         new Bush(11, 4, "large"),
         new Hill(16, 4, "small"),
-        new QuestionBlock(16, 8),
+        new QuestionBlock(16, 7),
         new Cloud(19, 13, "small"),
-        new Brick(20, 8),
-        new QuestionBlock(21, 8),
-        new Brick(22, 8),
-        new QuestionBlock(22, 12),
+        new Brick(20, 7),
+        new QuestionBlock(21, 7),
+        new Brick(22, 7),
+        new QuestionBlock(22, 11),
         new Bush(23, 4, "small"),
-        new QuestionBlock(23, 8),
-        new Brick(24, 8),
+        new QuestionBlock(23, 7),
+        new Brick(24, 7),
         new Cloud(27, 12, "large"),
         new Pipe(28, 4, 2),
         new Cloud(36, 13, "medium"),
-        new Pipe(39, 4, 3),
+        new Pipe(38, 4, 3),
         new Bush(41, 4, "medium"),
         new Pipe(46, 4, 4),
         new Hill(48, 4, "large"),
@@ -84,48 +84,48 @@ export class Game {
         new Wall(71, 0, 15, 4),
         new Bush(71, 4, "small"),
         new Cloud(75, 12, "large"),
-        new Brick(77, 8),
-        new QuestionBlock(78, 8),
-        new Brick(79, 8),
-        new Brick(80, 12),
-        new Brick(81, 12),
-        new Brick(82, 12),
-        new Brick(83, 12),
-        new Brick(84, 12),
+        new Brick(77, 7),
+        new QuestionBlock(78, 7),
+        new Brick(79, 7),
+        new Brick(80, 11),
+        new Brick(81, 11),
+        new Brick(82, 11),
+        new Brick(83, 11),
+        new Brick(84, 11),
         new Cloud(84, 13, "medium"),
-        new Brick(85, 12),
-        new Brick(86, 12),
-        new Brick(87, 12),
-        new Brick(88, 12),
+        new Brick(85, 11),
+        new Brick(86, 11),
+        new Brick(87, 11),
         new Bush(89, 4, "medium"),
         new Wall(89, 0, 64, 4),
-        new Brick(91, 12),
-        new Brick(92, 12),
-        new Brick(93, 8),
-        new Brick(93, 12),
+        new Brick(91, 11),
+        new Brick(92, 11),
+        new Brick(93, 11),
+        new Brick(94, 7),
+        new Brick(94, 11),
         new Hill(96, 4, "large"),
-        new Brick(100, 8),
-        new Brick(101, 8),
+        new Brick(100, 7),
+        new Brick(101, 7),
         new Cloud(104, 12, "small"),
-        new QuestionBlock(106, 8),
+        new QuestionBlock(106, 7),
         new Bush(107, 4, "large"),
-        new QuestionBlock(109, 8),
-        new QuestionBlock(109, 12),
+        new QuestionBlock(109, 7),
+        new QuestionBlock(109, 11),
         new Hill(112, 4, "small"),
-        new QuestionBlock(112, 8),
+        new QuestionBlock(112, 7),
         new Cloud(115, 13, "small"),
         new Bush(119, 4, "small"),
-        new Brick(119, 8),
-        new Brick(121, 12),
-        new Brick(122, 12),
+        new Brick(119, 7),
+        new Brick(121, 11),
+        new Brick(122, 11),
         new Cloud(123, 12, "large"),
-        new Brick(123, 12),
-        new Brick(128, 12),
-        new Brick(129, 12),
-        new QuestionBlock(129, 12),
-        new Brick(130, 12),
-        new QuestionBlock(130, 12),
-        new Brick(131, 12),
+        new Brick(123, 11),
+        new Brick(128, 11),
+        new Brick(129, 11),
+        new QuestionBlock(129, 11),
+        new Brick(130, 11),
+        new QuestionBlock(130, 11),
+        new Brick(131, 11),
         new Cloud(132, 13, "medium"),
         new Block(134, 4),
         new Block(135, 4),
@@ -177,13 +177,13 @@ export class Game {
         new Block(157, 5),
         new Block(158, 4),
         new Hill(160, 4, "small"),
-        new Pipe(162, 4, 2),
+        new Pipe(163, 4, 2),
         new Cloud(163, 13, "small"),
         new Bush(167, 4, "small"),
-        new Brick(168, 8),
-        new Brick(169, 8),
-        new QuestionBlock(170, 8),
-        new Brick(171, 8),
+        new Brick(168, 7),
+        new Brick(169, 7),
+        new QuestionBlock(170, 7),
+        new Brick(171, 7),
         new Cloud(171, 12, "large"),
         new Pipe(179, 4, 2),
         new Cloud(180, 13, "medium"),
@@ -433,8 +433,13 @@ export class Game {
     const now = Date.now();
     const elapsedMs = now - this.prevUpdateMs;
     const seconds = 1 / (1000 / elapsedMs);
+    const isPressingA = this.keydowns.has("a");
+    const isPressingB = this.keydowns.has("b");
+    const isPressingLeft =
+      this.keydowns.has("left") && !this.keydowns.has("right");
+    const isPressingRight =
+      this.keydowns.has("right") && !this.keydowns.has("left");
 
-    // @todo update this.state
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
 
@@ -448,22 +453,14 @@ export class Game {
         entity.position.y += entity.velocity.y * seconds;
 
         // decelerate if moving left but no longer holding left
-        if (
-          entity.deceleration &&
-          entity.velocity.x < 0 &&
-          !this.keydowns.has("left")
-        ) {
+        if (entity.deceleration && entity.velocity.x < 0 && !isPressingLeft) {
           entity.velocity.x += Math.min(
             entity.deceleration.x * seconds,
             -entity.velocity.x
           );
         }
         // decelerate if moving right but no longer holding right
-        if (
-          entity.deceleration &&
-          entity.velocity.x > 0 &&
-          !this.keydowns.has("right")
-        ) {
+        if (entity.deceleration && entity.velocity.x > 0 && !isPressingRight) {
           entity.velocity.x -= Math.min(
             entity.deceleration.x * seconds,
             entity.velocity.x
@@ -473,26 +470,24 @@ export class Game {
         // accelerate if holding left
         if (
           entity.acceleration &&
-          // !collisions.left &&
-          this.keydowns.has("left") &&
-          !this.keydowns.has("right")
+          isPressingLeft
+          // !collisions.left
         ) {
           entity.velocity.x -=
-            entity.acceleration.x * seconds * (this.keydowns.has("a") ? 2 : 1);
+            entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
         }
         // accelerate if holding right
         if (
           entity.acceleration &&
-          // !collisions.right &&
-          this.keydowns.has("right") &&
-          !this.keydowns.has("left")
+          isPressingRight
+          // !collisions.right
         ) {
           entity.velocity.x +=
-            entity.acceleration.x * seconds * (this.keydowns.has("a") ? 2 : 1);
+            entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
         }
 
         if (entity.vmax) {
-          const vmaxX = entity.vmax?.x * (this.keydowns.has("a") ? 2 : 1);
+          const vmaxX = entity.vmax?.x * (isPressingA ? 2 : 1);
           const vmaxY = entity.vmax?.y;
 
           entity.velocity.x = clamp(-vmaxX, entity.velocity.x, vmaxX);
