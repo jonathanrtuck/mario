@@ -8,12 +8,7 @@ import {
   PIXEL_SCALE,
 } from "@/constants";
 import { Bitmap, Key, Pattern, Position, Velocity } from "@/types";
-import {
-  clamp,
-  getIsCollision,
-  getIsCollisionByDimension,
-  getRGBA,
-} from "@/utils";
+import { clamp, getIsCollision, getRGBA } from "@/utils";
 
 import { Block } from "./Block";
 import { Brick } from "./Brick";
@@ -27,6 +22,8 @@ import { Pipe } from "./Pipe";
 import { QuestionBlock } from "./QuestionBlock";
 import { State } from "./State";
 import { Wall } from "./Wall";
+
+type Side = "bottom" | "left" | "right" | "top";
 
 const BITMAPS_BY_PATTERN: Partial<Record<Pattern, Bitmap>> = {
   ...("patterns" in Block ? Block.patterns : {}),
@@ -44,6 +41,9 @@ const PATTERN_KEYS = Object.keys(BITMAPS_BY_PATTERN) as Pattern[];
 const PATTERN_VALUES = Object.values(BITMAPS_BY_PATTERN);
 
 export class Game {
+  // used to ignore holding b, only handle it on first update after keydown
+  private _consumedKeyB = false;
+
   private animationFrameRequest: ReturnType<
     typeof requestAnimationFrame
   > | null = null;
@@ -246,12 +246,12 @@ export class Game {
         new Cloud(211, 13, "small"),
         new Bush(215, 4, "small"),
         new Cloud(219, 12, "large"),
-        new Mario(2.125, 4.125, "small"),
+        new Mario(2.125, 4, "small"),
       ],
       universe: {
         acceleration: {
           x: 0,
-          y: -9.8,
+          y: -9.8 * 4,
           z: 0,
         },
         color: 5,
@@ -434,7 +434,7 @@ export class Game {
     const elapsedMs = now - this.prevUpdateMs;
     const seconds = 1 / (1000 / elapsedMs);
     const isPressingA = this.keydowns.has("a");
-    const isPressingB = this.keydowns.has("b");
+    const isPressingB = this.keydowns.has("b") && !this._consumedKeyB;
     const isPressingLeft =
       this.keydowns.has("left") && !this.keydowns.has("right");
     const isPressingRight =
@@ -484,12 +484,6 @@ export class Game {
         z: entity.position.z,
       };
 
-      if (entity.mass !== 0 && entity.mass !== Infinity) {
-        nextPosition.x += this.state.universe.acceleration.x * seconds;
-        nextPosition.y += this.state.universe.acceleration.y * seconds;
-        nextPosition.z += this.state.universe.acceleration.z * seconds;
-      }
-
       if (entity.velocity) {
         nextPosition.x += entity.velocity.x * seconds;
         nextPosition.y += entity.velocity.y * seconds;
@@ -497,6 +491,19 @@ export class Game {
       }
 
       nextPositions[i] = nextPosition;
+    }
+
+    const entityCollisionSides = new Array<Record<Side, boolean>>(
+      entitiesToUpdate.length
+    );
+
+    for (let i = 0; i !== entitiesToUpdate.length; i++) {
+      entityCollisionSides[i] = {
+        bottom: false,
+        left: false,
+        right: false,
+        top: false,
+      };
     }
 
     // update entities
@@ -523,30 +530,26 @@ export class Game {
             otherEntity.length
           )
         ) {
-          const isCollisionBottom =
+          entityCollisionSides[i].bottom =
             entity.position.y >=
               otherEntity.position.y + otherEntity.length.y &&
             nextPosition.y <= otherNextPosition.y + otherEntity.length.y;
-          const isCollisionLeft =
+          entityCollisionSides[i].left =
             entity.position.x >=
               otherEntity.position.x + otherEntity.length.x &&
             nextPosition.x <= otherNextPosition.x + otherEntity.length.x;
-          const isCollisionRight =
-            !isCollisionLeft &&
+          entityCollisionSides[i].right =
             entity.position.x + entity.length.x <= otherEntity.position.x &&
             nextPosition.x + entity.length.x >= otherNextPosition.x;
-          const isCollisionTop =
-            !isCollisionBottom &&
+          entityCollisionSides[i].top =
             entity.position.y + entity.length.y <= otherEntity.position.y &&
             nextPosition.y + entity.length.y >= otherNextPosition.y;
 
           // calculate precise time of each collision(s) occurence
           let collisionMomentIndex = 0;
-          const collisionMoments = new Array<
-            ["bottom" | "left" | "right" | "top", number]
-          >(2);
+          const collisionMoments = new Array<[Side, number]>(2);
 
-          if (isCollisionBottom) {
+          if (entityCollisionSides[i].bottom) {
             const prevLengthBetween =
               entity.position.y -
               (otherEntity.position.y + otherEntity.length.y);
@@ -567,7 +570,7 @@ export class Game {
             }
           }
 
-          if (isCollisionLeft) {
+          if (entityCollisionSides[i].left) {
             const prevLengthBetween =
               entity.position.x -
               (otherEntity.position.x + otherEntity.length.x);
@@ -588,7 +591,7 @@ export class Game {
             }
           }
 
-          if (isCollisionRight) {
+          if (entityCollisionSides[i].right) {
             const prevLengthBetween =
               otherEntity.position.x - (entity.position.x + entity.length.x);
 
@@ -608,7 +611,7 @@ export class Game {
             }
           }
 
-          if (isCollisionTop) {
+          if (entityCollisionSides[i].top) {
             const prevLengthBetween =
               otherEntity.position.y - (entity.position.y + entity.length.y);
 
@@ -628,29 +631,106 @@ export class Game {
             }
           }
 
-          collisionMoments.length = collisionMomentIndex;
-          collisionMoments.sort(([, a], [, b]) => a - b);
+          if (collisionMomentIndex !== 0) {
+            collisionMoments.length = collisionMomentIndex;
 
-          // loop through collisionMoments and update entities' position/velocity accordingly
-          for (let k = 0; k !== collisionMoments.length; k++) {
-            const [side, moment] = collisionMoments[k];
+            // update entities' position/velocity only based on earliest collision
+            const [side, moment] =
+              collisionMoments.length === 1
+                ? collisionMoments[0]
+                : collisionMoments[0][1] < collisionMoments[1][1]
+                ? collisionMoments[0]
+                : collisionMoments[1];
 
-            if (!entity.velocity) {
-              // use entity.position position to update otherEntity.position
-            } else if (!otherEntity.velocity) {
-              // use otherEntity.position position to update entity.position
-            } else {
-              // use moment to find the point on intersection and set both entities' positions based on it
+            switch (side) {
+              case "bottom":
+                entityCollisionSides[j].top = true;
+                break;
+              case "left":
+                entityCollisionSides[j].right = true;
+                break;
+              case "right":
+                entityCollisionSides[j].left = true;
+                break;
+              case "top":
+                entityCollisionSides[j].bottom = true;
+                break;
             }
 
-            // check if still collision in each subsequent iteration
-            if (k !== 0) {
-              //
+            if (!entity.velocity) {
+              // use entity.position to update otherEntity.position
+              switch (side) {
+                case "bottom":
+                  otherNextPosition.y = nextPosition.y - otherEntity.length.y;
+
+                  if (otherEntity.velocity && otherEntity.velocity.y > 0) {
+                    otherEntity.velocity.y = 0;
+                  }
+                  break;
+                case "left":
+                  otherNextPosition.x = nextPosition.x - otherEntity.length.x;
+
+                  if (otherEntity.velocity && otherEntity.velocity.x > 0) {
+                    otherEntity.velocity.x = 0;
+                  }
+                  break;
+                case "right":
+                  otherNextPosition.x = nextPosition.x + entity.length.x;
+
+                  if (otherEntity.velocity && otherEntity.velocity.x < 0) {
+                    otherEntity.velocity.x = 0;
+                  }
+                  break;
+                case "top":
+                  otherNextPosition.y = nextPosition.y + entity.length.y;
+
+                  if (otherEntity.velocity && otherEntity.velocity.y < 0) {
+                    otherEntity.velocity.y = 0;
+                  }
+                  break;
+              }
+            } else if (!otherEntity.velocity) {
+              // use otherEntity.position to update entity.position
+              switch (side) {
+                case "bottom":
+                  nextPosition.y =
+                    otherEntity.position.y + otherEntity.length.y;
+
+                  if (entity.velocity && entity.velocity.y < 0) {
+                    entity.velocity.y = 0;
+                  }
+                  break;
+                case "left":
+                  nextPosition.x =
+                    otherEntity.position.x + otherEntity.length.x;
+
+                  if (entity.velocity && entity.velocity.x < 0) {
+                    entity.velocity.x = 0;
+                  }
+                  break;
+                case "right":
+                  nextPosition.x = otherEntity.position.x - entity.length.x;
+
+                  if (entity.velocity && entity.velocity.x > 0) {
+                    entity.velocity.x = 0;
+                  }
+                  break;
+                case "top":
+                  nextPosition.y = otherEntity.position.y - entity.length.y;
+
+                  if (entity.velocity && entity.velocity.y > 0) {
+                    entity.velocity.y = 0;
+                  }
+                  break;
+              }
+            } else {
+              // @todo use moment to find the point of intersection and set both entities' positions based on it
             }
           }
         }
       }
 
+      // update entity's velocity
       if (entity.velocity) {
         const nextVelocity: Velocity = {
           x: entity.velocity.x,
@@ -658,38 +738,45 @@ export class Game {
           z: entity.velocity.z,
         };
 
-        // decelerate if moving left but no longer holding left
-        if (entity.deceleration && entity.velocity.x < 0 && !isPressingLeft) {
-          nextVelocity.x += Math.min(
-            entity.deceleration.x * seconds,
-            -entity.velocity.x
-          );
-        }
-        // decelerate if moving right but no longer holding right
-        if (entity.deceleration && entity.velocity.x > 0 && !isPressingRight) {
-          nextVelocity.x -= Math.min(
-            entity.deceleration.x * seconds,
-            entity.velocity.x
-          );
+        if (entity.mass !== 0 && entity.mass !== Infinity) {
+          nextVelocity.x += this.state.universe.acceleration.x * seconds;
+          nextVelocity.y += this.state.universe.acceleration.y * seconds;
+          nextVelocity.z += this.state.universe.acceleration.z * seconds;
         }
 
-        // accelerate if holding left
-        if (
-          entity.acceleration &&
-          isPressingLeft
-          // !collisions.left
-        ) {
-          nextVelocity.x -=
-            entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
-        }
-        // accelerate if holding right
-        if (
-          entity.acceleration &&
-          isPressingRight
-          // !collisions.right
-        ) {
-          nextVelocity.x +=
-            entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
+        if (entity instanceof Mario) {
+          // decelerate if moving left but no longer holding left
+          if (entity.velocity.x < 0 && !isPressingLeft) {
+            nextVelocity.x += Math.min(
+              entity.deceleration.x * seconds,
+              -entity.velocity.x
+            );
+          }
+
+          // decelerate if moving right but no longer holding right
+          if (entity.velocity.x > 0 && !isPressingRight) {
+            nextVelocity.x -= Math.min(
+              entity.deceleration.x * seconds,
+              entity.velocity.x
+            );
+          }
+
+          // accelerate if holding left
+          if (isPressingLeft && !entityCollisionSides[i].left) {
+            nextVelocity.x -=
+              entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
+          }
+
+          // accelerate if holding right
+          if (isPressingRight && !entityCollisionSides[i].right) {
+            nextVelocity.x +=
+              entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
+          }
+
+          // if pressed b (jump)
+          if (entityCollisionSides[i].bottom && isPressingB) {
+            nextVelocity.y += entity.acceleration.y;
+          }
         }
 
         if (entity.vmax) {
@@ -745,6 +832,13 @@ export class Game {
       }
 
       entity.position = nextPosition;
+    }
+
+    if (this.keydowns.has("b")) {
+      this._consumedKeyB = true;
+    }
+    if (this.keyups.has("b")) {
+      this._consumedKeyB = false;
     }
 
     for (const key of this.keyups) {
