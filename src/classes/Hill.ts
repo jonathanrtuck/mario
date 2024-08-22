@@ -1,4 +1,4 @@
-import { GRID_DIMENSION } from "@/constants";
+import { GRID_UNIT_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -110,8 +110,8 @@ export class Hill extends Entity {
 
   get length() {
     return {
-      x: GRID_DIMENSION * (this.size === "large" ? 5 : 3),
-      y: GRID_DIMENSION * (this.size === "large" ? 3 : 2),
+      x: GRID_UNIT_LENGTH * (this.size === "large" ? 5 : 3),
+      y: GRID_UNIT_LENGTH * (this.size === "large" ? 3 : 2),
       z: 0,
     };
   }
@@ -121,8 +121,8 @@ export class Hill extends Entity {
     super();
 
     this.position = {
-      x: GRID_DIMENSION * gridX,
-      y: GRID_DIMENSION * gridY,
+      x: GRID_UNIT_LENGTH * gridX,
+      y: GRID_UNIT_LENGTH * gridY,
       z: -1,
     };
     this.size = size;

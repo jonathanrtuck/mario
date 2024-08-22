@@ -1,4 +1,4 @@
-import { GRID_DIMENSION } from "@/constants";
+import { GRID_UNIT_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -84,9 +84,9 @@ export class Bush extends Entity {
   get length() {
     return {
       x:
-        GRID_DIMENSION *
+        GRID_UNIT_LENGTH *
         (this.size === "large" ? 5 : this.size === "medium" ? 4 : 3),
-      y: GRID_DIMENSION * 1,
+      y: GRID_UNIT_LENGTH * 1,
       z: 0,
     };
   }
@@ -96,8 +96,8 @@ export class Bush extends Entity {
     super();
 
     this.position = {
-      x: GRID_DIMENSION * gridX,
-      y: GRID_DIMENSION * gridY,
+      x: GRID_UNIT_LENGTH * gridX,
+      y: GRID_UNIT_LENGTH * gridY,
       z: -1,
     };
     this.size = size;

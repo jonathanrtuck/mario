@@ -15,7 +15,7 @@ export const COLORS: Color[] = [
   new Uint8ClampedArray([231, 62, 37, 255]), //   11 - Red
 ] as const;
 
-export const GRID_DIMENSION = 0.775; // m
+export const GRID_UNIT_LENGTH = 0.775; // m
 
 export const IS_DEBUG_MODE = process.env.NODE_ENV === "development";
 
@@ -48,7 +48,7 @@ export const PATTERNS = [
   "Wall",
 ] as const;
 
-export const PIXEL_DIMENSION = GRID_DIMENSION / 16;
+export const PIXEL_LENGTH = GRID_UNIT_LENGTH / 16;
 
 export const PIXEL_SCALE = 4;
 

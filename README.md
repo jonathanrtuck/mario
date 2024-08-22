@@ -20,6 +20,7 @@
   - custom hitbox position/length
     - needed for flag
   - die when mario hits y=0
+- move entity logic into entity classes
 - mario bitmaps/animation
 - game time
   - needed to animate i.e. question blocks

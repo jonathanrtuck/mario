@@ -1,19 +1,25 @@
 import {
   COLORS,
-  GRID_DIMENSION,
+  GRID_UNIT_LENGTH,
   IS_DEBUG_MODE,
   KEY_BINDING,
   KEYS,
-  PIXEL_DIMENSION,
+  PIXEL_LENGTH,
   PIXEL_SCALE,
 } from "@/constants";
-import { Bitmap, Key, Pattern } from "@/types";
-import { clamp, getIsCollisionByDimension, getRGBA } from "@/utils";
+import { Bitmap, Key, Pattern, Position, Velocity } from "@/types";
+import {
+  clamp,
+  getIsCollision,
+  getIsCollisionByDimension,
+  getRGBA,
+} from "@/utils";
 
 import { Block } from "./Block";
 import { Brick } from "./Brick";
 import { Bush } from "./Bush";
 import { Cloud } from "./Cloud";
+import { Entity } from "./Entity";
 import { Flag } from "./Flag";
 import { Hill } from "./Hill";
 import { Mario } from "./Mario";
@@ -240,7 +246,7 @@ export class Game {
         new Cloud(211, 13, "small"),
         new Bush(215, 4, "small"),
         new Cloud(219, 12, "large"),
-        new Mario(2.125, 4, "small"),
+        new Mario(2.125, 4.125, "small"),
       ],
       universe: {
         acceleration: {
@@ -250,20 +256,20 @@ export class Game {
         },
         color: 5,
         length: {
-          x: GRID_DIMENSION * 210,
-          y: GRID_DIMENSION * 15,
+          x: GRID_UNIT_LENGTH * 210,
+          y: GRID_UNIT_LENGTH * 15,
           z: 2,
         },
       },
       viewport: {
         length: {
-          x: GRID_DIMENSION * 16,
-          y: GRID_DIMENSION * 15,
+          x: GRID_UNIT_LENGTH * 16,
+          y: GRID_UNIT_LENGTH * 15,
           z: 3,
         },
         position: {
           x: 0,
-          y: GRID_DIMENSION * 2,
+          y: GRID_UNIT_LENGTH * 2,
           z: -1,
         },
       },
@@ -374,9 +380,9 @@ export class Game {
 
     this.context.reset();
     this.context.canvas.height =
-      (this.state.viewport.length.y / PIXEL_DIMENSION) * PIXEL_SCALE;
+      (this.state.viewport.length.y / PIXEL_LENGTH) * PIXEL_SCALE;
     this.context.canvas.width =
-      (this.state.viewport.length.x / PIXEL_DIMENSION) * PIXEL_SCALE;
+      (this.state.viewport.length.x / PIXEL_LENGTH) * PIXEL_SCALE;
     this.context.canvas.style.backgroundColor = getRGBA(
       this.state.universe.color
     );
@@ -387,23 +393,11 @@ export class Game {
 
       // only render entities within viewport
       if (
-        getIsCollisionByDimension(
-          this.state.viewport.position.x,
-          this.state.viewport.length.x,
-          entity.position.x,
-          entity.length.x
-        ) &&
-        getIsCollisionByDimension(
-          this.state.viewport.position.y,
-          this.state.viewport.length.y,
-          entity.position.y,
-          entity.length.y
-        ) &&
-        getIsCollisionByDimension(
-          this.state.viewport.position.z,
-          this.state.viewport.length.z,
-          entity.position.z,
-          entity.length.z
+        getIsCollision(
+          this.state.viewport.position,
+          this.state.viewport.length,
+          entity.position,
+          entity.length
         )
       ) {
         this.context.fillStyle =
@@ -413,20 +407,20 @@ export class Game {
         this.context.save();
         this.context.translate(
           ((entity.position.x - this.state.viewport.position.x) /
-            PIXEL_DIMENSION) *
+            PIXEL_LENGTH) *
             PIXEL_SCALE,
           ((this.state.viewport.length.y +
             this.state.viewport.position.y -
             entity.position.y -
             entity.length.y) /
-            PIXEL_DIMENSION) *
+            PIXEL_LENGTH) *
             PIXEL_SCALE
         );
         this.context.fillRect(
           0,
           0,
-          (entity.length.x / PIXEL_DIMENSION) * PIXEL_SCALE,
-          (entity.length.y / PIXEL_DIMENSION) * PIXEL_SCALE
+          (entity.length.x / PIXEL_LENGTH) * PIXEL_SCALE,
+          (entity.length.y / PIXEL_LENGTH) * PIXEL_SCALE
         );
         this.context.restore();
       }
@@ -446,35 +440,234 @@ export class Game {
     const isPressingRight =
       this.keydowns.has("right") && !this.keydowns.has("left");
 
-    this.state.entities.sort(
-      // prettier-ignore
-      (a, b) => (a.position.z + a.length.z) - (b.position.z + b.length.z)
-    );
+    // only update entities within viewport (or 2 GRID_UNIT_LENGTHs horizontally)
+    const entitiesToUpdate = new Array<Entity>(this.state.entities.length);
+    let nextEntityToUpdateIndex = 0;
 
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
 
+      if (
+        getIsCollision(
+          {
+            x: this.state.viewport.position.x - GRID_UNIT_LENGTH * 2,
+            y: this.state.viewport.position.y,
+            z: this.state.viewport.position.z,
+          },
+          {
+            x: this.state.viewport.length.x + GRID_UNIT_LENGTH * 4,
+            y: this.state.viewport.length.y,
+            z: this.state.viewport.length.z,
+          },
+          entity.position,
+          entity.length
+        )
+      ) {
+        entitiesToUpdate[nextEntityToUpdateIndex++] = entity;
+      }
+    }
+
+    entitiesToUpdate.length = nextEntityToUpdateIndex;
+    entitiesToUpdate.sort(
+      // prettier-ignore
+      (a, b) => (a.position.z + a.length.z) - (b.position.z + b.length.z)
+    );
+
+    // calculate each entity's next position in order to determine if collision(s) happened
+    const nextPositions = new Array<Position>(entitiesToUpdate.length);
+
+    for (let i = 0; i !== entitiesToUpdate.length; i++) {
+      const entity = entitiesToUpdate[i];
+      const nextPosition: Position = {
+        x: entity.position.x,
+        y: entity.position.y,
+        z: entity.position.z,
+      };
+
       if (entity.mass !== 0 && entity.mass !== Infinity) {
-        // entity.position.x += this.state.universe.acceleration.x * seconds;
-        // entity.position.y += this.state.universe.acceleration.y * seconds;
+        nextPosition.x += this.state.universe.acceleration.x * seconds;
+        nextPosition.y += this.state.universe.acceleration.y * seconds;
+        nextPosition.z += this.state.universe.acceleration.z * seconds;
       }
 
-      // @todo move as much of this logic as possible into the Entity classes
+      if (entity.velocity) {
+        nextPosition.x += entity.velocity.x * seconds;
+        nextPosition.y += entity.velocity.y * seconds;
+        nextPosition.z += entity.velocity.z * seconds;
+      }
+
+      nextPositions[i] = nextPosition;
+    }
+
+    // update entities
+    for (let i = 0; i !== entitiesToUpdate.length; i++) {
+      const entity = entitiesToUpdate[i];
+      const nextPosition = nextPositions[i];
+
+      // collision detection
+      for (let j = i + 1; j !== entitiesToUpdate.length; j++) {
+        const otherEntity = entitiesToUpdate[j];
+
+        // two stationary entities cannot collide
+        if (!entity.velocity && !otherEntity.velocity) {
+          continue;
+        }
+
+        const otherNextPosition = nextPositions[j];
+
+        if (
+          getIsCollision(
+            nextPosition,
+            entity.length,
+            otherNextPosition,
+            otherEntity.length
+          )
+        ) {
+          const isCollisionBottom =
+            entity.position.y >=
+              otherEntity.position.y + otherEntity.length.y &&
+            nextPosition.y <= otherNextPosition.y + otherEntity.length.y;
+          const isCollisionLeft =
+            entity.position.x >=
+              otherEntity.position.x + otherEntity.length.x &&
+            nextPosition.x <= otherNextPosition.x + otherEntity.length.x;
+          const isCollisionRight =
+            !isCollisionLeft &&
+            entity.position.x + entity.length.x <= otherEntity.position.x &&
+            nextPosition.x + entity.length.x >= otherNextPosition.x;
+          const isCollisionTop =
+            !isCollisionBottom &&
+            entity.position.y + entity.length.y <= otherEntity.position.y &&
+            nextPosition.y + entity.length.y >= otherNextPosition.y;
+
+          // calculate precise time of each collision(s) occurence
+          let collisionMomentIndex = 0;
+          const collisionMoments = new Array<
+            ["bottom" | "left" | "right" | "top", number]
+          >(2);
+
+          if (isCollisionBottom) {
+            const prevLengthBetween =
+              entity.position.y -
+              (otherEntity.position.y + otherEntity.length.y);
+
+            if (prevLengthBetween === 0) {
+              collisionMoments[collisionMomentIndex++] = ["bottom", 0];
+            } else {
+              const totalLengthDelta =
+                entity.position.y -
+                nextPosition.y +
+                (otherNextPosition.y - otherEntity.position.y);
+              const coefficient = prevLengthBetween / totalLengthDelta;
+
+              collisionMoments[collisionMomentIndex++] = [
+                "bottom",
+                seconds * coefficient,
+              ];
+            }
+          }
+
+          if (isCollisionLeft) {
+            const prevLengthBetween =
+              entity.position.x -
+              (otherEntity.position.x + otherEntity.length.x);
+
+            if (prevLengthBetween === 0) {
+              collisionMoments[collisionMomentIndex++] = ["left", 0];
+            } else {
+              const totalLengthDelta =
+                entity.position.x -
+                nextPosition.x +
+                (otherNextPosition.x - otherEntity.position.x);
+              const coefficient = prevLengthBetween / totalLengthDelta;
+
+              collisionMoments[collisionMomentIndex++] = [
+                "left",
+                seconds * coefficient,
+              ];
+            }
+          }
+
+          if (isCollisionRight) {
+            const prevLengthBetween =
+              otherEntity.position.x - (entity.position.x + entity.length.x);
+
+            if (prevLengthBetween === 0) {
+              collisionMoments[collisionMomentIndex++] = ["right", 0];
+            } else {
+              const totalLengthDelta =
+                nextPosition.x -
+                entity.position.x +
+                (otherEntity.position.x - otherNextPosition.x);
+              const coefficient = prevLengthBetween / totalLengthDelta;
+
+              collisionMoments[collisionMomentIndex++] = [
+                "right",
+                seconds * coefficient,
+              ];
+            }
+          }
+
+          if (isCollisionTop) {
+            const prevLengthBetween =
+              otherEntity.position.y - (entity.position.y + entity.length.y);
+
+            if (prevLengthBetween === 0) {
+              collisionMoments[collisionMomentIndex++] = ["top", 0];
+            } else {
+              const totalLengthDelta =
+                nextPosition.y -
+                entity.position.y +
+                (otherEntity.position.y - otherNextPosition.y);
+              const coefficient = prevLengthBetween / totalLengthDelta;
+
+              collisionMoments[collisionMomentIndex++] = [
+                "top",
+                seconds * coefficient,
+              ];
+            }
+          }
+
+          collisionMoments.length = collisionMomentIndex;
+          collisionMoments.sort(([, a], [, b]) => a - b);
+
+          // loop through collisionMoments and update entities' position/velocity accordingly
+          for (let k = 0; k !== collisionMoments.length; k++) {
+            const [side, moment] = collisionMoments[k];
+
+            if (!entity.velocity) {
+              // use entity.position position to update otherEntity.position
+            } else if (!otherEntity.velocity) {
+              // use otherEntity.position position to update entity.position
+            } else {
+              // use moment to find the point on intersection and set both entities' positions based on it
+            }
+
+            // check if still collision in each subsequent iteration
+            if (k !== 0) {
+              //
+            }
+          }
+        }
+      }
 
       if (entity.velocity) {
-        entity.position.x += entity.velocity.x * seconds;
-        entity.position.y += entity.velocity.y * seconds;
+        const nextVelocity: Velocity = {
+          x: entity.velocity.x,
+          y: entity.velocity.y,
+          z: entity.velocity.z,
+        };
 
         // decelerate if moving left but no longer holding left
         if (entity.deceleration && entity.velocity.x < 0 && !isPressingLeft) {
-          entity.velocity.x += Math.min(
+          nextVelocity.x += Math.min(
             entity.deceleration.x * seconds,
             -entity.velocity.x
           );
         }
         // decelerate if moving right but no longer holding right
         if (entity.deceleration && entity.velocity.x > 0 && !isPressingRight) {
-          entity.velocity.x -= Math.min(
+          nextVelocity.x -= Math.min(
             entity.deceleration.x * seconds,
             entity.velocity.x
           );
@@ -486,7 +679,7 @@ export class Game {
           isPressingLeft
           // !collisions.left
         ) {
-          entity.velocity.x -=
+          nextVelocity.x -=
             entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
         }
         // accelerate if holding right
@@ -495,7 +688,7 @@ export class Game {
           isPressingRight
           // !collisions.right
         ) {
-          entity.velocity.x +=
+          nextVelocity.x +=
             entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
         }
 
@@ -503,51 +696,55 @@ export class Game {
           const vmaxX = entity.vmax?.x * (isPressingA ? 2 : 1);
           const vmaxY = entity.vmax?.y;
 
-          entity.velocity.x = clamp(-vmaxX, entity.velocity.x, vmaxX);
-          entity.velocity.y = clamp(-vmaxY, entity.velocity.y, vmaxY);
+          nextVelocity.x = clamp(-vmaxX, nextVelocity.x, vmaxX);
+          nextVelocity.y = clamp(-vmaxY, nextVelocity.y, vmaxY);
         }
+
+        if (entity instanceof Mario) {
+          const entityCenterX = entity.position.x + entity.length.x / 2;
+          const viewportCenterX =
+            this.state.viewport.position.x + this.state.viewport.length.x / 2;
+          const maxViewportPositionX =
+            this.state.universe.length.x - this.state.viewport.length.x;
+
+          // follow entity with viewport
+          if (
+            entityCenterX > viewportCenterX &&
+            this.state.viewport.position.x < maxViewportPositionX
+          ) {
+            this.state.viewport.position.x = clamp(
+              this.state.viewport.position.x,
+              entityCenterX - this.state.viewport.length.x / 2,
+              maxViewportPositionX
+            );
+          }
+
+          const minPositionX = this.state.viewport.position.x;
+          const maxPositionX =
+            this.state.viewport.position.x +
+            this.state.viewport.length.x -
+            entity.length.x;
+
+          // prevent entity from overflowing viewport
+          if (nextPosition.x < minPositionX) {
+            nextPosition.x = minPositionX;
+
+            if (nextVelocity.x < 0) {
+              nextVelocity.x = 0;
+            }
+          } else if (nextPosition.x > maxPositionX) {
+            nextPosition.x = maxPositionX;
+
+            if (nextVelocity.x > 0) {
+              nextVelocity.x = 0;
+            }
+          }
+        }
+
+        entity.velocity = nextVelocity;
       }
 
-      if (entity instanceof Mario) {
-        const entityCenterX = entity.position.x + entity.length.x / 2;
-        const viewportCenterX =
-          this.state.viewport.position.x + this.state.viewport.length.x / 2;
-        const maxViewportPositionX =
-          this.state.universe.length.x - this.state.viewport.length.x;
-
-        // follow entity with viewport
-        if (
-          entityCenterX > viewportCenterX &&
-          this.state.viewport.position.x < maxViewportPositionX
-        ) {
-          this.state.viewport.position.x = clamp(
-            this.state.viewport.position.x,
-            entityCenterX - this.state.viewport.length.x / 2,
-            maxViewportPositionX
-          );
-        }
-
-        const minPositionX = this.state.viewport.position.x;
-        const maxPositionX =
-          this.state.viewport.position.x +
-          this.state.viewport.length.x -
-          entity.length.x;
-
-        // prevent entity from overflowing viewport
-        if (entity.position.x < minPositionX) {
-          entity.position.x = minPositionX;
-
-          if (entity.velocity.x < 0) {
-            entity.velocity.x = 0;
-          }
-        } else if (entity.position.x > maxPositionX) {
-          entity.position.x = maxPositionX;
-
-          if (entity.velocity.x > 0) {
-            entity.velocity.x = 0;
-          }
-        }
-      }
+      entity.position = nextPosition;
     }
 
     for (const key of this.keyups) {

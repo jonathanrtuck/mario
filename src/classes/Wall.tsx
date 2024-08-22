@@ -1,4 +1,4 @@
-import { GRID_DIMENSION } from "@/constants";
+import { GRID_UNIT_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -45,13 +45,13 @@ export class Wall extends Entity {
     super();
 
     this.length = {
-      x: GRID_DIMENSION * gridWidth,
-      y: GRID_DIMENSION * gridHeight,
+      x: GRID_UNIT_LENGTH * gridWidth,
+      y: GRID_UNIT_LENGTH * gridHeight,
       z: 0,
     };
     this.position = {
-      x: GRID_DIMENSION * gridX,
-      y: GRID_DIMENSION * gridY,
+      x: GRID_UNIT_LENGTH * gridX,
+      y: GRID_UNIT_LENGTH * gridY,
       z: 0,
     };
   }

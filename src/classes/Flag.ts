@@ -1,4 +1,4 @@
-import { GRID_DIMENSION } from "@/constants";
+import { GRID_UNIT_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -13,8 +13,8 @@ export class Flag extends Entity {
   };
   fill: Entity["fill"] = 9; // @todo
   length = {
-    x: GRID_DIMENSION * 1,
-    y: GRID_DIMENSION * 10,
+    x: GRID_UNIT_LENGTH * 1,
+    y: GRID_UNIT_LENGTH * 10,
     z: 0,
   };
   mass = 0;
@@ -24,8 +24,8 @@ export class Flag extends Entity {
     super();
 
     this.position = {
-      x: GRID_DIMENSION * gridX,
-      y: GRID_DIMENSION * gridY,
+      x: GRID_UNIT_LENGTH * gridX,
+      y: GRID_UNIT_LENGTH * gridY,
       z: 0,
     };
   }

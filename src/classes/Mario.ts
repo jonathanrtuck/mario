@@ -1,4 +1,4 @@
-import { GRID_DIMENSION } from "@/constants";
+import { GRID_UNIT_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -70,13 +70,13 @@ export class Mario extends Entity {
     super();
 
     this.length = {
-      x: GRID_DIMENSION * 0.75,
-      y: GRID_DIMENSION * (size === "large" ? 2 : 1),
+      x: GRID_UNIT_LENGTH * 0.75,
+      y: GRID_UNIT_LENGTH * (size === "large" ? 2 : 1),
       z: 0,
     };
     this.position = {
-      x: GRID_DIMENSION * gridX,
-      y: GRID_DIMENSION * gridY,
+      x: GRID_UNIT_LENGTH * gridX,
+      y: GRID_UNIT_LENGTH * gridY,
       z: 0,
     };
     this.size = size;
