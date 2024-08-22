@@ -27,7 +27,7 @@ export class Mario extends Entity {
 
   acceleration = {
     x: 8,
-    y: 16.2,
+    y: 8,
     z: 0,
   };
   collidableSides = {

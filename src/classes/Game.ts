@@ -8,7 +8,12 @@ import {
   PIXEL_SCALE,
 } from "@/constants";
 import { Bitmap, Key, Pattern, Position, Velocity } from "@/types";
-import { clamp, getIsCollision, getRGBA } from "@/utils";
+import {
+  clamp,
+  getIsCollision,
+  getIsCollisionByDimension,
+  getRGBA,
+} from "@/utils";
 
 import { Block } from "./Block";
 import { Brick } from "./Brick";
@@ -37,25 +42,25 @@ const BITMAPS_BY_PATTERN: Partial<Record<Pattern, Bitmap>> = {
   ...("patterns" in QuestionBlock ? QuestionBlock.patterns : {}),
   ...("patterns" in Wall ? Wall.patterns : {}),
 };
+const JUMP_INPUT_DURATION = 250; // ms
 const PATTERN_KEYS = Object.keys(BITMAPS_BY_PATTERN) as Pattern[];
 const PATTERN_VALUES = Object.values(BITMAPS_BY_PATTERN);
 
 export class Game {
-  // used to ignore holding b, only handle it on first update after keydown
-  private _consumedKeyB = false;
-
   private animationFrameRequest: ReturnType<
     typeof requestAnimationFrame
   > | null = null;
-  private context: CanvasRenderingContext2D;
   private elapsedMsSincePrevSecond: number = 0;
-  private fps: number = 0;
   private keydowns: Set<Key> = new Set<Key>();
   private keyups: Set<Key> = new Set<Key>();
+  private elapsedMsSinceJump: number | null = null;
   private prevRenderMs: number = 0; // ms
   private prevUpdateMs: number = 0; // ms
-  private patterns: Partial<Record<Pattern, CanvasPattern>> = {};
-  private state: State;
+
+  context: CanvasRenderingContext2D;
+  patterns: Partial<Record<Pattern, CanvasPattern>> = {};
+  fps: number = 0;
+  state: State;
 
   constructor(canvas: HTMLCanvasElement) {
     this.context = canvas.getContext("2d")!;
@@ -434,7 +439,7 @@ export class Game {
     const elapsedMs = now - this.prevUpdateMs;
     const seconds = 1 / (1000 / elapsedMs);
     const isPressingA = this.keydowns.has("a");
-    const isPressingB = this.keydowns.has("b") && !this._consumedKeyB;
+    const isPressingB = this.keydowns.has("b");
     const isPressingLeft =
       this.keydowns.has("left") && !this.keydowns.has("right");
     const isPressingRight =
@@ -448,19 +453,11 @@ export class Game {
       const entity = this.state.entities[i];
 
       if (
-        getIsCollision(
-          {
-            x: this.state.viewport.position.x - GRID_UNIT_LENGTH * 2,
-            y: this.state.viewport.position.y,
-            z: this.state.viewport.position.z,
-          },
-          {
-            x: this.state.viewport.length.x + GRID_UNIT_LENGTH * 4,
-            y: this.state.viewport.length.y,
-            z: this.state.viewport.length.z,
-          },
-          entity.position,
-          entity.length
+        getIsCollisionByDimension(
+          this.state.viewport.position.x - GRID_UNIT_LENGTH * 2,
+          this.state.viewport.length.x + GRID_UNIT_LENGTH * 4,
+          entity.position.x,
+          entity.length.x
         )
       ) {
         entitiesToUpdate[nextEntityToUpdateIndex++] = entity;
@@ -764,18 +761,37 @@ export class Game {
           // accelerate if holding left
           if (isPressingLeft && !entityCollisionSides[i].left) {
             nextVelocity.x -=
-              entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
+              entity.acceleration.x *
+              seconds *
+              (isPressingA && entityCollisionSides[i].bottom ? 2 : 1);
           }
 
           // accelerate if holding right
           if (isPressingRight && !entityCollisionSides[i].right) {
             nextVelocity.x +=
-              entity.acceleration.x * seconds * (isPressingA ? 2 : 1);
+              entity.acceleration.x *
+              seconds *
+              (isPressingA && entityCollisionSides[i].bottom ? 2 : 1);
           }
 
-          // if pressed b (jump)
-          if (entityCollisionSides[i].bottom && isPressingB) {
-            nextVelocity.y += entity.acceleration.y;
+          // jump if pressing b
+          if (isPressingB) {
+            if (
+              entityCollisionSides[i].bottom &&
+              this.elapsedMsSinceJump === null
+            ) {
+              nextVelocity.y += entity.acceleration.y;
+
+              this.elapsedMsSinceJump = 0;
+            }
+
+            if (
+              !entityCollisionSides[i].bottom &&
+              this.elapsedMsSinceJump !== null &&
+              this.elapsedMsSinceJump < JUMP_INPUT_DURATION
+            ) {
+              nextVelocity.y += entity.acceleration.y / 9.8;
+            }
           }
         }
 
@@ -834,17 +850,15 @@ export class Game {
       entity.position = nextPosition;
     }
 
-    if (this.keydowns.has("b")) {
-      this._consumedKeyB = true;
+    if (this.elapsedMsSinceJump !== null && this.keydowns.has("b")) {
+      this.elapsedMsSinceJump += elapsedMs;
     }
     if (this.keyups.has("b")) {
-      this._consumedKeyB = false;
+      this.elapsedMsSinceJump = null;
     }
-
     for (const key of this.keyups) {
       this.keydowns.delete(key);
     }
-
     this.keyups.clear();
 
     this.render();
