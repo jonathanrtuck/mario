@@ -41,6 +41,7 @@ export class Mario extends Entity {
     y: 0,
     z: 0,
   };
+  isJumping = false;
   length;
   mass = 70;
   position;

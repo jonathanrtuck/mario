@@ -53,7 +53,7 @@ export class Game {
   private elapsedMsSincePrevSecond: number = 0;
   private keydowns: Set<Key> = new Set<Key>();
   private keyups: Set<Key> = new Set<Key>();
-  private elapsedMsSinceJump: number | null = null;
+  private elapsedMsSincePressB: number | null = null;
   private prevRenderMs: number = 0; // ms
   private prevUpdateMs: number = 0; // ms
 
@@ -444,6 +444,15 @@ export class Game {
       this.keydowns.has("left") && !this.keydowns.has("right");
     const isPressingRight =
       this.keydowns.has("right") && !this.keydowns.has("left");
+    const isReleasingB = this.keyups.has("b");
+
+    if (isPressingB) {
+      if (this.elapsedMsSincePressB === null) {
+        this.elapsedMsSincePressB = 0;
+      } else {
+        this.elapsedMsSincePressB += elapsedMs;
+      }
+    }
 
     // only update entities within viewport (or 2 GRID_UNIT_LENGTHs horizontally)
     const entitiesToUpdate = new Array<Entity>(this.state.entities.length);
@@ -774,21 +783,23 @@ export class Game {
               (isPressingA && entityCollisionSides[i].bottom ? 2 : 1);
           }
 
-          // jump if pressing b
+          if (isReleasingB || entityCollisionSides[i].bottom) {
+            entity.isJumping = false;
+          }
+
+          // jump
           if (isPressingB) {
             if (
+              !entity.isJumping &&
               entityCollisionSides[i].bottom &&
-              this.elapsedMsSinceJump === null
+              this.elapsedMsSincePressB === 0
             ) {
+              entity.isJumping = true;
               nextVelocity.y += entity.acceleration.y;
-
-              this.elapsedMsSinceJump = 0;
-            }
-
-            if (
-              !entityCollisionSides[i].bottom &&
-              this.elapsedMsSinceJump !== null &&
-              this.elapsedMsSinceJump < JUMP_INPUT_DURATION
+            } else if (
+              entity.isJumping &&
+              this.elapsedMsSincePressB !== null &&
+              this.elapsedMsSincePressB < JUMP_INPUT_DURATION
             ) {
               nextVelocity.y += entity.acceleration.y / 9.8;
             }
@@ -850,15 +861,14 @@ export class Game {
       entity.position = nextPosition;
     }
 
-    if (this.elapsedMsSinceJump !== null && this.keydowns.has("b")) {
-      this.elapsedMsSinceJump += elapsedMs;
-    }
     if (this.keyups.has("b")) {
-      this.elapsedMsSinceJump = null;
+      this.elapsedMsSincePressB = null;
     }
+
     for (const key of this.keyups) {
       this.keydowns.delete(key);
     }
+
     this.keyups.clear();
 
     this.render();
