@@ -903,8 +903,25 @@ export class Game {
     }
   };
 
-  // @todo
-  reset = () => {};
+  reset = () => {
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+
+    this.keydowns.clear();
+    this.keyups.clear();
+
+    this.elapsedMsSincePrevSecond = 0;
+    this.elapsedMsSincePressB = null;
+    this.pauseMs = null;
+    this.prevRenderMs = null;
+    this.prevUpdateMs = null;
+    this.state = Game.initialState;
+
+    this.context.canvas.focus();
+
+    this.animationFrameRequest = requestAnimationFrame(this.update);
+  };
 
   unpause = () => {
     if (this.pauseMs !== null) {

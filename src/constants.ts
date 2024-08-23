@@ -1,16 +1,3 @@
-import {
-  Block,
-  Brick,
-  Bush,
-  Cloud,
-  Flag,
-  Hill,
-  Mario,
-  Pipe,
-  QuestionBlock,
-  State,
-  Wall,
-} from "@/classes";
 import { Color, Key } from "@/types";
 
 export const COLORS: Color[] = [
