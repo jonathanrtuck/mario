@@ -228,7 +228,7 @@ export class Game {
         new Block(189, 11),
         new Hill(192, 4, "large"),
         new Block(198, 4),
-        new Flag(198, 5),
+        new Flag(198.25, 5),
         new Cloud(200, 12, "small"),
         new Bush(205, 4, "small"),
         new Hill(208, 4, "small"),

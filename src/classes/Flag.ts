@@ -1,13 +1,35 @@
-import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
+import {
+  GRID_UNIT_LENGTH,
+  PIXEL_LENGTH,
+  NUM_PIXELS_PER_GRID_UNIT,
+} from "@/constants";
 
 import { CollidableEntity } from "./CollidableEntity";
 import { Entity } from "./Entity";
 
+const WIDTH = GRID_UNIT_LENGTH * 0.5;
+
 export class Flag extends CollidableEntity {
-  static patterns: typeof Entity.patterns = {};
+  static patterns: typeof Entity.patterns = {
+    // prettier-ignore
+    Flag: [
+      new Uint8ClampedArray([0, 0, 1, 1, 1, 1, 0, 0]),
+      new Uint8ClampedArray([0, 1, 9, 7, 7, 7, 1, 0]),
+      new Uint8ClampedArray([1, 9, 7, 7, 7, 7, 7, 1]),
+      new Uint8ClampedArray([1, 9, 7, 7, 7, 7, 7, 1]),
+      new Uint8ClampedArray([1, 7, 7, 7, 7, 7, 7, 1]),
+      new Uint8ClampedArray([1, 7, 7, 7, 7, 7, 7, 1]),
+      new Uint8ClampedArray([0, 1, 7, 7, 7, 7, 1, 0]),
+      new Uint8ClampedArray([0, 0, 1, 1, 1, 1, 0, 0]),
+    ].concat(
+      new Array(13 * NUM_PIXELS_PER_GRID_UNIT).fill(
+        new Uint8ClampedArray([0, 0, 0, 9, 9, 0, 0, 0])
+      )
+    ),
+  };
 
   collidableOffset = {
-    x: GRID_UNIT_LENGTH / 2 - PIXEL_LENGTH,
+    x: WIDTH / 2 - PIXEL_LENGTH,
     y: 0,
     z: 0,
   };
@@ -17,9 +39,9 @@ export class Flag extends CollidableEntity {
     right: true,
     top: true,
   };
-  fill: Entity["fill"] = 9; // @todo
+  fill: Entity["fill"] = "Flag";
   length = {
-    x: GRID_UNIT_LENGTH * 1,
+    x: WIDTH,
     y: GRID_UNIT_LENGTH * 10,
     z: 0,
   };
