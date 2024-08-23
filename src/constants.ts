@@ -51,5 +51,3 @@ export const PATTERNS = [
 export const PIXEL_LENGTH = GRID_UNIT_LENGTH / 16;
 
 export const PIXEL_SCALE = 4;
-
-export const TIME_UNIT = 400; // ms

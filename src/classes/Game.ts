@@ -54,8 +54,8 @@ export class Game {
   private keydowns: Set<Key> = new Set<Key>();
   private keyups: Set<Key> = new Set<Key>();
   private elapsedMsSincePressB: number | null = null;
-  private prevRenderMs: number = 0; // ms
-  private prevUpdateMs: number = 0; // ms
+  private prevRenderMs: number | null = null; // ms
+  private prevUpdateMs: number | null = null; // ms
 
   context: CanvasRenderingContext2D;
   fps: number = 0;
@@ -330,9 +330,6 @@ export class Game {
         }
       })
       .then(() => {
-        this.prevRenderMs = Date.now();
-        this.prevUpdateMs = Date.now();
-
         this.context.canvas.addEventListener("keydown", this.onKeyDown);
         this.context.canvas.addEventListener("keyup", this.onKeyUp);
 
@@ -368,7 +365,7 @@ export class Game {
 
   render = () => {
     const now = Date.now();
-    const elapsedMs = now - this.prevRenderMs;
+    const elapsedMs = this.prevRenderMs === null ? 0 : now - this.prevRenderMs;
 
     if (IS_DEBUG_MODE) {
       this.elapsedMsSincePrevSecond += elapsedMs;
@@ -436,8 +433,8 @@ export class Game {
 
   update = () => {
     const now = Date.now();
-    const elapsedMs = now - this.prevUpdateMs;
-    const seconds = 1 / (1000 / elapsedMs);
+    const elapsedMs = this.prevUpdateMs === null ? 0 : now - this.prevUpdateMs;
+    const seconds = elapsedMs === 0 ? 0 : 1 / (1000 / elapsedMs);
     const isPressingA = this.keydowns.has("a");
     const isPressingB = this.keydowns.has("b");
     const isPressingLeft =

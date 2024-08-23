@@ -12,8 +12,6 @@ export type Color = Uint8ClampedArray;
 
 export type ColorIndex = number;
 
-export type ID = string;
-
 export type Key = (typeof KEYS)[number];
 
 export type Length = {
@@ -23,8 +21,6 @@ export type Length = {
 };
 
 export type Pattern = (typeof PATTERNS)[number];
-
-export type Pixels = number[][];
 
 export type Position = {
   x: number; // m (>= 0)
