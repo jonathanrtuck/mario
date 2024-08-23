@@ -1,8 +1,9 @@
-import { GRID_UNIT_LENGTH } from "@/constants";
+import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
 
+import { CollidableEntity } from "./CollidableEntity";
 import { Entity } from "./Entity";
 
-export class Pipe extends Entity {
+export class Pipe extends CollidableEntity {
   static patterns: typeof Entity.patterns = {
     // prettier-ignore
     Pipe: [
@@ -30,6 +31,11 @@ export class Pipe extends Entity {
     }, [])),
   };
 
+  collidableOffset = {
+    x: PIXEL_LENGTH,
+    y: 0,
+    z: 0,
+  };
   collidableSides = {
     bottom: false,
     left: true,

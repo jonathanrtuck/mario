@@ -16,7 +16,7 @@
 - castle bitmap
 - collision detection
   - custom hitbox position/length
-    - needed for flag
+    - needed for flag, pipe
   - die when mario hits y=0
 - move entity logic into entity classes
 - mario bitmaps/animation
@@ -30,12 +30,13 @@
   - coin
   - mushroom
   - flower
+  - star
 - hidden blocks
   - one-up
   - against castle door
     - disappear when mario collides with it
+- underworld
 - text at the top
   - _Score_, _Coins_, _World_, _Time_, _Lives_
   - font
 - a better way of logging fps
-- pause game when document loses focus?

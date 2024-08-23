@@ -1,8 +1,9 @@
 import { GRID_UNIT_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
+import { MovableEntity } from "./MovableEntity";
 
-export class Mario extends Entity {
+export class Mario extends MovableEntity {
   static patterns: typeof Entity.patterns = {
     // prettier-ignore
     MarioSmallStandingRight: [
@@ -28,6 +29,11 @@ export class Mario extends Entity {
   acceleration = {
     x: 8,
     y: 8,
+    z: 0,
+  };
+  collidableOffset = {
+    x: 0,
+    y: 0,
     z: 0,
   };
   collidableSides = {

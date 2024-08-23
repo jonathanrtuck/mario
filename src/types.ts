@@ -1,4 +1,4 @@
-import { KEYS, PATTERNS } from "@/constants";
+import { KEYS, PATTERNS, SIDES } from "@/constants";
 
 export type Acceleration = {
   x: number; // m/s^2 (>= 0)
@@ -27,6 +27,8 @@ export type Position = {
   y: number;
   z: number;
 };
+
+export type Side = (typeof SIDES)[number];
 
 export type Universe = {
   acceleration: Acceleration; // gravity

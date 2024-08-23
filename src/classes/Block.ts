@@ -1,8 +1,9 @@
 import { GRID_UNIT_LENGTH } from "@/constants";
 
+import { CollidableEntity } from "./CollidableEntity";
 import { Entity } from "./Entity";
 
-export class Block extends Entity {
+export class Block extends CollidableEntity {
   static patterns: typeof Entity.patterns = {
     // prettier-ignore
     Block: [
@@ -25,6 +26,11 @@ export class Block extends Entity {
     ],
   };
 
+  collidableOffset = {
+    x: 0,
+    y: 0,
+    z: 0,
+  };
   collidableSides = {
     bottom: false,
     left: true,

@@ -1,3 +1,4 @@
+import { CollidableEntity, Entity, MovableEntity } from "@/classes";
 import { COLORS } from "@/constants";
 import { ColorIndex, Length, Position } from "@/types";
 
@@ -29,3 +30,12 @@ export const getRGBA = (
 
   return `rgba(${r},${g},${b},${a})`;
 };
+
+export const isCollidable = (
+  entity: Entity | CollidableEntity
+): entity is CollidableEntity =>
+  (entity as CollidableEntity).collidableSides !== undefined;
+
+export const isMovable = (
+  entity: Entity | MovableEntity
+): entity is MovableEntity => (entity as MovableEntity).velocity !== undefined;

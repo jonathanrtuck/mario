@@ -7,12 +7,14 @@ import {
   PIXEL_LENGTH,
   PIXEL_SCALE,
 } from "@/constants";
-import { Bitmap, Key, Pattern, Position, Velocity } from "@/types";
+import { Bitmap, Key, Pattern, Position, Side, Velocity } from "@/types";
 import {
   clamp,
   getIsCollision,
   getIsCollisionByDimension,
   getRGBA,
+  isCollidable,
+  isMovable,
 } from "@/utils";
 
 import { Block } from "./Block";
@@ -27,8 +29,6 @@ import { Pipe } from "./Pipe";
 import { QuestionBlock } from "./QuestionBlock";
 import { State } from "./State";
 import { Wall } from "./Wall";
-
-type Side = "bottom" | "left" | "right" | "top";
 
 const BITMAPS_BY_PATTERN: Partial<Record<Pattern, Bitmap>> = {
   ...("patterns" in Block ? Block.patterns : {}),
@@ -47,24 +47,8 @@ const PATTERN_KEYS = Object.keys(BITMAPS_BY_PATTERN) as Pattern[];
 const PATTERN_VALUES = Object.values(BITMAPS_BY_PATTERN);
 
 export class Game {
-  private animationFrameRequest: ReturnType<
-    typeof requestAnimationFrame
-  > | null = null;
-  private elapsedMsSincePrevSecond: number = 0;
-  private keydowns: Set<Key> = new Set<Key>();
-  private keyups: Set<Key> = new Set<Key>();
-  private elapsedMsSincePressB: number | null = null;
-  private prevRenderMs: number | null = null; // ms
-  private prevUpdateMs: number | null = null; // ms
-
-  context: CanvasRenderingContext2D;
-  fps: number = 0;
-  patterns: Partial<Record<Pattern, CanvasPattern>> = {};
-  state: State;
-
-  constructor(canvas: HTMLCanvasElement) {
-    this.context = canvas.getContext("2d")!;
-    this.state = new State({
+  static get initialState(): State {
+    return new State({
       entities: [
         new Wall(0, 0, 69, 4),
         new Hill(0, 4, "large"),
@@ -281,77 +265,42 @@ export class Game {
     });
   }
 
-  destroy = () => {
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
+  private animationFrameRequest: ReturnType<
+    typeof requestAnimationFrame
+  > | null = null;
+  private elapsedMsSincePrevSecond: number = 0;
+  private keydowns: Set<Key> = new Set<Key>();
+  private keyups: Set<Key> = new Set<Key>();
+  private elapsedMsSincePressB: number | null = null;
+  private pauseMs: number | null = null; // ms
+  private prevRenderMs: number | null = null; // ms
+  private prevUpdateMs: number | null = null; // ms
 
-    this.context.canvas.removeEventListener("keydown", this.onKeyDown);
-    this.context.canvas.removeEventListener("keyup", this.onKeyUp);
-  };
+  context: CanvasRenderingContext2D;
+  fps: number = 0;
+  patterns: Partial<Record<Pattern, CanvasPattern>> = {};
+  state: State;
 
-  init = () => {
-    Promise.all(
-      PATTERN_VALUES.map((bitmap) => {
-        const numColumns = bitmap[0].length;
-        const numRows = bitmap.length;
-        const height = numRows * PIXEL_SCALE;
-        const width = numColumns * PIXEL_SCALE;
-        const arr = new Uint8ClampedArray(height * width * 4);
+  constructor(canvas: HTMLCanvasElement) {
+    this.context = canvas.getContext("2d")!;
+    this.state = Game.initialState;
+  }
 
-        let index = 0;
-        for (let row of bitmap) {
-          for (let i = 0; i !== PIXEL_SCALE; i++) {
-            for (let pixelColorIndex of row) {
-              const [r, g, b, a] = COLORS[pixelColorIndex];
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (this.pauseMs === null) {
+      for (let i = 0; i !== KEYS.length; i++) {
+        const key = KEYS[i];
 
-              for (let j = 0; j !== PIXEL_SCALE; j++) {
-                arr[index++] = r;
-                arr[index++] = g;
-                arr[index++] = b;
-                arr[index++] = a;
-              }
-            }
-          }
+        if (KEY_BINDING[key].has(e.key)) {
+          e.preventDefault();
+
+          this.keydowns.add(key);
         }
-
-        const imageData = new ImageData(arr, width, height);
-
-        return createImageBitmap(imageData, 0, 0, width, height);
-      })
-    )
-      .then((imageBitmaps) => {
-        for (let i = 0; i !== imageBitmaps.length; i++) {
-          const pattern: Pattern = PATTERN_KEYS[i];
-          const imageBitmap = imageBitmaps[i];
-
-          this.patterns[pattern] =
-            this.context.createPattern(imageBitmap, "repeat") ?? undefined;
-        }
-      })
-      .then(() => {
-        this.context.canvas.addEventListener("keydown", this.onKeyDown);
-        this.context.canvas.addEventListener("keyup", this.onKeyUp);
-
-        this.context.canvas.focus();
-
-        this.animationFrameRequest = requestAnimationFrame(this.update);
-      });
-  };
-
-  onKeyDown = (e: KeyboardEvent) => {
-    for (let i = 0; i !== KEYS.length; i++) {
-      const key = KEYS[i];
-
-      if (KEY_BINDING[key].has(e.key)) {
-        e.preventDefault();
-
-        this.keydowns.add(key);
       }
     }
   };
 
-  onKeyUp = (e: KeyboardEvent) => {
+  private onKeyUp = (e: KeyboardEvent) => {
     for (let i = 0; i !== KEYS.length; i++) {
       const key = KEYS[i];
 
@@ -363,7 +312,7 @@ export class Game {
     }
   };
 
-  render = () => {
+  private render = () => {
     const now = Date.now();
     const elapsedMs = this.prevRenderMs === null ? 0 : now - this.prevRenderMs;
 
@@ -431,7 +380,7 @@ export class Game {
     this.prevRenderMs = now;
   };
 
-  update = () => {
+  private update = () => {
     const now = Date.now();
     const elapsedMs = this.prevUpdateMs === null ? 0 : now - this.prevUpdateMs;
     const seconds = elapsedMs === 0 ? 0 : 1 / (1000 / elapsedMs);
@@ -487,7 +436,7 @@ export class Game {
         z: entity.position.z,
       };
 
-      if (entity.velocity) {
+      if (isMovable(entity)) {
         nextPosition.x += entity.velocity.x * seconds;
         nextPosition.y += entity.velocity.y * seconds;
         nextPosition.z += entity.velocity.z * seconds;
@@ -519,7 +468,11 @@ export class Game {
         const otherEntity = entitiesToUpdate[j];
 
         // two stationary entities cannot collide
-        if (!entity.velocity && !otherEntity.velocity) {
+        if (
+          !isCollidable(entity) ||
+          !isCollidable(otherEntity) ||
+          !(isMovable(entity) || isMovable(otherEntity))
+        ) {
           continue;
         }
 
@@ -556,7 +509,7 @@ export class Game {
             entity.position.y + entity.length.y <= otherEntity.position.y &&
             nextPosition.y + entity.length.y >= otherNextPosition.y;
 
-          // calculate precise time of each collision(s) occurence
+          // calculate precise moment of each collision
           let collisionMomentIndex = 0;
           const collisionMoments = new Array<[Side, number]>(2);
 
@@ -668,7 +621,7 @@ export class Game {
                 break;
             }
 
-            if (!entity.velocity) {
+            if (!isMovable(entity) && isMovable(otherEntity)) {
               // use entity.position to update otherEntity.position
               switch (side) {
                 case "bottom":
@@ -700,7 +653,7 @@ export class Game {
                   }
                   break;
               }
-            } else if (!otherEntity.velocity) {
+            } else if (isMovable(entity) && !isMovable(otherEntity)) {
               // use otherEntity.position to update entity.position
               switch (side) {
                 case "bottom":
@@ -742,7 +695,7 @@ export class Game {
       }
 
       // update entity's velocity
-      if (entity.velocity) {
+      if (isMovable(entity)) {
         const nextVelocity: Velocity = {
           x: entity.velocity.x,
           y: entity.velocity.y,
@@ -879,5 +832,92 @@ export class Game {
     this.render();
     this.prevUpdateMs = now;
     this.animationFrameRequest = requestAnimationFrame(this.update);
+  };
+
+  destroy = () => {
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+
+    this.context.canvas.removeEventListener("keydown", this.onKeyDown);
+    this.context.canvas.removeEventListener("keyup", this.onKeyUp);
+  };
+
+  init = () => {
+    Promise.all(
+      PATTERN_VALUES.map((bitmap) => {
+        const numColumns = bitmap[0].length;
+        const numRows = bitmap.length;
+        const height = numRows * PIXEL_SCALE;
+        const width = numColumns * PIXEL_SCALE;
+        const arr = new Uint8ClampedArray(height * width * 4);
+
+        let index = 0;
+        for (let row of bitmap) {
+          for (let i = 0; i !== PIXEL_SCALE; i++) {
+            for (let pixelColorIndex of row) {
+              const [r, g, b, a] = COLORS[pixelColorIndex];
+
+              for (let j = 0; j !== PIXEL_SCALE; j++) {
+                arr[index++] = r;
+                arr[index++] = g;
+                arr[index++] = b;
+                arr[index++] = a;
+              }
+            }
+          }
+        }
+
+        const imageData = new ImageData(arr, width, height);
+
+        return createImageBitmap(imageData, 0, 0, width, height);
+      })
+    )
+      .then((imageBitmaps) => {
+        for (let i = 0; i !== imageBitmaps.length; i++) {
+          const pattern: Pattern = PATTERN_KEYS[i];
+          const imageBitmap = imageBitmaps[i];
+
+          this.patterns[pattern] =
+            this.context.createPattern(imageBitmap, "repeat") ?? undefined;
+        }
+      })
+      .then(() => {
+        this.context.canvas.addEventListener("keydown", this.onKeyDown);
+        this.context.canvas.addEventListener("keyup", this.onKeyUp);
+
+        this.context.canvas.focus();
+
+        this.animationFrameRequest = requestAnimationFrame(this.update);
+      });
+  };
+
+  pause = () => {
+    if (this.pauseMs === null) {
+      this.pauseMs = Date.now();
+
+      if (this.animationFrameRequest) {
+        cancelAnimationFrame(this.animationFrameRequest);
+        this.animationFrameRequest = null;
+      }
+    }
+  };
+
+  // @todo
+  reset = () => {};
+
+  unpause = () => {
+    if (this.pauseMs !== null) {
+      const now = Date.now();
+
+      if (this.prevRenderMs !== null) {
+        this.prevRenderMs += now - this.pauseMs;
+      }
+      if (this.prevUpdateMs !== null) {
+        this.prevUpdateMs += now - this.pauseMs;
+      }
+      this.pauseMs = null;
+      this.animationFrameRequest = requestAnimationFrame(this.update);
+    }
   };
 }

@@ -1,3 +1,16 @@
+import {
+  Block,
+  Brick,
+  Bush,
+  Cloud,
+  Flag,
+  Hill,
+  Mario,
+  Pipe,
+  QuestionBlock,
+  State,
+  Wall,
+} from "@/classes";
 import { Color, Key } from "@/types";
 
 export const COLORS: Color[] = [
@@ -51,3 +64,5 @@ export const PATTERNS = [
 export const PIXEL_LENGTH = GRID_UNIT_LENGTH / 16;
 
 export const PIXEL_SCALE = 4;
+
+export const SIDES = ["bottom", "left", "right", "top"] as const;
