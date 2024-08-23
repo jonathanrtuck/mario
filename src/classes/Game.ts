@@ -58,8 +58,8 @@ export class Game {
   private prevUpdateMs: number = 0; // ms
 
   context: CanvasRenderingContext2D;
-  patterns: Partial<Record<Pattern, CanvasPattern>> = {};
   fps: number = 0;
+  patterns: Partial<Record<Pattern, CanvasPattern>> = {};
   state: State;
 
   constructor(canvas: HTMLCanvasElement) {
