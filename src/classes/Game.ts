@@ -11,7 +11,7 @@ import { Bitmap, Key, Pattern, Position, Side, Velocity } from "@/types";
 import {
   clamp,
   getIsCollision,
-  getIsCollisionByDimension,
+  getIsWithinViewport,
   getRGBA,
   isCollidable,
   isMovable,
@@ -338,19 +338,16 @@ export class Game {
       this.state.universe.color
     );
 
+    const getIsWithinViewportByEntity = getIsWithinViewport(
+      this.state.viewport
+    );
+
     // render entities
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
 
       // only render entities within viewport
-      if (
-        getIsCollision(
-          this.state.viewport.position,
-          this.state.viewport.length,
-          entity.position,
-          entity.length
-        )
-      ) {
+      if (getIsWithinViewportByEntity(entity)) {
         this.context.fillStyle =
           (typeof entity.fill === "number"
             ? getRGBA(entity.fill)
@@ -401,20 +398,21 @@ export class Game {
     }
 
     // only update entities within viewport (or 2 GRID_UNIT_LENGTHs horizontally)
+    const getIsWithinViewportByEntity = getIsWithinViewport(
+      this.state.viewport,
+      {
+        x: GRID_UNIT_LENGTH * 2,
+        y: 0,
+        z: 0,
+      }
+    );
     const entitiesToUpdate = new Array<Entity>(this.state.entities.length);
     let nextEntityToUpdateIndex = 0;
 
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
 
-      if (
-        getIsCollisionByDimension(
-          this.state.viewport.position.x - GRID_UNIT_LENGTH * 2,
-          this.state.viewport.length.x + GRID_UNIT_LENGTH * 4,
-          entity.position.x,
-          entity.length.x
-        )
-      ) {
+      if (getIsWithinViewportByEntity(entity)) {
         entitiesToUpdate[nextEntityToUpdateIndex++] = entity;
       }
     }
@@ -480,34 +478,80 @@ export class Game {
 
         if (
           getIsCollision(
-            nextPosition,
-            entity.length,
-            otherNextPosition,
-            otherEntity.length
+            {
+              ...entity,
+              position: nextPosition,
+            },
+            {
+              ...otherEntity,
+              position: otherNextPosition,
+            }
           )
         ) {
+          const entityCollisionSideBottom =
+            entity.position.y + entity.collidableOffset.x;
+          const entityCollisionSideLeft =
+            entity.position.x + entity.collidableOffset.x;
+          const entityCollisionSideRight =
+            entity.position.x + entity.length.x - entity.collidableOffset.x;
+          const entityCollisionSideTop =
+            entity.position.y + entity.length.y - entity.collidableOffset.y;
+
+          const otherEntityCollisionSideBottom =
+            otherEntity.position.y + otherEntity.collidableOffset.x;
+          const otherEntityCollisionSideLeft =
+            otherEntity.position.x + otherEntity.collidableOffset.x;
+          const otherEntityCollisionSideRight =
+            otherEntity.position.x +
+            otherEntity.length.x -
+            otherEntity.collidableOffset.x;
+          const otherEntityCollisionSideTop =
+            otherEntity.position.y +
+            otherEntity.length.y -
+            otherEntity.collidableOffset.y;
+
+          const nextEntityCollisionSideBottom =
+            nextPosition.y + entity.collidableOffset.x;
+          const nextEntityCollisionSideLeft =
+            nextPosition.x + entity.collidableOffset.x;
+          const nextEntityCollisionSideRight =
+            nextPosition.x + entity.length.x - entity.collidableOffset.x;
+          const nextEntityCollisionSideTop =
+            nextPosition.y + entity.length.y - entity.collidableOffset.y;
+
+          const nextOtherEntityCollisionSideBottom =
+            otherNextPosition.y + otherEntity.collidableOffset.x;
+          const nextOtherEntityCollisionSideLeft =
+            otherNextPosition.x + otherEntity.collidableOffset.x;
+          const nextOtherEntityCollisionSideRight =
+            otherNextPosition.x +
+            otherEntity.length.x -
+            otherEntity.collidableOffset.x;
+          const nextOtherEntityCollisionSideTop =
+            otherNextPosition.y +
+            otherEntity.length.y -
+            otherEntity.collidableOffset.y;
+
           entityCollisionSides[i].bottom =
-            (entity.collidableSides?.bottom ?? false) &&
-            (otherEntity.collidableSides?.top ?? false) &&
-            entity.position.y >=
-              otherEntity.position.y + otherEntity.length.y &&
-            nextPosition.y <= otherNextPosition.y + otherEntity.length.y;
+            entity.collidableSides.bottom &&
+            otherEntity.collidableSides.top &&
+            entityCollisionSideBottom >= otherEntityCollisionSideTop &&
+            nextEntityCollisionSideBottom <= nextOtherEntityCollisionSideTop;
           entityCollisionSides[i].left =
-            (entity.collidableSides?.left ?? false) &&
-            (otherEntity.collidableSides?.right ?? false) &&
-            entity.position.x >=
-              otherEntity.position.x + otherEntity.length.x &&
-            nextPosition.x <= otherNextPosition.x + otherEntity.length.x;
+            entity.collidableSides.left &&
+            otherEntity.collidableSides.right &&
+            entityCollisionSideLeft >= otherEntityCollisionSideRight &&
+            nextEntityCollisionSideLeft <= nextOtherEntityCollisionSideRight;
           entityCollisionSides[i].right =
-            (entity.collidableSides?.right ?? false) &&
-            (otherEntity.collidableSides?.left ?? false) &&
-            entity.position.x + entity.length.x <= otherEntity.position.x &&
-            nextPosition.x + entity.length.x >= otherNextPosition.x;
+            entity.collidableSides.right &&
+            otherEntity.collidableSides.left &&
+            entityCollisionSideRight <= otherEntityCollisionSideLeft &&
+            nextEntityCollisionSideRight >= nextOtherEntityCollisionSideLeft;
           entityCollisionSides[i].top =
-            (entity.collidableSides?.top ?? false) &&
-            (otherEntity.collidableSides?.bottom ?? false) &&
-            entity.position.y + entity.length.y <= otherEntity.position.y &&
-            nextPosition.y + entity.length.y >= otherNextPosition.y;
+            entity.collidableSides.top &&
+            otherEntity.collidableSides.bottom &&
+            entityCollisionSideTop <= otherEntityCollisionSideBottom &&
+            nextEntityCollisionSideTop >= nextOtherEntityCollisionSideBottom;
 
           // calculate precise moment of each collision
           let collisionMomentIndex = 0;
@@ -515,8 +559,7 @@ export class Game {
 
           if (entityCollisionSides[i].bottom) {
             const prevLengthBetween =
-              entity.position.y -
-              (otherEntity.position.y + otherEntity.length.y);
+              entityCollisionSideBottom - otherEntityCollisionSideTop;
 
             if (prevLengthBetween === 0) {
               collisionMoments[collisionMomentIndex++] = ["bottom", 0];
@@ -536,8 +579,7 @@ export class Game {
 
           if (entityCollisionSides[i].left) {
             const prevLengthBetween =
-              entity.position.x -
-              (otherEntity.position.x + otherEntity.length.x);
+              entityCollisionSideLeft - otherEntityCollisionSideRight;
 
             if (prevLengthBetween === 0) {
               collisionMoments[collisionMomentIndex++] = ["left", 0];
@@ -557,7 +599,7 @@ export class Game {
 
           if (entityCollisionSides[i].right) {
             const prevLengthBetween =
-              otherEntity.position.x - (entity.position.x + entity.length.x);
+              otherEntityCollisionSideLeft - entityCollisionSideRight;
 
             if (prevLengthBetween === 0) {
               collisionMoments[collisionMomentIndex++] = ["right", 0];
@@ -577,7 +619,7 @@ export class Game {
 
           if (entityCollisionSides[i].top) {
             const prevLengthBetween =
-              otherEntity.position.y - (entity.position.y + entity.length.y);
+              otherEntityCollisionSideBottom - entityCollisionSideTop;
 
             if (prevLengthBetween === 0) {
               collisionMoments[collisionMomentIndex++] = ["top", 0];
@@ -625,28 +667,44 @@ export class Game {
               // use entity.position to update otherEntity.position
               switch (side) {
                 case "bottom":
-                  otherNextPosition.y = nextPosition.y - otherEntity.length.y;
+                  otherNextPosition.y =
+                    nextPosition.y -
+                    otherEntity.length.y +
+                    otherEntity.collidableOffset.y +
+                    entity.collidableOffset.y;
 
                   if (otherEntity.velocity && otherEntity.velocity.y > 0) {
                     otherEntity.velocity.y = 0;
                   }
                   break;
                 case "left":
-                  otherNextPosition.x = nextPosition.x - otherEntity.length.x;
+                  otherNextPosition.x =
+                    nextPosition.x -
+                    otherEntity.length.x +
+                    otherEntity.collidableOffset.x +
+                    entity.collidableOffset.x;
 
                   if (otherEntity.velocity && otherEntity.velocity.x > 0) {
                     otherEntity.velocity.x = 0;
                   }
                   break;
                 case "right":
-                  otherNextPosition.x = nextPosition.x + entity.length.x;
+                  otherNextPosition.x =
+                    nextPosition.x +
+                    entity.length.x +
+                    otherEntity.collidableOffset.x -
+                    entity.collidableOffset.x;
 
                   if (otherEntity.velocity && otherEntity.velocity.x < 0) {
                     otherEntity.velocity.x = 0;
                   }
                   break;
                 case "top":
-                  otherNextPosition.y = nextPosition.y + entity.length.y;
+                  otherNextPosition.y =
+                    nextPosition.y +
+                    entity.length.y +
+                    otherEntity.collidableOffset.y -
+                    entity.collidableOffset.y;
 
                   if (otherEntity.velocity && otherEntity.velocity.y < 0) {
                     otherEntity.velocity.y = 0;
@@ -658,7 +716,10 @@ export class Game {
               switch (side) {
                 case "bottom":
                   nextPosition.y =
-                    otherEntity.position.y + otherEntity.length.y;
+                    otherEntity.position.y +
+                    otherEntity.length.y +
+                    entity.collidableOffset.y -
+                    otherEntity.collidableOffset.y;
 
                   if (entity.velocity && entity.velocity.y < 0) {
                     entity.velocity.y = 0;
@@ -666,21 +727,32 @@ export class Game {
                   break;
                 case "left":
                   nextPosition.x =
-                    otherEntity.position.x + otherEntity.length.x;
+                    otherEntity.position.x +
+                    otherEntity.length.x +
+                    entity.collidableOffset.x -
+                    otherEntity.collidableOffset.x;
 
                   if (entity.velocity && entity.velocity.x < 0) {
                     entity.velocity.x = 0;
                   }
                   break;
                 case "right":
-                  nextPosition.x = otherEntity.position.x - entity.length.x;
+                  nextPosition.x =
+                    otherEntity.position.x -
+                    entity.length.x -
+                    entity.collidableOffset.x +
+                    otherEntity.collidableOffset.x;
 
                   if (entity.velocity && entity.velocity.x > 0) {
                     entity.velocity.x = 0;
                   }
                   break;
                 case "top":
-                  nextPosition.y = otherEntity.position.y - entity.length.y;
+                  nextPosition.y =
+                    otherEntity.position.y -
+                    entity.length.y -
+                    entity.collidableOffset.y +
+                    otherEntity.collidableOffset.y;
 
                   if (entity.velocity && entity.velocity.y > 0) {
                     entity.velocity.y = 0;

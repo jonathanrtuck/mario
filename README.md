@@ -14,10 +14,8 @@
 
 - flag bitmap
 - castle bitmap
-- collision detection
-  - custom hitbox position/length
-    - needed for flag, pipe
-  - die when mario hits y=0
+- lose when mario hits y=0
+- win when mario hits flag
 - move entity logic into entity classes
 - mario bitmaps/animation
 - game time

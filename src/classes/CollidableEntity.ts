@@ -1,6 +1,8 @@
 import { Length, Side } from "@/types";
 
-export abstract class CollidableEntity {
+import { Entity } from "./Entity";
+
+export abstract class CollidableEntity extends Entity {
   abstract collidableOffset: Length;
   abstract collidableSides: Record<Side, boolean>;
 }
