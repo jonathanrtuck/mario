@@ -534,17 +534,25 @@ export class Game {
           )
         ) {
           entityCollisionSides[i].bottom =
+            (entity.collidableSides?.bottom ?? false) &&
+            (otherEntity.collidableSides?.top ?? false) &&
             entity.position.y >=
               otherEntity.position.y + otherEntity.length.y &&
             nextPosition.y <= otherNextPosition.y + otherEntity.length.y;
           entityCollisionSides[i].left =
+            (entity.collidableSides?.left ?? false) &&
+            (otherEntity.collidableSides?.right ?? false) &&
             entity.position.x >=
               otherEntity.position.x + otherEntity.length.x &&
             nextPosition.x <= otherNextPosition.x + otherEntity.length.x;
           entityCollisionSides[i].right =
+            (entity.collidableSides?.right ?? false) &&
+            (otherEntity.collidableSides?.left ?? false) &&
             entity.position.x + entity.length.x <= otherEntity.position.x &&
             nextPosition.x + entity.length.x >= otherNextPosition.x;
           entityCollisionSides[i].top =
+            (entity.collidableSides?.top ?? false) &&
+            (otherEntity.collidableSides?.bottom ?? false) &&
             entity.position.y + entity.length.y <= otherEntity.position.y &&
             nextPosition.y + entity.length.y >= otherNextPosition.y;
 

@@ -15,7 +15,6 @@
 - flag bitmap
 - castle bitmap
 - collision detection
-  - use Entity’s `collidableSides`
   - custom hitbox position/length
     - needed for flag
   - die when mario hits y=0
