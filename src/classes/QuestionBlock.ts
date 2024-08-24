@@ -31,13 +31,7 @@ export class QuestionBlock extends CollidableEntity {
     y: 0,
     z: 0,
   };
-  collidableSides = {
-    bottom: true,
-    left: true,
-    right: true,
-    top: true,
-  };
-  fill: Entity["fill"] = "QuestionBlock";
+  isVisible: boolean;
   length = {
     x: GRID_UNIT_LENGTH * 1,
     y: GRID_UNIT_LENGTH * 1,
@@ -46,9 +40,42 @@ export class QuestionBlock extends CollidableEntity {
   mass = 0;
   position;
 
-  constructor(gridX: number, gridY: number) {
+  get collidableSides() {
+    if (!this.isVisible) {
+      return {
+        bottom: true,
+        left: false,
+        right: false,
+        top: false,
+      };
+    }
+
+    return {
+      bottom: true,
+      left: true,
+      right: true,
+      top: true,
+    };
+  }
+  set collidableSides(value) {}
+
+  get fill() {
+    if (!this.isVisible) {
+      return 0;
+    }
+
+    return "QuestionBlock";
+  }
+  set fill(value) {}
+
+  constructor(
+    gridX: number,
+    gridY: number,
+    isVisible: QuestionBlock["isVisible"] = true
+  ) {
     super();
 
+    this.isVisible = isVisible;
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,
       y: GRID_UNIT_LENGTH * gridY,

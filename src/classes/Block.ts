@@ -37,7 +37,7 @@ export class Block extends CollidableEntity {
     right: true,
     top: true,
   };
-  fill: Entity["fill"] = "Block";
+  isVisible: boolean;
   length = {
     x: GRID_UNIT_LENGTH * 1,
     y: GRID_UNIT_LENGTH * 1,
@@ -46,9 +46,23 @@ export class Block extends CollidableEntity {
   mass = Infinity;
   position;
 
-  constructor(gridX: number, gridY: number) {
+  get fill() {
+    if (!this.isVisible) {
+      return 0;
+    }
+
+    return "Block";
+  }
+  set fill(value) {}
+
+  constructor(
+    gridX: number,
+    gridY: number,
+    isVisible: Block["isVisible"] = true
+  ) {
     super();
 
+    this.isVisible = isVisible;
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,
       y: GRID_UNIT_LENGTH * gridY,
