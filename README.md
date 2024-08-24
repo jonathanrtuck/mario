@@ -12,7 +12,6 @@
 
 ## todo
 
-- castle bitmap
 - lose when mario hits y=0
 - win when mario hits flag
 - move entity logic into entity classes

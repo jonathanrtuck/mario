@@ -20,6 +20,7 @@ import {
 import { Block } from "./Block";
 import { Brick } from "./Brick";
 import { Bush } from "./Bush";
+import { Castle } from "./Castle";
 import { Cloud } from "./Cloud";
 import { Entity } from "./Entity";
 import { Flag } from "./Flag";
@@ -34,6 +35,7 @@ const BITMAPS_BY_PATTERN: Partial<Record<Pattern, Bitmap>> = {
   ...("patterns" in Block ? Block.patterns : {}),
   ...("patterns" in Brick ? Brick.patterns : {}),
   ...("patterns" in Bush ? Bush.patterns : {}),
+  ...("patterns" in Castle ? Castle.patterns : {}),
   ...("patterns" in Cloud ? Cloud.patterns : {}),
   ...("patterns" in Flag ? Flag.patterns : {}),
   ...("patterns" in Hill ? Hill.patterns : {}),
@@ -228,7 +230,6 @@ export class Game {
         new Block(189, 11),
         new Hill(192, 4, "large"),
         new Block(198, 4),
-        new Flag(198.25, 5),
         new Cloud(200, 12, "small"),
         new Bush(205, 4, "small"),
         new Hill(208, 4, "small"),
@@ -236,6 +237,8 @@ export class Game {
         new Bush(215, 4, "small"),
         new Cloud(219, 12, "large"),
         new Mario(2.125, 4, "small"),
+        new Flag(198.25, 5),
+        new Castle(202, 4),
       ],
       universe: {
         acceleration: {

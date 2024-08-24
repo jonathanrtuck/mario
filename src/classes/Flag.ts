@@ -13,17 +13,17 @@ export class Flag extends CollidableEntity {
   static patterns: typeof Entity.patterns = {
     // prettier-ignore
     Flag: [
-      new Uint8ClampedArray([0, 0, 1, 1, 1, 1, 0, 0]),
-      new Uint8ClampedArray([0, 1, 9, 7, 7, 7, 1, 0]),
-      new Uint8ClampedArray([1, 9, 7, 7, 7, 7, 7, 1]),
-      new Uint8ClampedArray([1, 9, 7, 7, 7, 7, 7, 1]),
-      new Uint8ClampedArray([1, 7, 7, 7, 7, 7, 7, 1]),
-      new Uint8ClampedArray([1, 7, 7, 7, 7, 7, 7, 1]),
-      new Uint8ClampedArray([0, 1, 7, 7, 7, 7, 1, 0]),
-      new Uint8ClampedArray([0, 0, 1, 1, 1, 1, 0, 0]),
+      new Uint8ClampedArray([0,0,1,1,1,1,0,0]),
+      new Uint8ClampedArray([0,1,9,7,7,7,1,0]),
+      new Uint8ClampedArray([1,9,7,7,7,7,7,1]),
+      new Uint8ClampedArray([1,9,7,7,7,7,7,1]),
+      new Uint8ClampedArray([1,7,7,7,7,7,7,1]),
+      new Uint8ClampedArray([1,7,7,7,7,7,7,1]),
+      new Uint8ClampedArray([0,1,7,7,7,7,1,0]),
+      new Uint8ClampedArray([0,0,1,1,1,1,0,0]),
     ].concat(
       new Array(13 * NUM_PIXELS_PER_GRID_UNIT).fill(
-        new Uint8ClampedArray([0, 0, 0, 9, 9, 0, 0, 0])
+        new Uint8ClampedArray([0,0,0,9,9,0,0,0])
       )
     ),
   };

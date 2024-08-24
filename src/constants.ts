@@ -38,6 +38,7 @@ export const PATTERNS = [
   "BushLarge",
   "BushMedium",
   "BushSmall",
+  "Castle",
   "CloudLarge",
   "CloudMedium",
   "CloudSmall",
