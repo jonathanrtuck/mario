@@ -35,7 +35,7 @@ export class QuestionBlock extends CollidableEntity {
   length = {
     x: GRID_UNIT_LENGTH * 1,
     y: GRID_UNIT_LENGTH * 1,
-    z: 0,
+    z: 1,
   };
   mass = 0;
   position;

@@ -47,7 +47,9 @@ export class Mario extends MovableEntity {
     y: 0,
     z: 0,
   };
+  elasticity = 0;
   isJumping = false;
+  isRunning = false;
   length;
   mass = 70;
   position;
@@ -55,11 +57,6 @@ export class Mario extends MovableEntity {
   velocity = {
     x: 0,
     y: 0,
-    z: 0,
-  };
-  vmax = {
-    x: 4,
-    y: 19.6,
     z: 0,
   };
 
@@ -73,13 +70,22 @@ export class Mario extends MovableEntity {
   }
   set fill(value) {}
 
+  get vmax() {
+    return {
+      x: 4 * (this.isRunning ? 2 : 1),
+      y: 19.6,
+      z: 0,
+    };
+  }
+  set vmax(value) {}
+
   constructor(gridX: number, gridY: number, size: Mario["size"]) {
     super();
 
     this.length = {
       x: GRID_UNIT_LENGTH * 0.75,
       y: GRID_UNIT_LENGTH * (size === "large" ? 2 : 1),
-      z: 0,
+      z: 1,
     };
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,

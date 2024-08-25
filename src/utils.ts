@@ -1,69 +1,38 @@
 import { CollidableEntity, Entity, MovableEntity } from "@/classes";
 import { COLORS } from "@/constants";
-import { ColorIndex, Length, Viewport } from "@/types";
-
-const getIsCollisionByDimension = (
-  aPosition: number,
-  aLength: number,
-  bPosition: number,
-  bLength: number
-): boolean =>
-  !(bPosition + bLength < aPosition || bPosition > aPosition + aLength);
+import { ColorIndex, Length, Position } from "@/types";
 
 export const clamp = (min: number, num: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
 
 export const getIsCollision = (
-  a: CollidableEntity,
-  b: CollidableEntity
+  aPositions: Position,
+  aLengths: Length,
+  bPositions: Position,
+  bLengths: Length
 ): boolean =>
   getIsCollisionByDimension(
-    a.position.x + a.collidableOffset.x,
-    a.length.x - a.collidableOffset.x * 2,
-    b.position.x + b.collidableOffset.x,
-    b.length.x - b.collidableOffset.x * 2
+    aPositions.x,
+    aLengths.x,
+    bPositions.x,
+    bLengths.x
   ) &&
   getIsCollisionByDimension(
-    a.position.y + a.collidableOffset.y,
-    a.length.y - a.collidableOffset.y * 2,
-    b.position.y + b.collidableOffset.y,
-    b.length.y - b.collidableOffset.y * 2
+    aPositions.y,
+    aLengths.y,
+    bPositions.y,
+    bLengths.y
   ) &&
-  getIsCollisionByDimension(
-    a.position.z + a.collidableOffset.z,
-    a.length.z - a.collidableOffset.z * 2,
-    b.position.z + b.collidableOffset.z,
-    b.length.z - b.collidableOffset.z * 2
-  );
+  getIsCollisionByDimension(aPositions.z, aLengths.z, bPositions.z, bLengths.z);
 
-export const getIsWithinViewport =
-  (
-    viewport: Viewport,
-    padding: Length = {
-      x: 0,
-      y: 0,
-      z: 0,
-    }
-  ) =>
-  (entity: Entity): boolean =>
-    getIsCollisionByDimension(
-      entity.position.x,
-      entity.length.x,
-      viewport.position.x - padding.x,
-      viewport.length.x + padding.x * 2
-    ) &&
-    getIsCollisionByDimension(
-      entity.position.y,
-      entity.length.y,
-      viewport.position.y - padding.y,
-      viewport.length.y + padding.y * 2
-    ) &&
-    getIsCollisionByDimension(
-      entity.position.z,
-      entity.length.z,
-      viewport.position.z - padding.z,
-      viewport.length.z + padding.z * 2
-    );
+// overlapping, not just touching
+export const getIsCollisionByDimension = (
+  aPosition: number,
+  aLength: number,
+  bPosition: number,
+  bLength: number
+): boolean =>
+  !(bPosition + bLength <= aPosition || bPosition >= aPosition + aLength);
 
 export const getRGBA = (
   colorIndex: ColorIndex

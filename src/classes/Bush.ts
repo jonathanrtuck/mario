@@ -98,7 +98,7 @@ export class Bush extends Entity {
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,
       y: GRID_UNIT_LENGTH * gridY,
-      z: -1,
+      z: -2,
     };
     this.size = size;
   }

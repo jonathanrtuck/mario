@@ -123,7 +123,7 @@ export class Hill extends Entity {
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,
       y: GRID_UNIT_LENGTH * gridY,
-      z: -1,
+      z: -3,
     };
     this.size = size;
   }

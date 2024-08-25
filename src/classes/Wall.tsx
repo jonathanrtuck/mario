@@ -53,12 +53,12 @@ export class Wall extends CollidableEntity {
     this.length = {
       x: GRID_UNIT_LENGTH * gridWidth,
       y: GRID_UNIT_LENGTH * gridHeight,
-      z: 0,
+      z: 4,
     };
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,
       y: GRID_UNIT_LENGTH * gridY,
-      z: 0,
+      z: -3,
     };
   }
 }

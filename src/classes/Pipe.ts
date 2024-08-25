@@ -57,7 +57,7 @@ export class Pipe extends CollidableEntity {
     this.length = {
       x: GRID_UNIT_LENGTH * 2,
       y: GRID_UNIT_LENGTH * gridHeight,
-      z: 0,
+      z: 1,
     };
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,

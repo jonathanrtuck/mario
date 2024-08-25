@@ -43,7 +43,7 @@ export class Flag extends CollidableEntity {
   length = {
     x: WIDTH,
     y: GRID_UNIT_LENGTH * 10,
-    z: 0,
+    z: 1,
   };
   mass = 0;
   position;

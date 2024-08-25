@@ -105,7 +105,7 @@ export class Castle extends Entity {
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,
       y: GRID_UNIT_LENGTH * gridY,
-      z: 0,
+      z: -1,
     };
   }
 }
