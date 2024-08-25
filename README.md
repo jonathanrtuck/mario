@@ -30,8 +30,6 @@ On each update, determine where each rendered entity should be now based on its 
 
 ## todo
 
-- determine if mario is in the air
-  - for preventing double jumps or the application of running X accelaration
 - lose when mario hits y=0
 - win when mario hits flag
 - move entity logic into entity classes

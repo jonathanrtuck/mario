@@ -11,6 +11,7 @@ import { Bitmap, Key, Length, Pattern, Position, Side } from "@/types";
 import {
   clamp,
   getIsCollision,
+  getIsCollisionByDimension,
   getRGBA,
   isCollidable,
   isMovable,
@@ -857,91 +858,133 @@ export class Game {
       }
     } while (collisions.length !== 0);
 
+    // update movable entities' velocities
     for (let i = 0; i !== movableEntities.length; i++) {
-      const entity = movableEntities[i];
+      const movableEntity = movableEntities[i];
 
-      // update velocity based on gravity
-      if (entity.mass !== 0 && entity.mass !== Infinity) {
-        entity.velocity.x += this.state.universe.acceleration.x * seconds;
-        entity.velocity.y += this.state.universe.acceleration.y * seconds;
-        entity.velocity.z += this.state.universe.acceleration.z * seconds;
+      // apply gravity
+      if (movableEntity.mass !== 0 && movableEntity.mass !== Infinity) {
+        movableEntity.velocity.x +=
+          this.state.universe.acceleration.x * seconds;
+        movableEntity.velocity.y +=
+          this.state.universe.acceleration.y * seconds;
+        movableEntity.velocity.z +=
+          this.state.universe.acceleration.z * seconds;
       }
 
-      if (entity instanceof Mario) {
+      if (movableEntity instanceof Mario) {
+        let isTouchingBottom = false;
+
+        for (let j = 0; j !== collidableEntities.length; j++) {
+          const collidableEntity = collidableEntities[j];
+
+          if (movableEntity === collidableEntity) {
+            continue;
+          }
+
+          if (
+            movableEntity.position.y - movableEntity.collidableOffset.y ===
+              collidableEntity.position.y +
+                collidableEntity.length.y -
+                collidableEntity.collidableOffset.y &&
+            getIsCollisionByDimension(
+              movableEntity.position.x + movableEntity.collidableOffset.x,
+              movableEntity.length.x - movableEntity.collidableOffset.x * 2,
+              collidableEntity.position.x + collidableEntity.collidableOffset.x,
+              collidableEntity.length.x -
+                collidableEntity.collidableOffset.x * 2
+            ) &&
+            getIsCollisionByDimension(
+              movableEntity.position.z + movableEntity.collidableOffset.z,
+              movableEntity.length.z - movableEntity.collidableOffset.z * 2,
+              collidableEntity.position.z + collidableEntity.collidableOffset.z,
+              collidableEntity.length.z -
+                collidableEntity.collidableOffset.z * 2
+            )
+          ) {
+            isTouchingBottom = true;
+
+            break;
+          }
+        }
+
         if (isPressingA) {
-          entity.isRunning = true;
+          movableEntity.isRunning = true;
         }
         if (isReleasingA) {
-          entity.isRunning = false;
+          movableEntity.isRunning = false;
         }
         if (isReleasingB) {
-          entity.isJumping = false;
+          movableEntity.isJumping = false;
         }
 
         // decelerate if moving left but no longer holding left
-        if (entity.velocity.x < 0 && !isPressingLeft) {
-          entity.velocity.x += Math.min(
-            entity.deceleration.x * seconds,
-            -entity.velocity.x
+        if (movableEntity.velocity.x < 0 && !isPressingLeft) {
+          movableEntity.velocity.x += Math.min(
+            movableEntity.deceleration.x * seconds,
+            -movableEntity.velocity.x
           );
         }
 
         // decelerate if moving right but no longer holding right
-        if (entity.velocity.x > 0 && !isPressingRight) {
-          entity.velocity.x -= Math.min(
-            entity.deceleration.x * seconds,
-            entity.velocity.x
+        if (movableEntity.velocity.x > 0 && !isPressingRight) {
+          movableEntity.velocity.x -= Math.min(
+            movableEntity.deceleration.x * seconds,
+            movableEntity.velocity.x
           );
         }
 
         // accelerate if holding left
-        // @todo only increase if "running" AND on not in the air
         if (isPressingLeft) {
-          entity.velocity.x -=
-            entity.acceleration.x * seconds * (entity.isRunning ? 2 : 1);
+          movableEntity.velocity.x -=
+            movableEntity.acceleration.x *
+            seconds *
+            (movableEntity.isRunning && isTouchingBottom ? 2 : 1);
         }
 
         // accelerate if holding right
-        // @todo only increase if "running" AND on not in the air
         if (isPressingRight) {
-          entity.velocity.x +=
-            entity.acceleration.x * seconds * (entity.isRunning ? 2 : 1);
+          movableEntity.velocity.x +=
+            movableEntity.acceleration.x *
+            seconds *
+            (movableEntity.isRunning && isTouchingBottom ? 2 : 1);
         }
 
         // jump
         if (isPressingB) {
           if (
-            !entity.isJumping &&
-            // @todo AND not in the air
+            !movableEntity.isJumping &&
+            isTouchingBottom &&
             this.elapsedMsSincePressB === 0
           ) {
-            entity.isJumping = true;
-            entity.velocity.y += entity.acceleration.y;
+            movableEntity.isJumping = true;
+            movableEntity.velocity.y += movableEntity.acceleration.y;
           } else if (
-            entity.isJumping &&
+            movableEntity.isJumping &&
+            !isTouchingBottom &&
             this.elapsedMsSincePressB !== null &&
             this.elapsedMsSincePressB < JUMP_INPUT_DURATION
           ) {
-            entity.velocity.y += entity.acceleration.y / 9.8;
+            movableEntity.velocity.y += movableEntity.acceleration.y / 9.8;
           }
         }
       }
 
-      if (entity.vmax) {
-        entity.velocity.x = clamp(
-          -entity.vmax.x,
-          entity.velocity.x,
-          entity.vmax.x
+      if (movableEntity.vmax) {
+        movableEntity.velocity.x = clamp(
+          -movableEntity.vmax.x,
+          movableEntity.velocity.x,
+          movableEntity.vmax.x
         );
-        entity.velocity.y = clamp(
-          -entity.vmax.y,
-          entity.velocity.y,
-          entity.vmax.y
+        movableEntity.velocity.y = clamp(
+          -movableEntity.vmax.y,
+          movableEntity.velocity.y,
+          movableEntity.vmax.y
         );
-        entity.velocity.z = clamp(
-          -entity.vmax.z,
-          entity.velocity.z,
-          entity.vmax.z
+        movableEntity.velocity.z = clamp(
+          -movableEntity.vmax.z,
+          movableEntity.velocity.z,
+          movableEntity.vmax.z
         );
       }
     }
