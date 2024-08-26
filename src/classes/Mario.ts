@@ -1,29 +1,58 @@
-import { GRID_UNIT_LENGTH } from "@/constants";
+import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
+import { Bitmap } from "@/types";
 
 import { Entity } from "./Entity";
 import { MovableEntity } from "./MovableEntity";
 
+// prettier-ignore
+const MarioSmallJumpingRight: Bitmap = [
+  new Uint8ClampedArray([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,10,10,10]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 0, 0,11,11,11,11,11, 0, 0,10,10,10]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 0,11,11,11,11,11,11,11,11,11,10,10]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 0, 8, 8, 8,10,10, 8,10, 0, 8, 8, 8]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 8,10, 8,10,10,10, 8,10,10, 8, 8, 8]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 8,10, 8, 8,10,10,10, 8,10,10,10, 8]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 8, 8,10,10,10,10, 8, 8, 8, 8, 8, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 0, 0,10,10,10,10,10,10,10, 8, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 8, 8, 8, 8, 8,11, 8, 8, 8,11, 8, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 8, 8, 8, 8, 8, 8, 8,11, 8, 8, 8,11, 0, 0, 8]),
+  new Uint8ClampedArray([10,10, 8, 8, 8, 8, 8, 8,11,11,11,11,11, 0, 0, 8]),
+  new Uint8ClampedArray([10,10,10, 0,11,11, 8,11,11,10,11,11,10,11, 8, 8]),
+  new Uint8ClampedArray([ 0,10, 0, 8,11,11,11,11,11,11,11,11,11,11, 8, 8]),
+  new Uint8ClampedArray([ 0, 0, 8, 8, 8,11,11,11,11,11,11,11,11,11, 8, 8]),
+  new Uint8ClampedArray([ 0, 8, 8, 8,11,11,11,11,11,11,11, 0, 0, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 8, 0, 0,11,11,11,11, 0, 0, 0, 0, 0, 0, 0, 0]),
+];
+// prettier-ignore
+const MarioSmallStandingRight: Bitmap = [
+  new Uint8ClampedArray([ 0, 0, 0, 0, 0,11,11,11,11,11, 0, 0, 0, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 0,11,11,11,11,11,11,11,11,11, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 8, 8, 8,10,10, 8,10, 0, 0, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 8,10, 8,10,10,10, 8,10,10,10, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 8,10, 8, 8,10,10,10, 8,10,10,10, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 8, 8,10,10,10,10, 8, 8, 8, 8, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 0,10,10,10,10,10,10,10, 0, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 0, 8, 8,11, 8, 8, 8, 0, 0, 0, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 8, 8, 8,11, 8, 8,11, 8, 8, 8, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 8, 8, 8, 8,11,11,11,11, 8, 8, 8, 8, 0, 0]),
+  new Uint8ClampedArray([ 0, 0,10,10, 8,11,10,11,11,10,11, 8,10,10, 0, 0]),
+  new Uint8ClampedArray([ 0, 0,10,10,10,11,11,11,11,11,11,10,10,10, 0, 0]),
+  new Uint8ClampedArray([ 0, 0,10,10,11,11,11,11,11,11,11,11,10,10, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 0,11,11,11, 0, 0,11,11,11, 0, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 0, 8, 8, 8, 0, 0, 0, 0, 8, 8, 8, 0, 0, 0]),
+  new Uint8ClampedArray([ 0, 0, 8, 8, 8, 8, 0, 0, 0, 0, 8, 8, 8, 8, 0, 0]),
+];
+
 export class Mario extends MovableEntity {
   static patterns: typeof Entity.patterns = {
-    // prettier-ignore
-    MarioSmallStandingRight: [
-      new Uint8ClampedArray([ 0, 0, 0,11,11,11,11,11, 0, 0, 0, 0]),
-      new Uint8ClampedArray([ 0, 0,11,11,11,11,11,11,11,11,11, 0]),
-      new Uint8ClampedArray([ 0, 0, 8, 8, 8,10,10, 8,10, 0, 0, 0]),
-      new Uint8ClampedArray([ 0, 8,10, 8,10,10,10, 8,10,10,10, 0]),
-      new Uint8ClampedArray([ 0, 8,10, 8, 8,10,10,10, 8,10,10,10]),
-      new Uint8ClampedArray([ 0, 8, 8,10,10,10,10, 8, 8, 8, 8, 0]),
-      new Uint8ClampedArray([ 0, 0, 0,10,10,10,10,10,10,10, 0, 0]),
-      new Uint8ClampedArray([ 0, 0, 8, 8,11, 8, 8, 8, 0, 0, 0, 0]),
-      new Uint8ClampedArray([ 0, 8, 8, 8,11, 8, 8,11, 8, 8, 8, 0]),
-      new Uint8ClampedArray([ 8, 8, 8, 8,11,11,11,11, 8, 8, 8, 8]),
-      new Uint8ClampedArray([10,10, 8,11,10,11,11,10,11, 8,10,10]),
-      new Uint8ClampedArray([10,10,10,11,11,11,11,11,11,10,10,10]),
-      new Uint8ClampedArray([10,10,11,11,11,11,11,11,11,11,10,10]),
-      new Uint8ClampedArray([ 0, 0,11,11,11, 0, 0,11,11,11, 0, 0]),
-      new Uint8ClampedArray([ 0, 8, 8, 8, 0, 0, 0, 0, 8, 8, 8, 0]),
-      new Uint8ClampedArray([ 8, 8, 8, 8, 0, 0, 0, 0, 8, 8, 8, 8]),
-    ],
+    MarioSmallJumpingLeft: MarioSmallJumpingRight.map((row) =>
+      row.toReversed()
+    ),
+    MarioSmallJumpingRight,
+    MarioSmallStandingLeft: MarioSmallStandingRight.map((row) =>
+      row.toReversed()
+    ),
+    MarioSmallStandingRight,
   };
 
   acceleration = {
@@ -32,7 +61,7 @@ export class Mario extends MovableEntity {
     z: 0,
   };
   collidableOffset = {
-    x: 0,
+    x: PIXEL_LENGTH * 2,
     y: 0,
     z: 0,
   };
@@ -48,6 +77,8 @@ export class Mario extends MovableEntity {
     z: 0,
   };
   elasticity = 0;
+  isFacingLeft = false;
+  isInputtingJump = false;
   isJumping = false;
   isRunning = false;
   length;
@@ -64,8 +95,14 @@ export class Mario extends MovableEntity {
     switch (this.size) {
       case "large":
         return 11;
-      default:
-        return "MarioSmallStandingRight";
+      case "small":
+        return this.isFacingLeft
+          ? this.isJumping
+            ? "MarioSmallJumpingLeft"
+            : "MarioSmallStandingLeft"
+          : this.isJumping
+          ? "MarioSmallJumpingRight"
+          : "MarioSmallStandingRight";
     }
   }
   set fill(value) {}
@@ -83,7 +120,7 @@ export class Mario extends MovableEntity {
     super();
 
     this.length = {
-      x: GRID_UNIT_LENGTH * 0.75,
+      x: GRID_UNIT_LENGTH * 1,
       y: GRID_UNIT_LENGTH * (size === "large" ? 2 : 1),
       z: 1,
     };

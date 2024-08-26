@@ -240,7 +240,7 @@ export class Game {
         new Cloud(211, 13, "small"),
         new Bush(215, 4, "small"),
         new Cloud(219, 12, "large"),
-        new Mario(2.125, 4, "small"),
+        new Mario(2, 4, "small"),
         new Flag(198.25, 5),
         new Castle(202, 4),
       ],
@@ -628,6 +628,7 @@ export class Game {
               ];
 
               if (movableEntity instanceof Mario) {
+                movableEntity.isInputtingJump = false;
                 movableEntity.isJumping = false;
               }
             }
@@ -785,8 +786,8 @@ export class Game {
               movableEntityNextPositions[movableEntityIndex].x =
                 collidableEntity.position.x +
                 collidableEntity.collidableOffset.x -
-                movableEntity.length.x -
-                movableEntity.collidableOffset.x;
+                (movableEntity.length.x - movableEntity.collidableOffset.x) -
+                PIXEL_LENGTH * 0.1; // account for float precision issues
               movableEntity.velocity.x =
                 -movableEntity.velocity.x * movableEntity.elasticity;
               break;
@@ -794,8 +795,7 @@ export class Game {
               movableEntityNextPositions[movableEntityIndex].y =
                 collidableEntity.position.y +
                 collidableEntity.collidableOffset.y -
-                movableEntity.length.y -
-                movableEntity.collidableOffset.y;
+                (movableEntity.length.y - movableEntity.collidableOffset.y);
               movableEntity.velocity.y =
                 -movableEntity.velocity.y * movableEntity.elasticity;
               break;
@@ -874,6 +874,9 @@ export class Game {
 
       if (movableEntity instanceof Mario) {
         let isTouchingBottom = false;
+        let isTouchingLeft = false;
+        let isTouchingRight = false;
+        let isTouchingTop = false;
 
         for (let j = 0; j !== collidableEntities.length; j++) {
           const collidableEntity = collidableEntities[j];
@@ -883,18 +886,7 @@ export class Game {
           }
 
           if (
-            movableEntity.position.y - movableEntity.collidableOffset.y ===
-              collidableEntity.position.y +
-                collidableEntity.length.y -
-                collidableEntity.collidableOffset.y &&
-            getIsCollisionByDimension(
-              movableEntity.position.x + movableEntity.collidableOffset.x,
-              movableEntity.length.x - movableEntity.collidableOffset.x * 2,
-              collidableEntity.position.x + collidableEntity.collidableOffset.x,
-              collidableEntity.length.x -
-                collidableEntity.collidableOffset.x * 2
-            ) &&
-            getIsCollisionByDimension(
+            !getIsCollisionByDimension(
               movableEntity.position.z + movableEntity.collidableOffset.z,
               movableEntity.length.z - movableEntity.collidableOffset.z * 2,
               collidableEntity.position.z + collidableEntity.collidableOffset.z,
@@ -902,9 +894,59 @@ export class Game {
                 collidableEntity.collidableOffset.z * 2
             )
           ) {
-            isTouchingBottom = true;
+            continue;
+          }
 
-            break;
+          const isOverlappingHorizontally = getIsCollisionByDimension(
+            movableEntity.position.x + movableEntity.collidableOffset.x,
+            movableEntity.length.x - movableEntity.collidableOffset.x * 2,
+            collidableEntity.position.x + collidableEntity.collidableOffset.x,
+            collidableEntity.length.x - collidableEntity.collidableOffset.x * 2
+          );
+          const isOverlappingVertically = getIsCollisionByDimension(
+            movableEntity.position.y + movableEntity.collidableOffset.y,
+            movableEntity.length.y - movableEntity.collidableOffset.y * 2,
+            collidableEntity.position.y + collidableEntity.collidableOffset.y,
+            collidableEntity.length.y - collidableEntity.collidableOffset.y * 2
+          );
+
+          if (
+            movableEntity.position.y - movableEntity.collidableOffset.y ===
+              collidableEntity.position.y +
+                collidableEntity.length.y -
+                collidableEntity.collidableOffset.y &&
+            isOverlappingHorizontally
+          ) {
+            isTouchingBottom = true;
+          }
+          if (
+            movableEntity.position.x - movableEntity.collidableOffset.x ===
+              collidableEntity.position.x +
+                collidableEntity.length.x -
+                collidableEntity.collidableOffset.x &&
+            isOverlappingVertically
+          ) {
+            isTouchingLeft = true;
+          }
+          if (
+            collidableEntity.position.x -
+              collidableEntity.collidableOffset.x ===
+              movableEntity.position.x +
+                movableEntity.length.x -
+                movableEntity.collidableOffset.x &&
+            isOverlappingVertically
+          ) {
+            isTouchingRight = true;
+          }
+          if (
+            collidableEntity.position.y -
+              collidableEntity.collidableOffset.y ===
+              movableEntity.position.y +
+                movableEntity.length.y -
+                movableEntity.collidableOffset.y &&
+            isOverlappingHorizontally
+          ) {
+            isTouchingTop = true;
           }
         }
 
@@ -915,10 +957,10 @@ export class Game {
           movableEntity.isRunning = false;
         }
         if (isReleasingB) {
-          movableEntity.isJumping = false;
+          movableEntity.isInputtingJump = false;
         }
 
-        // decelerate if moving left but no longer holding left
+        // decelerate if moving left but no longer pressing left
         if (movableEntity.velocity.x < 0 && !isPressingLeft) {
           movableEntity.velocity.x += Math.min(
             movableEntity.deceleration.x * seconds,
@@ -926,7 +968,7 @@ export class Game {
           );
         }
 
-        // decelerate if moving right but no longer holding right
+        // decelerate if moving right but no longer pressing right
         if (movableEntity.velocity.x > 0 && !isPressingRight) {
           movableEntity.velocity.x -= Math.min(
             movableEntity.deceleration.x * seconds,
@@ -934,33 +976,36 @@ export class Game {
           );
         }
 
-        // accelerate if holding left
-        if (isPressingLeft) {
+        // accelerate if pressing left
+        if (isPressingLeft && !isTouchingLeft) {
           movableEntity.velocity.x -=
             movableEntity.acceleration.x *
             seconds *
             (movableEntity.isRunning && isTouchingBottom ? 2 : 1);
+          movableEntity.isFacingLeft = true;
         }
 
-        // accelerate if holding right
-        if (isPressingRight) {
+        // accelerate if pressing right
+        if (isPressingRight && !isTouchingRight) {
           movableEntity.velocity.x +=
             movableEntity.acceleration.x *
             seconds *
             (movableEntity.isRunning && isTouchingBottom ? 2 : 1);
+          movableEntity.isFacingLeft = false;
         }
 
         // jump
         if (isPressingB) {
           if (
-            !movableEntity.isJumping &&
+            !movableEntity.isInputtingJump &&
             isTouchingBottom &&
             this.elapsedMsSincePressB === 0
           ) {
+            movableEntity.isInputtingJump = true;
             movableEntity.isJumping = true;
             movableEntity.velocity.y += movableEntity.acceleration.y;
           } else if (
-            movableEntity.isJumping &&
+            movableEntity.isInputtingJump &&
             !isTouchingBottom &&
             this.elapsedMsSincePressB !== null &&
             this.elapsedMsSincePressB < JUMP_INPUT_DURATION
