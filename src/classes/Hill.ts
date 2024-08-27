@@ -1,4 +1,4 @@
-import { GRID_UNIT_LENGTH } from "@/constants";
+import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -112,7 +112,7 @@ export class Hill extends Entity {
     return {
       x: GRID_UNIT_LENGTH * (this.size === "large" ? 5 : 3),
       y: GRID_UNIT_LENGTH * (this.size === "large" ? 3 : 2),
-      z: 0,
+      z: PIXEL_LENGTH,
     };
   }
   set length(value) {}

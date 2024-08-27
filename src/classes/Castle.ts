@@ -1,4 +1,4 @@
-import { GRID_UNIT_LENGTH } from "@/constants";
+import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -100,7 +100,7 @@ export class Castle extends Entity {
     this.length = {
       x: GRID_UNIT_LENGTH * 5,
       y: GRID_UNIT_LENGTH * 5,
-      z: 0,
+      z: PIXEL_LENGTH,
     };
     this.position = {
       x: GRID_UNIT_LENGTH * gridX,

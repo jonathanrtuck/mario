@@ -32,7 +32,12 @@ export const getIsCollisionByDimension = (
   bPosition: number,
   bLength: number
 ): boolean =>
-  !(bPosition + bLength <= aPosition || bPosition >= aPosition + aLength);
+  !(
+    isLessThan(bPosition + bLength, aPosition) ||
+    isEqual(bPosition + bLength, aPosition) ||
+    isGreaterThan(bPosition, aPosition + aLength) ||
+    isEqual(bPosition, aPosition + aLength)
+  );
 
 export const getRGBA = (
   colorIndex: ColorIndex
@@ -46,6 +51,39 @@ export const isCollidable = (
   entity: Entity | CollidableEntity
 ): entity is CollidableEntity =>
   (entity as CollidableEntity).collidableSides !== undefined;
+
+// @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON#testing_equality
+export const isEqual = (x: number, y: number): boolean => {
+  let magnitude = 1;
+
+  if (x > 1 || y > 1) {
+    magnitude = Math.round(Math.max(x, y));
+  }
+
+  return Math.abs(x - y) < Number.EPSILON * magnitude;
+};
+
+// x > y
+export const isGreaterThan = (x: number, y: number): boolean => {
+  let magnitude = 1; // @todo use magnitude when using Number.EPSILON in Game.ts… or better yet, don't use Number.EPSILON directly in that file, only use these/new utils
+
+  if (x > 1 || y > 1) {
+    magnitude = Math.round(Math.max(x, y));
+  }
+
+  return x - Number.EPSILON * magnitude > y;
+};
+
+// x < y
+export const isLessThan = (x: number, y: number): boolean => {
+  let magnitude = 1;
+
+  if (x > 1 || y > 1) {
+    magnitude = Math.round(Math.max(x, y));
+  }
+
+  return x - Number.EPSILON * magnitude < y;
+};
 
 export const isMovable = (
   entity: Entity | MovableEntity

@@ -14,6 +14,9 @@ import {
   getIsCollisionByDimension,
   getRGBA,
   isCollidable,
+  isEqual,
+  isGreaterThan,
+  isLessThan,
   isMovable,
 } from "@/utils";
 
@@ -352,10 +355,10 @@ export class Game {
       // only render entities within viewport
       if (
         getIsCollision(
-          this.state.viewport.position,
-          this.state.viewport.length,
           entity.position,
-          entity.length
+          entity.length,
+          this.state.viewport.position,
+          this.state.viewport.length
         )
       ) {
         this.context.fillStyle =
@@ -605,13 +608,14 @@ export class Game {
             if (
               movableEntity.collidableSides.bottom &&
               collidableEntity.collidableSides.top &&
-              movableEntityHitboxPosition.y >=
+              movableEntityHitboxPosition.y + Number.EPSILON >=
                 collidableEntityHitboxPosition.y +
                   collidableEntityHitboxLength.y &&
               movableEntityHitboxNextPosition.y <
                 collidableEntityHitboxNextPosition.y +
-                  collidableEntityHitboxLength.y &&
-              movableEntityHitboxNextPosition.y >=
+                  collidableEntityHitboxLength.y +
+                  Number.EPSILON &&
+              movableEntityHitboxNextPosition.y + Number.EPSILON >=
                 collidableEntityHitboxNextPosition.y
             ) {
               const prevLengthBetween =
@@ -635,13 +639,14 @@ export class Game {
             if (
               movableEntity.collidableSides.left &&
               collidableEntity.collidableSides.right &&
-              movableEntityHitboxPosition.x >=
+              movableEntityHitboxPosition.x + Number.EPSILON >=
                 collidableEntityHitboxPosition.x +
                   collidableEntityHitboxLength.x &&
               movableEntityHitboxNextPosition.x <
                 collidableEntityHitboxNextPosition.x +
-                  collidableEntityHitboxLength.x &&
-              movableEntityHitboxNextPosition.x >=
+                  collidableEntityHitboxLength.x +
+                  Number.EPSILON &&
+              movableEntityHitboxNextPosition.x + Number.EPSILON >=
                 collidableEntityHitboxNextPosition.x
             ) {
               const prevLengthBetween =
@@ -660,12 +665,22 @@ export class Game {
             if (
               movableEntity.collidableSides.right &&
               collidableEntity.collidableSides.left &&
-              movableEntityHitboxPosition.x + movableEntityHitboxLength.x <=
-                collidableEntityHitboxPosition.x &&
-              movableEntityHitboxNextPosition.x + movableEntityHitboxLength.x >
-                collidableEntityHitboxNextPosition.x &&
-              movableEntityHitboxNextPosition.x <=
+              (isLessThan(
+                movableEntityHitboxPosition.x + movableEntityHitboxLength.x,
+                collidableEntityHitboxPosition.x
+              ) ||
+                isEqual(
+                  movableEntityHitboxPosition.x + movableEntityHitboxLength.x,
+                  collidableEntityHitboxPosition.x
+                )) &&
+              isGreaterThan(
+                movableEntityHitboxNextPosition.x + movableEntityHitboxLength.x,
                 collidableEntityHitboxNextPosition.x
+              ) &&
+              isLessThan(
+                movableEntityHitboxNextPosition.x,
+                collidableEntityHitboxNextPosition.x
+              )
             ) {
               const prevLengthBetween =
                 collidableEntityHitboxPosition.x -
@@ -683,11 +698,13 @@ export class Game {
               movableEntity.collidableSides.top &&
               collidableEntity.collidableSides.bottom &&
               movableEntityHitboxPosition.y + movableEntityHitboxLength.y <=
-                collidableEntityHitboxPosition.y &&
-              movableEntityHitboxNextPosition.y + movableEntityHitboxLength.y >
+                collidableEntityHitboxPosition.y + Number.EPSILON &&
+              movableEntityHitboxNextPosition.y +
+                movableEntityHitboxLength.y +
+                Number.EPSILON >
                 collidableEntityHitboxNextPosition.y &&
               movableEntityHitboxNextPosition.y <=
-                collidableEntityHitboxNextPosition.y
+                collidableEntityHitboxNextPosition.y + Number.EPSILON
             ) {
               const prevLengthBetween =
                 collidableEntityHitboxPosition.y -
@@ -763,6 +780,14 @@ export class Game {
           const movableEntity = movableEntities[movableEntityIndex];
           const collidableEntity = collidableEntities[collidableEntityIndex];
 
+          if (movableEntity instanceof Mario) {
+            if (collidableEntity instanceof Flag) {
+              console.debug("win!"); // @todo
+            }
+
+            // if enemy, lose
+          }
+
           switch (side) {
             case "bottom":
               movableEntityNextPositions[movableEntityIndex].y =
@@ -786,8 +811,7 @@ export class Game {
               movableEntityNextPositions[movableEntityIndex].x =
                 collidableEntity.position.x +
                 collidableEntity.collidableOffset.x -
-                (movableEntity.length.x - movableEntity.collidableOffset.x) -
-                PIXEL_LENGTH * 0.1; // account for float precision issues
+                (movableEntity.length.x - movableEntity.collidableOffset.x);
               movableEntity.velocity.x =
                 -movableEntity.velocity.x * movableEntity.elasticity;
               break;
@@ -911,46 +935,57 @@ export class Game {
           );
 
           if (
-            movableEntity.position.y - movableEntity.collidableOffset.y ===
+            isOverlappingHorizontally &&
+            isEqual(
+              movableEntity.position.y - movableEntity.collidableOffset.y,
               collidableEntity.position.y +
                 collidableEntity.length.y -
-                collidableEntity.collidableOffset.y &&
-            isOverlappingHorizontally
+                collidableEntity.collidableOffset.y
+            )
           ) {
             isTouchingBottom = true;
           }
           if (
-            movableEntity.position.x - movableEntity.collidableOffset.x ===
+            isOverlappingVertically &&
+            isEqual(
+              movableEntity.position.x - movableEntity.collidableOffset.x,
               collidableEntity.position.x +
                 collidableEntity.length.x -
-                collidableEntity.collidableOffset.x &&
-            isOverlappingVertically
+                collidableEntity.collidableOffset.x
+            )
           ) {
             isTouchingLeft = true;
           }
           if (
-            collidableEntity.position.x -
-              collidableEntity.collidableOffset.x ===
+            isOverlappingVertically &&
+            isEqual(
+              collidableEntity.position.x - collidableEntity.collidableOffset.x,
               movableEntity.position.x +
                 movableEntity.length.x -
-                movableEntity.collidableOffset.x &&
-            isOverlappingVertically
+                movableEntity.collidableOffset.x
+            )
           ) {
             isTouchingRight = true;
           }
           if (
-            collidableEntity.position.y -
-              collidableEntity.collidableOffset.y ===
+            isOverlappingHorizontally &&
+            isEqual(
+              collidableEntity.position.y - collidableEntity.collidableOffset.y,
               movableEntity.position.y +
                 movableEntity.length.y -
-                movableEntity.collidableOffset.y &&
-            isOverlappingHorizontally
+                movableEntity.collidableOffset.y
+            )
           ) {
             isTouchingTop = true;
           }
         }
 
-        if (isPressingA) {
+        // update mario's state
+        if (
+          isTouchingBottom &&
+          (isPressingLeft || isPressingRight) &&
+          isPressingA
+        ) {
           movableEntity.isRunning = true;
         }
         if (isReleasingA) {
@@ -959,6 +994,30 @@ export class Game {
         if (isReleasingB) {
           movableEntity.isInputtingJump = false;
         }
+        /*
+        if (
+          isTouchingBottom &&
+          ((isPressingLeft && isLessThan(movableEntity.velocity.x, 0)) ||
+            (isPressingRight && isGreaterThan(movableEntity.velocity.x, 0)))
+        ) {
+          if (isPressingA) {
+            movableEntity.isRunning = true;
+            movableEntity.isWalking = false;
+          } else {
+            movableEntity.isRunning = false;
+            movableEntity.isWalking = true;
+          }
+        }
+        if (
+          isTouchingBottom &&
+          ((isPressingLeft && isGreaterThan(movableEntity.velocity.x, 0)) ||
+            (isPressingRight && isLessThan(movableEntity.velocity.x, 0)))
+        ) {
+          movableEntity.isSliding = true;
+        } else {
+          movableEntity.isSliding = false;
+        }
+        */
 
         // decelerate if moving left but no longer pressing left
         if (movableEntity.velocity.x < 0 && !isPressingLeft) {
@@ -981,7 +1040,7 @@ export class Game {
           movableEntity.velocity.x -=
             movableEntity.acceleration.x *
             seconds *
-            (movableEntity.isRunning && isTouchingBottom ? 2 : 1);
+            (movableEntity.isRunning ? 2 : 1);
           movableEntity.isFacingLeft = true;
         }
 
@@ -990,7 +1049,7 @@ export class Game {
           movableEntity.velocity.x +=
             movableEntity.acceleration.x *
             seconds *
-            (movableEntity.isRunning && isTouchingBottom ? 2 : 1);
+            (movableEntity.isRunning ? 2 : 1);
           movableEntity.isFacingLeft = false;
         }
 

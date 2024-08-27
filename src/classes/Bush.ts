@@ -1,4 +1,4 @@
-import { GRID_UNIT_LENGTH } from "@/constants";
+import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
 
 import { Entity } from "./Entity";
 
@@ -87,7 +87,7 @@ export class Bush extends Entity {
         GRID_UNIT_LENGTH *
         (this.size === "large" ? 5 : this.size === "medium" ? 4 : 3),
       y: GRID_UNIT_LENGTH * 1,
-      z: 0,
+      z: PIXEL_LENGTH,
     };
   }
   set length(value) {}

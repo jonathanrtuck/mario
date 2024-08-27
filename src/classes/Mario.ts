@@ -81,6 +81,8 @@ export class Mario extends MovableEntity {
   isInputtingJump = false;
   isJumping = false;
   isRunning = false;
+  isSliding = false;
+  isWalking = false;
   length;
   mass = 70;
   position;
@@ -95,7 +97,7 @@ export class Mario extends MovableEntity {
     switch (this.size) {
       case "large":
         return 11;
-      case "small":
+      default:
         return this.isFacingLeft
           ? this.isJumping
             ? "MarioSmallJumpingLeft"
