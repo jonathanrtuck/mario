@@ -1,8 +1,8 @@
 import { State } from "@/classes";
-import { BUTTONS, COLOR_BLUE, GRID_UNIT_LENGTH } from "@/constants";
+import { BUTTONS, COLOR_BLUE } from "@/constants";
 import { Mario, Wall } from "@/entities";
 import { Button } from "@/types";
-import { getRGBA } from "@/utils";
+import { getRGBA, gridUnits } from "@/utils";
 
 export class Game {
   static get initialState(): State {
@@ -20,20 +20,20 @@ export class Game {
         },
         color: COLOR_BLUE,
         length: {
-          x: GRID_UNIT_LENGTH * 210,
-          y: GRID_UNIT_LENGTH * 15,
+          x: gridUnits(210),
+          y: gridUnits(15),
           z: 5,
         },
       },
       viewport: {
         length: {
-          x: GRID_UNIT_LENGTH * 16,
-          y: GRID_UNIT_LENGTH * 15,
+          x: gridUnits(16),
+          y: gridUnits(15),
           z: 5,
         },
         position: {
           x: 0,
-          y: GRID_UNIT_LENGTH * 2,
+          y: gridUnits(2),
           z: -4,
         },
       },
@@ -112,7 +112,9 @@ export class Game {
   private update = () => {
     const now = Date.now();
 
-    //
+    for (let entity of this.state.entities) {
+      entity.update(this.buttons);
+    }
   };
 
   pause = () => {

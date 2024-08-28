@@ -18,6 +18,7 @@ export interface Entity {
   length: Length;
   position: Position;
   render(context: CanvasRenderingContext2D): void;
+  update(buttons: Set<Button>): void;
 }
 
 export type Length = {

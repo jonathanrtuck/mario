@@ -39,6 +39,4 @@ export const PIXEL_LENGTH = 16;
 
 export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16;
 
-export const PIXEL_SCALE = 4;
-
 export const SIDES = ["bottom", "left", "right", "top"] as const;
