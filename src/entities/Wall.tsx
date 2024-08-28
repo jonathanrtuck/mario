@@ -4,7 +4,7 @@ import {
   COLOR_BROWN_LIGHT,
   COLOR_TRANSPARENT,
 } from "@/constants";
-import { Bitmap, Button, CollidableEntity } from "@/types";
+import { Button, CollidableEntity } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
 
 const B = COLOR_BROWN;
@@ -12,7 +12,7 @@ const K = COLOR_BLACK;
 const L = COLOR_BROWN_LIGHT;
 
 // prettier-ignore
-const STONE: Bitmap = [
+const STONE = drawBitmap([
   [B,L,L,L,L,L,L,L,L,K,B,L,L,L,L,B],
   [L,B,B,B,B,B,B,B,B,K,L,B,B,B,B,K],
   [L,B,B,B,B,B,B,B,B,K,L,B,B,B,B,K],
@@ -29,9 +29,7 @@ const STONE: Bitmap = [
   [L,B,B,B,L,L,L,K,L,B,B,B,B,B,B,K],
   [L,B,B,B,B,B,B,K,L,B,B,B,B,B,K,K],
   [B,K,K,K,K,K,K,B,L,K,K,K,K,K,K,B],
-];
-
-const stonePattern = drawBitmap(STONE);
+]);
 
 export class Wall implements CollidableEntity {
   collidableSides = {
@@ -63,7 +61,7 @@ export class Wall implements CollidableEntity {
 
   render(context: CanvasRenderingContext2D): void {
     context.fillStyle =
-      context.createPattern(stonePattern, "repeat") ?? COLOR_TRANSPARENT;
+      context.createPattern(STONE, "repeat") ?? COLOR_TRANSPARENT;
     context.fillRect(0, 0, this.length.x, this.length.y);
   }
 

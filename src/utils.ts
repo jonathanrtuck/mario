@@ -5,7 +5,10 @@ export const clamp = (min: number, num: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
 
 export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
-  const offscreenCanvas = new OffscreenCanvas(gridUnits(1), gridUnits(1));
+  const offscreenCanvas = new OffscreenCanvas(
+    pixels(bitmap[0].length),
+    pixels(bitmap.length)
+  );
   const offscreenCanvasContext = offscreenCanvas.getContext("2d")!;
 
   for (let i = 0; i !== bitmap.length; i++) {
