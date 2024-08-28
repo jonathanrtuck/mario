@@ -23,9 +23,7 @@ export const COLOR_TRANSPARENT: Color = "rgba(0, 0, 0, 0)";
 export const COLOR_WHITE: Color = "rgba(255, 255, 255, 255)";
 export const COLOR_YELLOW_DARK: Color = "rgba(227, 169, 76, 255)";
 
-export const IS_DEBUG_MODE = process.env.NODE_ENV === "development";
-
-export const PIXEL_LENGTH = 16;
+export const PIXEL_LENGTH = 16; // planckUnits
 
 export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16;
 
