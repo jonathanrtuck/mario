@@ -36,7 +36,7 @@ export interface MovableEntity extends Entity {
   vmax: Velocity;
 }
 
-export type MS = number;
+export type MS = number; // milliseconds
 
 export type Position = {
   x: number; // planckUnits (>= 0)
