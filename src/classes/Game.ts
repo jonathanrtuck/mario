@@ -2,14 +2,14 @@ import { State } from "@/classes";
 import { BUTTONS, COLOR_BLUE } from "@/constants";
 import { Mario, Wall } from "@/entities";
 import { Button } from "@/types";
-import { getRGBA, gridUnits } from "@/utils";
+import { gridUnits } from "@/utils";
 
 export class Game {
   static get initialState(): State {
     return new State({
       entities: [
         new Wall(0, 0, 69, 4),
-        new Mario(2, 4, "small"),
+        new Mario(2.125, 4, "small"),
         // …
       ],
       universe: {
@@ -44,7 +44,7 @@ export class Game {
     typeof requestAnimationFrame
   > | null = null;
   private buttons = new Set<Button>();
-  private prevUpdateTime: number = 0;
+  private prevUpdateTime: number | null = null; // ms
 
   context: CanvasRenderingContext2D;
   keyBinding: Record<Button, Set<string>> = {
@@ -63,7 +63,7 @@ export class Game {
     this.state = Game.initialState;
   }
 
-  private onKeyDown = (e: KeyboardEvent) => {
+  private onKeyDown = (e: KeyboardEvent): void => {
     for (let button of BUTTONS) {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
@@ -73,7 +73,7 @@ export class Game {
     }
   };
 
-  private onKeyUp = (e: KeyboardEvent) => {
+  private onKeyUp = (e: KeyboardEvent): void => {
     for (let button of BUTTONS) {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
@@ -83,13 +83,11 @@ export class Game {
     }
   };
 
-  private render = () => {
+  private render = (): void => {
     this.context.reset();
     this.context.canvas.height = this.state.viewport.length.y;
     this.context.canvas.width = this.state.viewport.length.x;
-    this.context.canvas.style.backgroundColor = getRGBA(
-      this.state.universe.color
-    );
+    this.context.canvas.style.backgroundColor = this.state.universe.color;
 
     for (let entity of this.state.entities) {
       this.context.save();
@@ -105,37 +103,42 @@ export class Game {
 
       this.context.restore();
     }
-
-    this.animationFrameRequest = requestAnimationFrame(this.render);
   };
 
-  private update = () => {
+  private update = (): void => {
     const now = Date.now();
+    const elapsedTime =
+      this.prevUpdateTime === null ? 0 : now - this.prevUpdateTime;
 
-    for (let entity of this.state.entities) {
-      entity.update(this.buttons);
+    if (elapsedTime) {
+      for (let entity of this.state.entities) {
+        entity.update(this.buttons);
+      }
     }
+
+    this.render();
+    this.prevUpdateTime = now;
+    this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
-  pause = () => {
+  pause = (): void => {
     //
   };
 
-  reset = () => {
+  reset = (): void => {
     //
   };
 
-  start = () => {
+  start = (): void => {
     this.context.canvas.addEventListener("keydown", this.onKeyDown);
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
 
     this.context.canvas.focus();
 
-    this.prevUpdateTime = Date.now();
-    this.animationFrameRequest = requestAnimationFrame(this.render);
+    this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
-  stop = () => {
+  stop = (): void => {
     if (this.animationFrameRequest) {
       cancelAnimationFrame(this.animationFrameRequest);
     }
@@ -144,7 +147,7 @@ export class Game {
     this.context.canvas.removeEventListener("keyup", this.onKeyUp);
   };
 
-  unpause = () => {
+  unpause = (): void => {
     //
   };
 }

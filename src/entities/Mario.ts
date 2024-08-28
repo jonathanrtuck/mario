@@ -1,6 +1,6 @@
 import { COLOR_RED } from "@/constants";
 import { Button, CollidableEntity, MovableEntity } from "@/types";
-import { getRGBA, gridUnits, pixels } from "@/utils";
+import { gridUnits, pixels } from "@/utils";
 
 export class Mario implements CollidableEntity, MovableEntity {
   acceleration = {
@@ -42,9 +42,9 @@ export class Mario implements CollidableEntity, MovableEntity {
     };
   }
 
-  constructor(gridX: number, gridY: number, size: Mario["size"]) {
+  constructor(gridX: number, gridY: number, size: "small" | "large") {
     this.length = {
-      x: gridUnits(1),
+      x: gridUnits(1) - pixels(4),
       y: gridUnits(size === "large" ? 2 : 1),
       z: 1,
     };
@@ -57,8 +57,8 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
 
   render(context: CanvasRenderingContext2D): void {
-    context.fillStyle = getRGBA(COLOR_RED);
-    context.fillRect(0, 0, this.length.x, this.length.y);
+    context.fillStyle = COLOR_RED;
+    context.fillRect(-pixels(2), 0, this.length.x + pixels(4), this.length.y);
   }
 
   update(buttons: Set<Button>): void {

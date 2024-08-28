@@ -6,13 +6,15 @@ export type Acceleration = {
   z: number;
 };
 
+export type Bitmap = Color[][];
+
 export type Button = (typeof BUTTONS)[number];
 
 export interface CollidableEntity extends Entity {
   collidableSides: Record<Side, boolean>;
 }
 
-export type Color = Uint8ClampedArray; // [r,g,b,a]
+export type Color = `rgba(${number}, ${number}, ${number}, ${number})`;
 
 export interface Entity {
   length: Length;

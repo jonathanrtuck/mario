@@ -1,18 +1,33 @@
 import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
-import { CollidableEntity, Color, Entity, MovableEntity } from "@/types";
+import { Bitmap, CollidableEntity, Entity, MovableEntity } from "@/types";
 
 export const clamp = (min: number, num: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
 
-export const getRGBA = ([
-  r,
-  g,
-  b,
-  a,
-]: Color): `rgba(${number},${number},${number},${number})` =>
-  `rgba(${r},${g},${b},${a})`;
+export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
+  const offscreenCanvas = new OffscreenCanvas(gridUnits(1), gridUnits(1));
+  const offscreenCanvasContext = offscreenCanvas.getContext("2d")!;
 
-export const gridUnits = (num: number): number => num * GRID_UNIT_LENGTH;
+  for (let i = 0; i !== bitmap.length; i++) {
+    const row = bitmap[i];
+
+    for (let j = 0; j !== row.length; j++) {
+      offscreenCanvasContext.fillStyle = row[j];
+      offscreenCanvasContext.fillRect(
+        pixels(j),
+        pixels(i),
+        pixels(1),
+        pixels(1)
+      );
+    }
+  }
+
+  return offscreenCanvas;
+};
+
+export const gridUnits = (num: number): number => int(num * GRID_UNIT_LENGTH);
+
+export const int = (num: number): number => Math.trunc(num);
 
 export const isCollidable = (
   entity: Entity | CollidableEntity
@@ -23,4 +38,4 @@ export const isMovable = (
   entity: Entity | MovableEntity
 ): entity is MovableEntity => (entity as MovableEntity).velocity !== undefined;
 
-export const pixels = (num: number): number => num * PIXEL_LENGTH;
+export const pixels = (num: number): number => int(num * PIXEL_LENGTH);
