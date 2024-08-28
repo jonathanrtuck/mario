@@ -1,8 +1,51 @@
-import { COLOR_RED } from "@/constants";
+import {
+  COLOR_GREEN_DARK,
+  COLOR_RED,
+  COLOR_TRANSPARENT,
+  COLOR_YELLOW_DARK,
+} from "@/constants";
 import { Button, CollidableEntity, MovableEntity } from "@/types";
-import { gridUnits, pixels } from "@/utils";
+import { drawBitmap, gridUnits, pixels } from "@/utils";
+
+const G = COLOR_GREEN_DARK;
+const R = COLOR_RED;
+const T = COLOR_TRANSPARENT;
+const Y = COLOR_YELLOW_DARK;
+
+// prettier-ignore
+const STANDING_RIGHT_SMALL_BITMAP = [
+  [T,T,T,T,T,R,R,R,R,R,T,T,T,T,T,T],
+  [T,T,T,T,R,R,R,R,R,R,R,R,R,T,T,T],
+  [T,T,T,T,G,G,G,Y,Y,G,Y,T,T,T,T,T],
+  [T,T,T,G,Y,G,Y,Y,Y,G,Y,Y,Y,T,T,T],
+  [T,T,T,G,Y,G,G,Y,Y,Y,G,Y,Y,Y,T,T],
+  [T,T,T,G,G,Y,Y,Y,Y,G,G,G,G,T,T,T],
+  [T,T,T,T,T,Y,Y,Y,Y,Y,Y,Y,T,T,T,T],
+  [T,T,T,T,G,G,R,G,G,G,T,T,T,T,T,T],
+  [T,T,T,G,G,G,R,G,G,R,G,G,G,T,T,T],
+  [T,T,G,G,G,G,R,R,R,R,G,G,G,G,T,T],
+  [T,T,Y,Y,G,R,Y,R,R,Y,R,G,Y,Y,T,T],
+  [T,T,Y,Y,Y,R,R,R,R,R,R,Y,Y,Y,T,T],
+  [T,T,Y,Y,R,R,R,R,R,R,R,R,Y,Y,T,T],
+  [T,T,T,T,R,R,R,T,T,R,R,R,T,T,T,T],
+  [T,T,T,G,G,G,T,T,T,T,G,G,G,T,T,T],
+  [T,T,G,G,G,G,T,T,T,T,G,G,G,G,T,T],
+];
+
+const STANDING_LEFT_SMALL = drawBitmap(
+  STANDING_RIGHT_SMALL_BITMAP.map((row) => row.toReversed())
+);
+const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
 export class Mario implements CollidableEntity, MovableEntity {
+  private get Image(): OffscreenCanvas {
+    if (this.size === "large") {
+      return STANDING_RIGHT_SMALL; // @todo
+    }
+
+    return this.isFacingLeft ? STANDING_LEFT_SMALL : STANDING_RIGHT_SMALL;
+  }
+
   acceleration = {
     x: pixels(10),
     y: pixels(10),
@@ -57,11 +100,24 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
 
   render(context: CanvasRenderingContext2D): void {
-    context.fillStyle = COLOR_RED;
-    context.fillRect(-pixels(2), 0, this.length.x + pixels(4), this.length.y);
+    context.drawImage(
+      this.Image,
+      pixels(-2),
+      0,
+      this.length.x + pixels(4),
+      this.length.y
+    );
   }
 
   update(buttons: Set<Button>): void {
-    //
+    const isPressingLeft = buttons.has("left") && !buttons.has("right");
+    const isPressingRight = buttons.has("right") && !buttons.has("left");
+
+    if (isPressingLeft) {
+      this.isFacingLeft = true;
+    }
+    if (isPressingRight) {
+      this.isFacingLeft = false;
+    }
   }
 }

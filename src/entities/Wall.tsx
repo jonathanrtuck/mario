@@ -12,7 +12,7 @@ const K = COLOR_BLACK;
 const L = COLOR_BROWN_LIGHT;
 
 // prettier-ignore
-const STONE = drawBitmap([
+const STONE_BITMAP = [
   [B,L,L,L,L,L,L,L,L,K,B,L,L,L,L,B],
   [L,B,B,B,B,B,B,B,B,K,L,B,B,B,B,K],
   [L,B,B,B,B,B,B,B,B,K,L,B,B,B,B,K],
@@ -29,7 +29,9 @@ const STONE = drawBitmap([
   [L,B,B,B,L,L,L,K,L,B,B,B,B,B,B,K],
   [L,B,B,B,B,B,B,K,L,B,B,B,B,B,K,K],
   [B,K,K,K,K,K,K,B,L,K,K,K,K,K,K,B],
-]);
+];
+
+const STONE = drawBitmap(STONE_BITMAP);
 
 export class Wall implements CollidableEntity {
   collidableSides = {
