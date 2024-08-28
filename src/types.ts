@@ -1,29 +1,40 @@
-import { KEYS, PATTERNS, SIDES } from "@/constants";
+import { BUTTONS, SIDES } from "@/constants";
 
 export type Acceleration = {
-  x: number; // m/s^2 (>= 0)
+  x: number; // planck_units/s^2 (>= 0)
   y: number;
   z: number;
 };
 
-export type Bitmap = Uint8ClampedArray[];
+export type Button = (typeof BUTTONS)[number];
 
-export type Color = Uint8ClampedArray;
+export interface CollidableEntity extends Entity {
+  collidableSides: Record<Side, boolean>;
+}
 
-export type ColorIndex = number;
+export type Color = Uint8ClampedArray; // [r,g,b,a]
 
-export type Key = (typeof KEYS)[number];
+export interface Entity {
+  length: Length;
+  position: Position;
+  render(context: CanvasRenderingContext2D): void;
+}
 
 export type Length = {
-  x: number; // m (>= 0)
+  x: number; // planck_units (>= 0)
   y: number;
   z: number;
 };
 
-export type Pattern = (typeof PATTERNS)[number];
+export interface MovableEntity extends Entity {
+  acceleration: Acceleration;
+  deceleration: Acceleration;
+  velocity: Velocity;
+  vmax: Velocity;
+}
 
 export type Position = {
-  x: number; // m (>= 0)
+  x: number; // planck_units (>= 0)
   y: number;
   z: number;
 };
@@ -32,12 +43,12 @@ export type Side = (typeof SIDES)[number];
 
 export type Universe = {
   acceleration: Acceleration; // gravity
-  color: ColorIndex;
+  color: Color;
   length: Length;
 };
 
 export type Velocity = {
-  x: number; // m/s (>= 0. - -> left, + -> right)
+  x: number; // planck_units/s (>= 0. - -> left, + -> right)
   y: number; // (- -> down, + -> up)
   z: number; // (- -> backward, + -> forward)
 };
