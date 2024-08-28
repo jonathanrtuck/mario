@@ -1,6 +1,6 @@
 import { State } from "@/classes";
 import { BUTTONS, COLOR_BLUE } from "@/constants";
-import { Mario, Wall } from "@/entities";
+import { Cloud, Mario, Wall } from "@/entities";
 import { Button, MS } from "@/types";
 import { clamp, gridUnits, pixels } from "@/utils";
 
@@ -9,6 +9,7 @@ export class Game {
     return new State({
       entities: [
         new Wall(0, 0, 69, 4),
+        new Cloud(9, 12, "small"),
         new Mario(2.125, 4, "small"),
         // …
       ],
@@ -149,7 +150,7 @@ export class Game {
           continue;
         }
 
-        entity.update(elapsedTime, this.buttons);
+        entity.update?.(elapsedTime, this.buttons);
 
         // update viewport
         if (entity instanceof Mario) {

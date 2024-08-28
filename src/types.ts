@@ -20,7 +20,7 @@ export interface Entity {
   length: Length;
   position: Position;
   render(context: CanvasRenderingContext2D): void;
-  update(elapsedTime: MS, buttons: Set<Button>): void;
+  update?(elapsedTime: MS, buttons: Set<Button>): void;
 }
 
 export type Length = {
