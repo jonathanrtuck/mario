@@ -4,7 +4,7 @@ import {
   COLOR_BROWN_LIGHT,
   COLOR_TRANSPARENT,
 } from "@/constants";
-import { Button, CollidableEntity } from "@/types";
+import { Bitmap, Button, CollidableEntity, MS } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
 
 const B = COLOR_BROWN;
@@ -12,7 +12,7 @@ const K = COLOR_BLACK;
 const L = COLOR_BROWN_LIGHT;
 
 // prettier-ignore
-const STONE_BITMAP = [
+const STONE_BITMAP: Bitmap = [
   [B,L,L,L,L,L,L,L,L,K,B,L,L,L,L,B],
   [L,B,B,B,B,B,B,B,B,K,L,B,B,B,B,K],
   [L,B,B,B,B,B,B,B,B,K,L,B,B,B,B,K],
@@ -67,7 +67,7 @@ export class Wall implements CollidableEntity {
     context.fillRect(0, 0, this.length.x, this.length.y);
   }
 
-  update(buttons: Set<Button>): void {
+  update(elapsedTime: MS, buttons: Set<Button>): void {
     //
   }
 }

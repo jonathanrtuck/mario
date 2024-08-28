@@ -1,7 +1,7 @@
 import { BUTTONS, SIDES } from "@/constants";
 
 export type Acceleration = {
-  x: number; // planck_units/s^2 (>= 0)
+  x: number; // planckUnits/ms^2 (>= 0)
   y: number;
   z: number;
 };
@@ -20,11 +20,11 @@ export interface Entity {
   length: Length;
   position: Position;
   render(context: CanvasRenderingContext2D): void;
-  update(buttons: Set<Button>): void;
+  update(elapsedTime: MS, buttons: Set<Button>): void;
 }
 
 export type Length = {
-  x: number; // planck_units (>= 0)
+  x: number; // planckUnits (>= 0)
   y: number;
   z: number;
 };
@@ -36,8 +36,10 @@ export interface MovableEntity extends Entity {
   vmax: Velocity;
 }
 
+export type MS = number;
+
 export type Position = {
-  x: number; // planck_units (>= 0)
+  x: number; // planckUnits (>= 0)
   y: number;
   z: number;
 };
@@ -51,7 +53,7 @@ export type Universe = {
 };
 
 export type Velocity = {
-  x: number; // planck_units/s (>= 0. - -> left, + -> right)
+  x: number; // planckUnits/ms (>= 0. - -> left, + -> right)
   y: number; // (- -> down, + -> up)
   z: number; // (- -> backward, + -> forward)
 };
