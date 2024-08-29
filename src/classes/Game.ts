@@ -13,8 +13,15 @@ import {
   QuestionBlock,
   Wall,
 } from "@/entities";
-import { Button, MS } from "@/types";
-import { clamp, gridUnits, pixels } from "@/utils";
+import { Button, MS, Position } from "@/types";
+import {
+  clamp,
+  gridUnits,
+  int,
+  isCollidable,
+  isMovable,
+  pixels,
+} from "@/utils";
 
 export class Game {
   static get initialState(): State {
@@ -206,14 +213,14 @@ export class Game {
         new Cloud(211, 13, "small"),
         new Bush(215, 4, "small"),
         new Cloud(219, 12, "large"),
-        new Mario(2.125, 4, "small"),
         new Flag(198.4375, 5),
         new Castle(202, 4),
-      ],
+        new Mario(2.125, 4, "small"),
+      ].toSorted((a, b) => a.position.z - b.position.z),
       universe: {
         acceleration: {
           x: 0,
-          y: pixels(202) / 1000, // pixels/s^2
+          y: pixels(-2) / 1000, // pixels/s^2
           z: 0,
         },
         color: COLOR_BLUE,
@@ -262,7 +269,7 @@ export class Game {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    for (let button of BUTTONS) {
+    for (const button of BUTTONS) {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
@@ -272,7 +279,7 @@ export class Game {
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
-    for (let button of BUTTONS) {
+    for (const button of BUTTONS) {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
@@ -287,7 +294,7 @@ export class Game {
     this.context.canvas.width = this.state.viewport.length.x;
     this.context.canvas.style.backgroundColor = this.state.universe.color;
 
-    for (let entity of this.state.entities) {
+    for (const entity of this.state.entities) {
       // only render entities within viewport
       if (
         entity.position.x + entity.length.x <
@@ -330,24 +337,47 @@ export class Game {
       this.prevUpdateTime === null ? 0 : now - this.prevUpdateTime;
 
     if (elapsedTime) {
-      for (let entity of this.state.entities) {
-        // only update entities within viewport
-        if (
-          entity.position.x + entity.length.x <
-            this.state.viewport.position.x - gridUnits(2) ||
-          entity.position.x >
+      // only update entities within viewport
+      const entitiesToUpdate = this.state.entities.filter(
+        (entity) =>
+          entity.position.x <
             this.state.viewport.position.x +
               this.state.viewport.length.x +
-              gridUnits(2) ||
-          entity.position.z + entity.length.z <
-            this.state.viewport.position.z ||
-          entity.position.z >
-            this.state.viewport.position.z + this.state.viewport.length.z
-        ) {
-          continue;
-        }
+              gridUnits(2) &&
+          entity.position.x + entity.length.x >
+            this.state.viewport.position.x - gridUnits(2) &&
+          entity.position.z <=
+            this.state.viewport.position.z + this.state.viewport.length.z &&
+          entity.position.z + entity.length.z >= this.state.viewport.position.z
+      );
+      const collidableEntities = entitiesToUpdate.filter(isCollidable);
+      const movableEntities = entitiesToUpdate.filter(isMovable);
+      const nextPositions = entitiesToUpdate.map<Position>((entity) =>
+        isMovable(entity)
+          ? {
+              x: entity.position.x + int(entity.velocity.x * elapsedTime),
+              y: entity.position.y + int(entity.velocity.y * elapsedTime),
+              z: entity.position.z + int(entity.velocity.z * elapsedTime),
+            }
+          : entity.position
+      );
+
+      // @todo get collisions
+
+      for (let i = 0; i !== entitiesToUpdate.length; i++) {
+        const entity = entitiesToUpdate[i];
+        const nextPosition = nextPositions[i];
+
+        entity.position = nextPosition;
 
         entity.update?.(elapsedTime, this.buttons);
+
+        // apply gravity
+        if (isMovable(entity)) {
+          entity.velocity.x += this.state.universe.acceleration.x * elapsedTime;
+          entity.velocity.y += this.state.universe.acceleration.y * elapsedTime;
+          entity.velocity.z += this.state.universe.acceleration.z * elapsedTime;
+        }
 
         // update viewport
         if (entity instanceof Mario) {

@@ -5,7 +5,7 @@ import {
   COLOR_YELLOW_DARK,
 } from "@/constants";
 import { Bitmap, Button, CollidableEntity, MovableEntity, MS } from "@/types";
-import { drawBitmap, gridUnits, pixels } from "@/utils";
+import { clamp, drawBitmap, gridUnits, int, pixels } from "@/utils";
 
 const G = COLOR_GREEN_DARK;
 const R = COLOR_RED;
@@ -60,7 +60,11 @@ const STANDING_LEFT_SMALL = drawBitmap(
 );
 const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
+const JUMP_INPUT_DURATION = 250; // ms
+
 export class Mario implements CollidableEntity, MovableEntity {
+  private jumpInputDuration: MS | null = null;
+
   private get Image(): OffscreenCanvas {
     // @todo
     if (this.size === "large") {
@@ -74,11 +78,6 @@ export class Mario implements CollidableEntity, MovableEntity {
     return this.isFacingLeft ? STANDING_LEFT_SMALL : STANDING_RIGHT_SMALL;
   }
 
-  acceleration = {
-    x: pixels(164) / 1000, // pixels/s^2
-    y: pixels(164) / 1000, // pixels/s^2
-    z: 0,
-  };
   collidableSides = {
     bottom: true,
     left: true,
@@ -92,11 +91,9 @@ export class Mario implements CollidableEntity, MovableEntity {
   };
   isAccelerating = false;
   isFacingLeft = false;
-  isInputtingJump = false;
   isJumping = false;
   isSliding = false;
   isWalking = false;
-  length;
   position;
   size: "small" | "large";
   velocity = {
@@ -104,6 +101,22 @@ export class Mario implements CollidableEntity, MovableEntity {
     y: 0,
     z: 0,
   };
+
+  get acceleration() {
+    return {
+      x: pixels(this.isAccelerating ? 164 : 82) / 1000, // pixels/s^2
+      y: pixels(41) / 1000, // pixels/s^2
+      z: 0,
+    };
+  }
+
+  get length() {
+    return {
+      x: gridUnits(1) - pixels(4),
+      y: gridUnits(this.size === "large" ? 2 : 1),
+      z: 1,
+    };
+  }
 
   get vmax() {
     return {
@@ -114,11 +127,6 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
 
   constructor(gridX: number, gridY: number, size: "small" | "large") {
-    this.length = {
-      x: gridUnits(1) - pixels(4),
-      y: gridUnits(size === "large" ? 2 : 1),
-      z: 1,
-    };
     this.position = {
       x: gridUnits(gridX),
       y: gridUnits(gridY),
@@ -147,7 +155,7 @@ export class Mario implements CollidableEntity, MovableEntity {
     this.isAccelerating = isPressingA;
 
     if (!isPressingB) {
-      this.isInputtingJump = false;
+      this.jumpInputDuration = null;
     }
     if (isPressingLeft) {
       this.isFacingLeft = true;
@@ -156,6 +164,55 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.isFacingLeft = false;
     }
 
-    //
+    // decelerate if moving left but no longer pressing left
+    if (!isPressingLeft && this.velocity.x < 0) {
+      this.velocity.x += Math.min(
+        this.deceleration.x * elapsedTime,
+        -this.velocity.x
+      );
+    }
+    // decelerate if moving right but no longer pressing right
+    if (!isPressingRight && this.velocity.x > 0) {
+      this.velocity.x -= Math.min(
+        this.deceleration.x * elapsedTime,
+        this.velocity.x
+      );
+    }
+
+    // accelerate if pressing left
+    // @todo && !isTouchingLeft
+    if (isPressingLeft) {
+      this.velocity.x -= this.acceleration.x * elapsedTime;
+      this.isFacingLeft = true;
+    }
+    // accelerate if pressing right
+    // @todo && !isTouchingRight
+    if (isPressingRight) {
+      this.velocity.x += this.acceleration.x * elapsedTime;
+      this.isFacingLeft = false;
+    }
+
+    /*
+    if (neighbors.bottom) {
+      this.isJumping = false;
+    }
+    */
+
+    // jump
+    if (isPressingB) {
+      // @todo if neighbors.bottom
+      if (this.jumpInputDuration === null) {
+        this.isJumping = true;
+        this.jumpInputDuration = elapsedTime;
+        this.velocity.y += int(this.acceleration.y * elapsedTime);
+      } else if (this.jumpInputDuration < JUMP_INPUT_DURATION) {
+        this.jumpInputDuration += elapsedTime;
+        this.velocity.y += int(this.acceleration.y * elapsedTime);
+      }
+      // @todo if flower, throw fireball
+    }
+
+    this.velocity.x = clamp(-this.vmax.x, this.velocity.x, this.vmax.x);
+    this.velocity.y = clamp(-this.vmax.y, this.velocity.y, this.vmax.y);
   }
 }
