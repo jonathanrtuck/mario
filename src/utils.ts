@@ -30,6 +30,12 @@ export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
 
 export const gridUnits = (num: number): number => int(num * GRID_UNIT_LENGTH);
 
+export const gridUnitsPerSecond = (num: number): number =>
+  gridUnits(num) / 1000;
+
+export const gridUnitsPerSecondPerSecond = (num: number): number =>
+  gridUnits(num) / 1000 / 1000;
+
 export const int = (num: number): number => Math.trunc(num);
 
 export const isCollidable = (entity: Entity): entity is CollidableEntity =>

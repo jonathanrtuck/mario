@@ -24,10 +24,10 @@ import { Button, Entity, MS, Neighbors, Position } from "@/types";
 import {
   clamp,
   gridUnits,
+  gridUnitsPerSecondPerSecond,
   int,
   isCollidable,
   isMovable,
-  pixels,
 } from "@/utils";
 
 export class Game {
@@ -227,7 +227,7 @@ export class Game {
       universe: {
         acceleration: {
           x: 0,
-          y: pixels(-300) / 1000 / 1000, // pixels/s^2
+          y: gridUnitsPerSecondPerSecond(-19),
           z: 0,
         },
         color: COLOR_BLUE,

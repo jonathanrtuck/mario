@@ -13,7 +13,13 @@ import {
   MS,
   Neighbors,
 } from "@/types";
-import { drawBitmap, gridUnits, pixels } from "@/utils";
+import {
+  drawBitmap,
+  gridUnits,
+  gridUnitsPerSecond,
+  gridUnitsPerSecondPerSecond,
+  pixels,
+} from "@/utils";
 
 const G = COLOR_GREEN_DARK;
 const R = COLOR_RED;
@@ -69,8 +75,8 @@ const STANDING_LEFT_SMALL = drawBitmap(
 const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
 const ACCELERATION: Acceleration = {
-  x: pixels(300) / 1000 / 1000, // pixels/s^2
-  y: pixels(900) / 1000 / 1000, // pixels/s^2
+  x: gridUnitsPerSecondPerSecond(19),
+  y: gridUnitsPerSecondPerSecond(57),
   z: 0,
 };
 const JUMP_INPUT_DURATION = 250; // ms
@@ -127,8 +133,8 @@ export class Mario implements CollidableEntity, MovableEntity {
 
   get vmax() {
     return {
-      x: pixels(this.isAccelerating ? 200 : 100) / 1000, // pixels/s
-      y: pixels(600) / 1000, // pixels/s
+      x: gridUnitsPerSecond(this.isAccelerating ? 12 : 6),
+      y: gridUnitsPerSecond(38),
       z: 0,
     };
   }

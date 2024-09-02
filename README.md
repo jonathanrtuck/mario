@@ -12,6 +12,8 @@
 
 ## physics
 
+An (movable) entity should only update its `acceleration` to affect its movement: the `Game` will use that to update its `velocity` and `position` accordingly.
+
 Acceleration is only applied (converted to change in velocity) once per update (`TIME_UNIT_LENGTH`).
 
 ## collision detection
