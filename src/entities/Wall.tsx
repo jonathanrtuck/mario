@@ -66,8 +66,4 @@ export class Wall implements CollidableEntity {
       context.createPattern(STONE, "repeat") ?? COLOR_TRANSPARENT;
     context.fillRect(0, 0, this.length.x, this.length.y);
   }
-
-  update(elapsedTime: MS, buttons: Set<Button>): void {
-    //
-  }
 }

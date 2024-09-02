@@ -433,44 +433,59 @@ export class Game {
                 continue;
               }
 
-              const isHorizontalOverlap = !(
-                entity.position.x + entity.length.x <=
-                  collidableEntity.position.x ||
-                entity.position.x >=
-                  collidableEntity.position.x + collidableEntity.length.x
-              );
-              const isVerticalOverlap = !(
-                entity.position.x + entity.length.x <=
-                  collidableEntity.position.x ||
-                entity.position.x >=
-                  collidableEntity.position.x + collidableEntity.length.x
-              );
-
               if (
+                entity.collidableSides.bottom &&
+                collidableEntity.collidableSides.top &&
                 collidableEntity.position.y + collidableEntity.length.y ===
                   entity.position.y &&
-                isHorizontalOverlap
+                !(
+                  entity.position.x + entity.length.x <=
+                    collidableEntity.position.x ||
+                  entity.position.x >=
+                    collidableEntity.position.x + collidableEntity.length.x
+                )
               ) {
                 neighbors.bottom.push(collidableEntity);
               }
               if (
+                entity.collidableSides.left &&
+                collidableEntity.collidableSides.right &&
                 collidableEntity.position.x + collidableEntity.length.x ===
                   entity.position.x &&
-                isVerticalOverlap
+                !(
+                  entity.position.x + entity.length.x <=
+                    collidableEntity.position.x ||
+                  entity.position.x >=
+                    collidableEntity.position.x + collidableEntity.length.x
+                )
               ) {
                 neighbors.left.push(collidableEntity);
               }
               if (
+                entity.collidableSides.right &&
+                collidableEntity.collidableSides.left &&
                 collidableEntity.position.x ===
                   entity.position.x + entity.length.x &&
-                isVerticalOverlap
+                !(
+                  entity.position.x + entity.length.x <=
+                    collidableEntity.position.x ||
+                  entity.position.x >=
+                    collidableEntity.position.x + collidableEntity.length.x
+                )
               ) {
                 neighbors.right.push(collidableEntity);
               }
               if (
+                entity.collidableSides.top &&
+                collidableEntity.collidableSides.bottom &&
                 collidableEntity.position.y ===
                   entity.position.y + entity.length.y &&
-                isHorizontalOverlap
+                !(
+                  entity.position.x + entity.length.x <=
+                    collidableEntity.position.x ||
+                  entity.position.x >=
+                    collidableEntity.position.x + collidableEntity.length.x
+                )
               ) {
                 neighbors.top.push(collidableEntity);
               }
@@ -482,6 +497,20 @@ export class Game {
 
             // update position
             entity.position = nextPositions[index];
+
+            // update velocity based on neighbors
+            if (neighbors.bottom.length && entity.velocity.y < 0) {
+              entity.velocity.y = 0;
+            }
+            if (neighbors.left.length && entity.velocity.x < 0) {
+              entity.velocity.x = 0;
+            }
+            if (neighbors.right.length && entity.velocity.x > 0) {
+              entity.velocity.x = 0;
+            }
+            if (neighbors.top.length && entity.velocity.y > 0) {
+              entity.velocity.y = 0;
+            }
 
             // apply friction
             // realistically we should also require `&& neighbors.bottom.length`, but mario slows even in the air
@@ -558,7 +587,7 @@ export class Game {
           }
 
           // update entity
-          entity.update?.(elapsedTime, this.buttons, neighbors);
+          entity.update?.(this.buttons, neighbors);
         }
       }
     }

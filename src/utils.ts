@@ -5,22 +5,22 @@ export const clamp = (min: number, num: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
 
 export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
-  const offscreenCanvas = new OffscreenCanvas(
-    pixels(bitmap[0].length),
-    pixels(bitmap.length)
-  );
+  const numRows = bitmap.length;
+  const numCols = bitmap[0]?.length ?? 0;
+  const offscreenCanvas = new OffscreenCanvas(pixels(numCols), pixels(numRows));
   const offscreenCanvasContext = offscreenCanvas.getContext("2d")!;
+  const pixelLength = pixels(1);
 
-  for (let i = 0; i !== bitmap.length; i++) {
-    const row = bitmap[i];
+  for (let y = 0; y !== numRows; y++) {
+    const row = bitmap[y];
 
-    for (let j = 0; j !== row.length; j++) {
-      offscreenCanvasContext.fillStyle = row[j];
+    for (let x = 0; x !== numCols; x++) {
+      offscreenCanvasContext.fillStyle = row[x];
       offscreenCanvasContext.fillRect(
-        pixels(j),
-        pixels(i),
-        pixels(1),
-        pixels(1)
+        pixels(x),
+        pixels(y),
+        pixelLength,
+        pixelLength
       );
     }
   }
@@ -31,10 +31,10 @@ export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
 export const gridUnits = (num: number): number => int(num * GRID_UNIT_LENGTH);
 
 export const gridUnitsPerSecond = (num: number): number =>
-  gridUnits(num) / 1000;
+  gridUnits(num) / 1000; // planckUnits/ms
 
 export const gridUnitsPerSecondPerSecond = (num: number): number =>
-  gridUnits(num) / 1000 / 1000;
+  gridUnits(num) / 1000 / 1000; // planckUnits/ms^2
 
 export const int = (num: number): number => Math.trunc(num);
 
