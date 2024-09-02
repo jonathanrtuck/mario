@@ -1,7 +1,12 @@
 import "setimmediate";
 
 import { State } from "@/classes";
-import { BUTTONS, COLOR_BLUE, TIME_UNIT_LENGTH } from "@/constants";
+import {
+  BUTTONS,
+  COLOR_BLUE,
+  MIN_VELOCITY,
+  TIME_UNIT_LENGTH,
+} from "@/constants";
 import {
   Block,
   Brick,
@@ -15,7 +20,7 @@ import {
   QuestionBlock,
   Wall,
 } from "@/entities";
-import { Button, MS, Position } from "@/types";
+import { Button, Entity, MS, Position } from "@/types";
 import {
   clamp,
   gridUnits,
@@ -222,7 +227,7 @@ export class Game {
       universe: {
         acceleration: {
           x: 0,
-          y: pixels(-2) / 1000, // pixels/s^2
+          y: pixels(-1) / 1000, // pixels/s^2
           z: 0,
         },
         color: COLOR_BLUE,
@@ -292,7 +297,12 @@ export class Game {
     }
   };
 
+  // @recursive
   private render = (): void => {
+    if (this.isStopped) {
+      return;
+    }
+
     this.context.reset();
     this.context.canvas.height = this.state.viewport.length.y;
     this.context.canvas.width = this.state.viewport.length.x;
@@ -370,183 +380,139 @@ export class Game {
         );
         const collidableEntities = entitiesToUpdate.filter(isCollidable);
         const movableEntities = entitiesToUpdate.filter(isMovable);
-        const nextPositions = entitiesToUpdate.map<Position>((entity) =>
-          isMovable(entity)
-            ? {
-                x: entity.position.x + int(entity.velocity.x * elapsedTime),
-                y: entity.position.y + int(entity.velocity.y * elapsedTime),
-                z: entity.position.z + int(entity.velocity.z * elapsedTime),
-              }
-            : entity.position
+
+        // apply acceleration
+        for (const movableEntity of movableEntities) {
+          movableEntity.velocity.x +=
+            movableEntity.acceleration.x * elapsedTime;
+          movableEntity.velocity.y +=
+            movableEntity.acceleration.y * elapsedTime;
+        }
+
+        const collisions: any[] = [];
+        const nextPositions = movableEntities.map<Position>(
+          ({ position, velocity }) => ({
+            x: int(position.x + velocity.x * elapsedTime),
+            y: int(position.y + velocity.y * elapsedTime),
+            z: position.z,
+          })
         );
 
-        // @todo get collisions
+        do {
+          // @todo get movableEntities' next positions based on their velocity and remaining elapsedTime since last update
 
+          // get collisions
+          for (const movableEntity of movableEntities) {
+            for (const collidableEntity of collidableEntities) {
+              if ((movableEntity as Entity) === (collidableEntity as Entity)) {
+                continue;
+              }
+
+              // @todo
+            }
+          }
+
+          // @todo sort collisions by time
+          // @todo for earliest collision(s), update corresponding entity(s)' nextPosition/velocity/acceleration
+          // @todo repeat until no collisions found and movableEntities' nextPositions updated till now
+        } while (collisions.length !== 0);
+
+        let movableEntitiesIndex = 0;
         for (let i = 0; i !== entitiesToUpdate.length; i++) {
           const entity = entitiesToUpdate[i];
-          const nextPosition = nextPositions[i];
 
-          // entity.position = nextPosition;
-
-          entity.update?.(elapsedTime, this.buttons);
-
-          // apply gravity
           if (isMovable(entity)) {
+            // update position
+            entity.position = nextPositions[movableEntitiesIndex++];
+
+            // apply friction
+            if (
+              entity.friction &&
+              ((entity.velocity.x < 0 && entity.acceleration.x >= 0) ||
+                (entity.velocity.x > 0 && entity.acceleration.x <= 0))
+            ) {
+              if (Math.abs(entity.velocity.x) < MIN_VELOCITY) {
+                entity.velocity.x = 0;
+              } else {
+                entity.velocity.x -=
+                  entity.velocity.x * (entity.friction * (elapsedTime / 1000));
+              }
+            }
+
+            // apply gravity
             entity.velocity.x +=
               this.state.universe.acceleration.x * elapsedTime;
-            entity.velocity.y +=
-              this.state.universe.acceleration.y * elapsedTime;
-            entity.velocity.z +=
-              this.state.universe.acceleration.z * elapsedTime;
+
+            // clamp velocity
+            entity.velocity.x = clamp(
+              -entity.vmax.x,
+              entity.velocity.x,
+              entity.vmax.x
+            );
+            entity.velocity.y = clamp(
+              -entity.vmax.y,
+              entity.velocity.y,
+              entity.vmax.y
+            );
+
+            // update viewport
+            if (entity instanceof Mario) {
+              const entityCenterX = entity.position.x + entity.length.x / 2;
+              const viewportCenterX =
+                this.state.viewport.position.x +
+                this.state.viewport.length.x / 2;
+              const maxViewportPositionX =
+                this.state.universe.length.x - this.state.viewport.length.x;
+
+              // follow entity with viewport
+              if (
+                entityCenterX > viewportCenterX &&
+                this.state.viewport.position.x < maxViewportPositionX
+              ) {
+                this.state.viewport.position.x = clamp(
+                  this.state.viewport.position.x,
+                  entityCenterX - this.state.viewport.length.x / 2,
+                  maxViewportPositionX
+                );
+              }
+
+              const minPositionX = this.state.viewport.position.x;
+              const maxPositionX =
+                this.state.viewport.position.x +
+                this.state.viewport.length.x -
+                entity.length.x;
+
+              // prevent entity from overflowing viewport
+              if (entity.position.x < minPositionX) {
+                entity.position.x = minPositionX;
+
+                if (entity.velocity.x < 0) {
+                  entity.velocity.x = 0;
+                }
+              } else if (entity.position.x > maxPositionX) {
+                entity.position.x = maxPositionX;
+
+                if (entity.velocity.x > 0) {
+                  entity.velocity.x = 0;
+                }
+              }
+            }
           }
 
-          // update viewport
-          if (entity instanceof Mario) {
-            const entityCenterX = entity.position.x + entity.length.x / 2;
-            const viewportCenterX =
-              this.state.viewport.position.x + this.state.viewport.length.x / 2;
-            const maxViewportPositionX =
-              this.state.universe.length.x - this.state.viewport.length.x;
-
-            // follow entity with viewport
-            if (
-              entityCenterX > viewportCenterX &&
-              this.state.viewport.position.x < maxViewportPositionX
-            ) {
-              this.state.viewport.position.x = clamp(
-                this.state.viewport.position.x,
-                entityCenterX - this.state.viewport.length.x / 2,
-                maxViewportPositionX
-              );
-            }
-
-            const minPositionX = this.state.viewport.position.x;
-            const maxPositionX =
-              this.state.viewport.position.x +
-              this.state.viewport.length.x -
-              entity.length.x;
-
-            // prevent entity from overflowing viewport
-            if (entity.position.x < minPositionX) {
-              entity.position.x = minPositionX;
-
-              if (entity.velocity.x < 0) {
-                entity.velocity.x = 0;
-              }
-            } else if (entity.position.x > maxPositionX) {
-              entity.position.x = maxPositionX;
-
-              if (entity.velocity.x > 0) {
-                entity.velocity.x = 0;
-              }
-            }
-          }
+          // update entity
+          entity.update?.(elapsedTime, this.buttons);
         }
       }
     }
 
     setImmediate(this.update);
-
-    /*
-    const now = Date.now();
-    const elapsedTime =
-      this.prevUpdateTime === null ? 0 : now - this.prevUpdateTime;
-
-    if (elapsedTime) {
-      // only update entities within viewport
-      const entitiesToUpdate = this.state.entities.filter(
-        (entity) =>
-          entity.position.x <
-            this.state.viewport.position.x +
-              this.state.viewport.length.x +
-              gridUnits(2) &&
-          entity.position.x + entity.length.x >
-            this.state.viewport.position.x - gridUnits(2) &&
-          entity.position.z <=
-            this.state.viewport.position.z + this.state.viewport.length.z &&
-          entity.position.z + entity.length.z >= this.state.viewport.position.z
-      );
-      const collidableEntities = entitiesToUpdate.filter(isCollidable);
-      const movableEntities = entitiesToUpdate.filter(isMovable);
-      const nextPositions = entitiesToUpdate.map<Position>((entity) =>
-        isMovable(entity)
-          ? {
-              x: entity.position.x + int(entity.velocity.x * elapsedTime),
-              y: entity.position.y + int(entity.velocity.y * elapsedTime),
-              z: entity.position.z + int(entity.velocity.z * elapsedTime),
-            }
-          : entity.position
-      );
-
-      // @todo get collisions
-
-      for (let i = 0; i !== entitiesToUpdate.length; i++) {
-        const entity = entitiesToUpdate[i];
-        const nextPosition = nextPositions[i];
-
-        entity.position = nextPosition;
-
-        entity.update?.(elapsedTime, this.buttons);
-
-        // apply gravity
-        if (isMovable(entity)) {
-          entity.velocity.x += this.state.universe.acceleration.x * elapsedTime;
-          entity.velocity.y += this.state.universe.acceleration.y * elapsedTime;
-          entity.velocity.z += this.state.universe.acceleration.z * elapsedTime;
-        }
-
-        // update viewport
-        if (entity instanceof Mario) {
-          const entityCenterX = entity.position.x + entity.length.x / 2;
-          const viewportCenterX =
-            this.state.viewport.position.x + this.state.viewport.length.x / 2;
-          const maxViewportPositionX =
-            this.state.universe.length.x - this.state.viewport.length.x;
-
-          // follow entity with viewport
-          if (
-            entityCenterX > viewportCenterX &&
-            this.state.viewport.position.x < maxViewportPositionX
-          ) {
-            this.state.viewport.position.x = clamp(
-              this.state.viewport.position.x,
-              entityCenterX - this.state.viewport.length.x / 2,
-              maxViewportPositionX
-            );
-          }
-
-          const minPositionX = this.state.viewport.position.x;
-          const maxPositionX =
-            this.state.viewport.position.x +
-            this.state.viewport.length.x -
-            entity.length.x;
-
-          // prevent entity from overflowing viewport
-          if (entity.position.x < minPositionX) {
-            entity.position.x = minPositionX;
-
-            if (entity.velocity.x < 0) {
-              entity.velocity.x = 0;
-            }
-          } else if (entity.position.x > maxPositionX) {
-            entity.position.x = maxPositionX;
-
-            if (entity.velocity.x > 0) {
-              entity.velocity.x = 0;
-            }
-          }
-        }
-      }
-    }
-    this.prevUpdateTime = now;
-
-    */
   };
 
   pause = (): void => {
     if (this.animationFrameRequest) {
       cancelAnimationFrame(this.animationFrameRequest);
     }
+
     this.isPaused = true;
   };
 
@@ -557,11 +523,12 @@ export class Game {
   };
 
   start = (): void => {
-    this.isStopped = false;
     this.context.canvas.addEventListener("keydown", this.onKeyDown);
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
     this.context.canvas.focus();
+
     this.animationFrameRequest = requestAnimationFrame(this.render);
+    this.isStopped = false;
     this.prevUpdateTime = performance.now();
     this.update();
   };

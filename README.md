@@ -10,7 +10,9 @@
 | RightArrow | move right           |
 | DownArrow  | crouch               |
 
+## physics
 
+Acceleration is only applied (converted to change in velocity) once per update (`TIME_UNIT_LENGTH`).
 
 ## collision detection
 
@@ -32,7 +34,6 @@ On each update, determine where each rendered entity should be now based on its 
 
 - lose when mario hits y=0
 - win when mario hits flag
-- move entity logic into entity classes
 - mario bitmaps/animation
 - game time
   - needed to animate i.e. question blocks
@@ -49,4 +50,3 @@ On each update, determine where each rendered entity should be now based on its 
 - text at the top
   - _Score_, _Coins_, _World_, _Time_, _Lives_
   - font
-- a better way of logging fps

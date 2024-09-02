@@ -4,8 +4,15 @@ import {
   COLOR_TRANSPARENT,
   COLOR_YELLOW_DARK,
 } from "@/constants";
-import { Bitmap, Button, CollidableEntity, MovableEntity, MS } from "@/types";
-import { clamp, drawBitmap, gridUnits, int, pixels } from "@/utils";
+import {
+  Acceleration,
+  Bitmap,
+  Button,
+  CollidableEntity,
+  MovableEntity,
+  MS,
+} from "@/types";
+import { drawBitmap, gridUnits, pixels } from "@/utils";
 
 const G = COLOR_GREEN_DARK;
 const R = COLOR_RED;
@@ -60,6 +67,11 @@ const STANDING_LEFT_SMALL = drawBitmap(
 );
 const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
+const ACCELERATION: Acceleration = {
+  x: pixels(300) / 1000 / 1000, // pixels/s^2
+  y: pixels(150) / 1000 / 1000, // pixels/s^2
+  z: 0,
+};
 const JUMP_INPUT_DURATION = 250; // ms
 
 export class Mario implements CollidableEntity, MovableEntity {
@@ -78,17 +90,18 @@ export class Mario implements CollidableEntity, MovableEntity {
     return this.isFacingLeft ? STANDING_LEFT_SMALL : STANDING_RIGHT_SMALL;
   }
 
+  acceleration = {
+    x: 0,
+    y: 0,
+    z: 0,
+  };
   collidableSides = {
     bottom: true,
     left: true,
     right: true,
     top: true,
   };
-  deceleration = {
-    x: pixels(128) / 1000, // pixels/s^2
-    y: 0,
-    z: 0,
-  };
+  friction = 3;
   isAccelerating = false;
   isFacingLeft = false;
   isJumping = false;
@@ -102,14 +115,6 @@ export class Mario implements CollidableEntity, MovableEntity {
     z: 0,
   };
 
-  get acceleration() {
-    return {
-      x: pixels(this.isAccelerating ? 164 : 82) / 1000, // pixels/s^2
-      y: pixels(41) / 1000, // pixels/s^2
-      z: 0,
-    };
-  }
-
   get length() {
     return {
       x: gridUnits(1) - pixels(4),
@@ -120,8 +125,8 @@ export class Mario implements CollidableEntity, MovableEntity {
 
   get vmax() {
     return {
-      x: pixels(this.isAccelerating ? 164 : 82) / 1000, // pixels/s^2
-      y: pixels(404) / 1000, // pixels/s^2
+      x: pixels(this.isAccelerating ? 200 : 100) / 1000, // pixels/s
+      y: pixels(360) / 1000, // pixels/s
       z: 0,
     };
   }
@@ -152,8 +157,6 @@ export class Mario implements CollidableEntity, MovableEntity {
     const isPressingLeft = buttons.has("left") && !buttons.has("right");
     const isPressingRight = buttons.has("right") && !buttons.has("left");
 
-    this.isAccelerating = isPressingA;
-
     if (!isPressingB) {
       this.jumpInputDuration = null;
     }
@@ -164,32 +167,19 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.isFacingLeft = false;
     }
 
-    // decelerate if moving left but no longer pressing left
-    if (!isPressingLeft && this.velocity.x < 0) {
-      this.velocity.x += Math.min(
-        this.deceleration.x * elapsedTime,
-        -this.velocity.x
-      );
-    }
-    // decelerate if moving right but no longer pressing right
-    if (!isPressingRight && this.velocity.x > 0) {
-      this.velocity.x -= Math.min(
-        this.deceleration.x * elapsedTime,
-        this.velocity.x
-      );
-    }
+    this.isAccelerating = isPressingA;
 
-    // accelerate if pressing left
+    this.acceleration.x = 0;
+
+    // accelerate if pressing direction
+    // @todo && isTouchingBottom
     // @todo && !isTouchingLeft
     if (isPressingLeft) {
-      this.velocity.x -= this.acceleration.x * elapsedTime;
-      this.isFacingLeft = true;
+      this.acceleration.x = -ACCELERATION.x;
     }
-    // accelerate if pressing right
     // @todo && !isTouchingRight
     if (isPressingRight) {
-      this.velocity.x += this.acceleration.x * elapsedTime;
-      this.isFacingLeft = false;
+      this.acceleration.x = ACCELERATION.x;
     }
 
     /*
@@ -204,15 +194,12 @@ export class Mario implements CollidableEntity, MovableEntity {
       if (this.jumpInputDuration === null) {
         this.isJumping = true;
         this.jumpInputDuration = elapsedTime;
-        this.velocity.y += int(this.acceleration.y * elapsedTime);
+        // this.velocity.y += int(this.acceleration.y * elapsedTime);
       } else if (this.jumpInputDuration < JUMP_INPUT_DURATION) {
         this.jumpInputDuration += elapsedTime;
-        this.velocity.y += int(this.acceleration.y * elapsedTime);
+        // this.velocity.y += int(this.acceleration.y * elapsedTime);
       }
-      // @todo if flower, throw fireball
+      // @todo if has flower, throw fireball
     }
-
-    this.velocity.x = clamp(-this.vmax.x, this.velocity.x, this.vmax.x);
-    this.velocity.y = clamp(-this.vmax.y, this.velocity.y, this.vmax.y);
   }
 }
