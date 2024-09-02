@@ -20,7 +20,7 @@ import {
   QuestionBlock,
   Wall,
 } from "@/entities";
-import { Button, Entity, MS, Position } from "@/types";
+import { Button, Entity, MS, Neighbors, Position } from "@/types";
 import {
   clamp,
   gridUnits,
@@ -227,7 +227,7 @@ export class Game {
       universe: {
         acceleration: {
           x: 0,
-          y: pixels(-1) / 1000, // pixels/s^2
+          y: pixels(-300) / 1000 / 1000, // pixels/s^2
           z: 0,
         },
         color: COLOR_BLUE,
@@ -418,18 +418,77 @@ export class Game {
         } while (collisions.length !== 0);
 
         let movableEntitiesIndex = 0;
-        for (let i = 0; i !== entitiesToUpdate.length; i++) {
-          const entity = entitiesToUpdate[i];
+        for (const entity of entitiesToUpdate) {
+          const neighbors: Neighbors = {
+            bottom: [],
+            left: [],
+            right: [],
+            top: [],
+          };
+
+          // get neighbors
+          if (isCollidable(entity)) {
+            for (const collidableEntity of collidableEntities) {
+              if (collidableEntity === entity) {
+                continue;
+              }
+
+              const isHorizontalOverlap = !(
+                entity.position.x + entity.length.x <=
+                  collidableEntity.position.x ||
+                entity.position.x >=
+                  collidableEntity.position.x + collidableEntity.length.x
+              );
+              const isVerticalOverlap = !(
+                entity.position.x + entity.length.x <=
+                  collidableEntity.position.x ||
+                entity.position.x >=
+                  collidableEntity.position.x + collidableEntity.length.x
+              );
+
+              if (
+                collidableEntity.position.y + collidableEntity.length.y ===
+                  entity.position.y &&
+                isHorizontalOverlap
+              ) {
+                neighbors.bottom.push(collidableEntity);
+              }
+              if (
+                collidableEntity.position.x + collidableEntity.length.x ===
+                  entity.position.x &&
+                isVerticalOverlap
+              ) {
+                neighbors.left.push(collidableEntity);
+              }
+              if (
+                collidableEntity.position.x ===
+                  entity.position.x + entity.length.x &&
+                isVerticalOverlap
+              ) {
+                neighbors.right.push(collidableEntity);
+              }
+              if (
+                collidableEntity.position.y ===
+                  entity.position.y + entity.length.y &&
+                isHorizontalOverlap
+              ) {
+                neighbors.top.push(collidableEntity);
+              }
+            }
+          }
 
           if (isMovable(entity)) {
+            const index = movableEntitiesIndex++;
+
             // update position
-            entity.position = nextPositions[movableEntitiesIndex++];
+            entity.position = nextPositions[index];
 
             // apply friction
+            // realistically we should also require `&& neighbors.bottom.length`, but mario slows even in the air
             if (
               entity.friction &&
-              ((entity.velocity.x < 0 && entity.acceleration.x >= 0) ||
-                (entity.velocity.x > 0 && entity.acceleration.x <= 0))
+              ((entity.velocity.x > 0 && entity.acceleration.x <= 0) ||
+                (entity.velocity.x < 0 && entity.acceleration.x >= 0))
             ) {
               if (Math.abs(entity.velocity.x) < MIN_VELOCITY) {
                 entity.velocity.x = 0;
@@ -440,8 +499,7 @@ export class Game {
             }
 
             // apply gravity
-            entity.velocity.x +=
-              this.state.universe.acceleration.x * elapsedTime;
+            // entity.velocity.y += this.state.universe.acceleration.y * elapsedTime;
 
             // clamp velocity
             entity.velocity.x = clamp(
@@ -500,7 +558,7 @@ export class Game {
           }
 
           // update entity
-          entity.update?.(elapsedTime, this.buttons);
+          entity.update?.(elapsedTime, this.buttons, neighbors);
         }
       }
     }

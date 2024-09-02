@@ -20,7 +20,7 @@ export interface Entity {
   length: Length;
   position: Position;
   render(context: CanvasRenderingContext2D): void;
-  update?(elapsedTime: MS, buttons: Set<Button>): void; // @todo collisions: Collision[]
+  update?(elapsedTime: MS, buttons: Set<Button>, neighbors: Neighbors): void;
 }
 
 export type Length = {
@@ -37,6 +37,8 @@ export interface MovableEntity extends Entity {
 }
 
 export type MS = number; // milliseconds
+
+export type Neighbors = Record<Side, CollidableEntity[]>;
 
 export type Position = {
   x: number; // planckUnits (>= 0)

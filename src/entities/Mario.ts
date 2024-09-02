@@ -11,6 +11,7 @@ import {
   CollidableEntity,
   MovableEntity,
   MS,
+  Neighbors,
 } from "@/types";
 import { drawBitmap, gridUnits, pixels } from "@/utils";
 
@@ -69,13 +70,13 @@ const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
 const ACCELERATION: Acceleration = {
   x: pixels(300) / 1000 / 1000, // pixels/s^2
-  y: pixels(150) / 1000 / 1000, // pixels/s^2
+  y: pixels(900) / 1000 / 1000, // pixels/s^2
   z: 0,
 };
 const JUMP_INPUT_DURATION = 250; // ms
 
 export class Mario implements CollidableEntity, MovableEntity {
-  private jumpInputDuration: MS | null = null;
+  private jumpInputDuration: MS = JUMP_INPUT_DURATION;
 
   private get Image(): OffscreenCanvas {
     // @todo
@@ -103,6 +104,7 @@ export class Mario implements CollidableEntity, MovableEntity {
   };
   friction = 3;
   isAccelerating = false;
+  isCrouching = false;
   isFacingLeft = false;
   isJumping = false;
   isSliding = false;
@@ -126,7 +128,7 @@ export class Mario implements CollidableEntity, MovableEntity {
   get vmax() {
     return {
       x: pixels(this.isAccelerating ? 200 : 100) / 1000, // pixels/s
-      y: pixels(360) / 1000, // pixels/s
+      y: pixels(600) / 1000, // pixels/s
       z: 0,
     };
   }
@@ -150,15 +152,18 @@ export class Mario implements CollidableEntity, MovableEntity {
     );
   }
 
-  update(elapsedTime: MS, buttons: Set<Button>): void {
+  update(elapsedTime: MS, buttons: Set<Button>, neighbors: Neighbors): void {
     const isPressingA = buttons.has("a");
     const isPressingB = buttons.has("b");
     const isPressingDown = buttons.has("down") && !buttons.has("up");
     const isPressingLeft = buttons.has("left") && !buttons.has("right");
     const isPressingRight = buttons.has("right") && !buttons.has("left");
+    const isTouchingBottom = neighbors.bottom.length !== 0;
+    const isTouchingLeft = neighbors.left.length !== 0;
+    const isTouchingRight = neighbors.right.length !== 0;
 
     if (!isPressingB) {
-      this.jumpInputDuration = null;
+      this.jumpInputDuration = JUMP_INPUT_DURATION;
     }
     if (isPressingLeft) {
       this.isFacingLeft = true;
@@ -167,38 +172,37 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.isFacingLeft = false;
     }
 
+    if (isTouchingBottom) {
+      this.jumpInputDuration = 0;
+      this.isJumping = false;
+    }
+
     this.isAccelerating = isPressingA;
+    this.isCrouching = this.size === "large" && isPressingDown;
 
     this.acceleration.x = 0;
+    this.acceleration.y = 0;
 
-    // accelerate if pressing direction
-    // @todo && isTouchingBottom
-    // @todo && !isTouchingLeft
-    if (isPressingLeft) {
+    if (isPressingLeft && !isTouchingLeft) {
       this.acceleration.x = -ACCELERATION.x;
     }
-    // @todo && !isTouchingRight
-    if (isPressingRight) {
+    if (isPressingRight && !isTouchingRight) {
       this.acceleration.x = ACCELERATION.x;
     }
 
-    /*
-    if (neighbors.bottom) {
-      this.isJumping = false;
-    }
-    */
-
-    // jump
     if (isPressingB) {
-      // @todo if neighbors.bottom
-      if (this.jumpInputDuration === null) {
+      if (!this.isJumping && isTouchingBottom) {
         this.isJumping = true;
         this.jumpInputDuration = elapsedTime;
-        // this.velocity.y += int(this.acceleration.y * elapsedTime);
-      } else if (this.jumpInputDuration < JUMP_INPUT_DURATION) {
+        this.acceleration.y = ACCELERATION.y;
+      } else if (
+        this.isJumping &&
+        this.jumpInputDuration < JUMP_INPUT_DURATION
+      ) {
         this.jumpInputDuration += elapsedTime;
-        // this.velocity.y += int(this.acceleration.y * elapsedTime);
+        this.acceleration.y = ACCELERATION.y;
       }
+
       // @todo if has flower, throw fireball
     }
   }
