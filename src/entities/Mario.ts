@@ -79,7 +79,7 @@ const ACCELERATION: Acceleration = {
   y: gridUnitsPerSecondPerSecond(60),
   z: 0,
 };
-const JUMP_INPUT_DURATION = 250; // ms
+const JUMP_INPUT_DURATION: MS = 250;
 
 export class Mario implements CollidableEntity, MovableEntity {
   private jumpTime: MS | null = null;
@@ -130,7 +130,6 @@ export class Mario implements CollidableEntity, MovableEntity {
       z: 1,
     };
   }
-
   get vmax() {
     return {
       x: gridUnitsPerSecond(this.isAccelerating ? 10 : 5),

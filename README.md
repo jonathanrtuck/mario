@@ -2,13 +2,13 @@
 
 ## keys
 
-| Key        | Action               |
-| ---------- | -------------------- |
-| z          | run / throw fireball |
-| x          | jump                 |
-| LeftArrow  | move left            |
-| RightArrow | move right           |
-| DownArrow  | crouch               |
+| Key(s)            | Action               |
+| ----------------- | -------------------- |
+| `Shift`, `z`      | run / throw fireball |
+| `Spacebar`, `x`   | jump                 |
+| `a`, `LeftArrow`  | move left            |
+| `d`, `RightArrow` | move right           |
+| `s`, `DownArrow`  | crouch               |
 
 ## physics
 

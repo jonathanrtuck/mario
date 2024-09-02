@@ -256,21 +256,28 @@ export class Game {
     typeof requestAnimationFrame
   > | null = null;
   private buttons = new Set<Button>();
-  private isPaused = false;
-  private isStopped = true;
+  private pauseTime: MS | null = null;
   private prevUpdateTime: MS | null = null;
+  private stopTime: MS | null = null;
 
   context: CanvasRenderingContext2D;
   keyBinding: Record<Button, Set<string>> = {
-    a: new Set(["z"]), // run
-    b: new Set(["x"]), // jump
-    down: new Set(["ArrowDown"]),
-    left: new Set(["ArrowLeft"]),
-    right: new Set(["ArrowRight"]),
+    a: new Set(["Shift", "z", "Z"]), // run
+    b: new Set([" ", "x", "X"]), // jump
+    down: new Set(["s", "S", "ArrowDown"]), // crouch
+    left: new Set(["a", "A", "ArrowLeft"]), // left
+    right: new Set(["d", "D", "ArrowRight"]), // right
     start: new Set(["Enter"]), // pause
-    up: new Set(["ArrowUp"]), // nothing
+    up: new Set(["w", "W", "ArrowUp"]), // [nothing]
   };
   state: State;
+
+  get isPaused() {
+    return this.pauseTime !== null;
+  }
+  get isStopped() {
+    return this.stopTime !== null;
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.context = canvas.getContext("2d")!;
@@ -282,7 +289,11 @@ export class Game {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        this.buttons.add(button);
+        if (button === "start") {
+          (this.isPaused ? this.unpause : this.pause)();
+        } else {
+          this.buttons.add(button);
+        }
       }
     }
   };
@@ -600,22 +611,23 @@ export class Game {
       cancelAnimationFrame(this.animationFrameRequest);
     }
 
-    this.isPaused = true;
+    this.pauseTime = performance.now();
   };
 
   // @todo
   reset = (): void => {
-    this.isPaused = false;
-    this.isStopped = false;
+    this.pauseTime = null;
+    this.stopTime = null;
   };
 
   start = (): void => {
+    this.stopTime = null;
+
     this.context.canvas.addEventListener("keydown", this.onKeyDown);
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
     this.context.canvas.focus();
 
     this.animationFrameRequest = requestAnimationFrame(this.render);
-    this.isStopped = false;
     this.prevUpdateTime = performance.now();
     this.update();
   };
@@ -627,11 +639,18 @@ export class Game {
 
     this.context.canvas.removeEventListener("keydown", this.onKeyDown);
     this.context.canvas.removeEventListener("keyup", this.onKeyUp);
-    this.isStopped = true;
+
+    this.pauseTime = null;
+    this.stopTime = performance.now();
   };
 
   unpause = (): void => {
-    this.isPaused = false;
+    if (this.pauseTime !== null && this.prevUpdateTime !== null) {
+      this.prevUpdateTime =
+        performance.now() - (this.pauseTime - this.prevUpdateTime);
+    }
+
+    this.pauseTime = null;
     this.animationFrameRequest = requestAnimationFrame(this.render);
   };
 }
