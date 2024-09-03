@@ -41,6 +41,14 @@ export const int = (num: number): number => Math.trunc(num);
 export const isCollidable = (entity: Entity): entity is CollidableEntity =>
   (entity as CollidableEntity).collidableSides !== undefined;
 
+export const isOverlapByDimension = (
+  aPosition: number,
+  aLength: number,
+  bPosition: number,
+  bLength: number
+): boolean =>
+  !(aPosition + aLength <= bPosition || aPosition >= bPosition + bLength);
+
 export const isMovable = (entity: Entity): entity is MovableEntity =>
   (entity as MovableEntity).velocity !== undefined;
 

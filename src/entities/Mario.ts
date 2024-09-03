@@ -76,10 +76,10 @@ const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
 const ACCELERATION: Acceleration = {
   x: gridUnitsPerSecondPerSecond(12),
-  y: gridUnitsPerSecondPerSecond(60),
+  y: gridUnitsPerSecondPerSecond(136),
   z: 0,
 };
-const JUMP_INPUT_DURATION: MS = 250;
+const JUMP_INPUT_DURATION: MS = 200;
 
 export class Mario implements CollidableEntity, MovableEntity {
   private jumpTime: MS | null = null;
@@ -108,6 +108,7 @@ export class Mario implements CollidableEntity, MovableEntity {
     right: true,
     top: true,
   };
+  elasticity = 0;
   friction = 3;
   isAccelerating = false;
   isCrouching = false;
@@ -132,8 +133,8 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
   get vmax() {
     return {
-      x: gridUnitsPerSecond(this.isAccelerating ? 10 : 5),
-      y: gridUnitsPerSecond(24),
+      x: gridUnitsPerSecond(this.isAccelerating ? 12 : 6),
+      y: gridUnitsPerSecond(18),
       z: 0,
     };
   }
@@ -178,7 +179,6 @@ export class Mario implements CollidableEntity, MovableEntity {
     }
 
     if (isTouchingBottom) {
-      this.jumpTime = null;
       this.isJumping = false;
     }
 
@@ -198,7 +198,7 @@ export class Mario implements CollidableEntity, MovableEntity {
     if (isPressingB) {
       const now = performance.now();
 
-      if (!this.isJumping && isTouchingBottom) {
+      if (!this.isJumping && this.jumpTime === null && isTouchingBottom) {
         this.isJumping = true;
         this.jumpTime = now;
         this.acceleration.y = ACCELERATION.y;
