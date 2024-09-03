@@ -435,7 +435,7 @@ export class Game {
           entity.length.y
       );
 
-      entity.render(this.context);
+      entity.render(this.context, this.time);
 
       this.context.restore();
     }
@@ -914,7 +914,7 @@ export class Game {
           }
 
           // update entity
-          entity.update?.(this.time, this.buttons, neighbors);
+          entity.update?.(this.buttons, neighbors);
         }
 
         if (this.numUpdatesSinceRender === UPDATES_PER_RENDER) {

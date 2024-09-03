@@ -14,6 +14,7 @@ export const COLOR_BLACK: Color = "rgba(0, 0, 0, 255)";
 export const COLOR_BLUE: Color = "rgba(155, 157, 248, 255)";
 export const COLOR_BLUE_LIGHT: Color = "rgba(128, 184, 249, 255)";
 export const COLOR_BROWN: Color = "rgba(154, 95, 32, 255)";
+export const COLOR_BROWN_DARK: Color = "rgba(76, 36, 8, 255)";
 export const COLOR_BROWN_LIGHT: Color = "rgba(248, 211, 205, 255)";
 export const COLOR_GREEN: Color = "rgba(75, 154, 44, 255)";
 export const COLOR_GREEN_DARK: Color = "rgba(121, 121, 36, 255)";
@@ -36,3 +37,5 @@ export const UPDATE_INTERVAL: MS = 1000 / 120; // 120hz
 export const UPDATES_PER_RENDER = 2; // 60hz
 
 export const UPDATES_PER_TICK = 48; // 400ms
+
+export const RENDERS_PER_TICK = UPDATES_PER_TICK / UPDATES_PER_RENDER;

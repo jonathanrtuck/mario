@@ -19,8 +19,8 @@ export type Color = `rgba(${number}, ${number}, ${number}, ${number})`;
 export interface Entity {
   length: Length;
   position: Position;
-  render(context: CanvasRenderingContext2D): void;
-  update?(time: number, buttons: Set<Button>, neighbors: Neighbors): void;
+  render(context: CanvasRenderingContext2D, time: number): void;
+  update?(buttons: Set<Button>, neighbors: Neighbors): void;
 }
 
 export type Length = {

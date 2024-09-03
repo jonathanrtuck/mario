@@ -34,7 +34,6 @@ On each update, determine where each rendered entity should be now based on its 
 
 ## todo
 
-- question block bitmaps/animation
 - mario bitmaps/animation
 - enemies
 - items
@@ -43,5 +42,3 @@ On each update, determine where each rendered entity should be now based on its 
   - flower
   - star
 - underworld
-- text at the top
-  - _Score_, _Coins_, _World_, ~~_Time_~~, _Lives_
