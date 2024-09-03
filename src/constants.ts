@@ -23,7 +23,7 @@ export const COLOR_TRANSPARENT: Color = "rgba(0, 0, 0, 0)";
 export const COLOR_WHITE: Color = "rgba(255, 255, 255, 255)";
 export const COLOR_YELLOW_DARK: Color = "rgba(227, 169, 76, 255)";
 
-export const MIN_VELOCITY = 0.25;
+export const MIN_VELOCITY = 0.25; // planckUnits/ms
 
 export const PIXEL_LENGTH = 16; // planckUnits
 
@@ -31,6 +31,8 @@ export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16; // planckUnits
 
 export const SIDES = ["bottom", "left", "right", "top"] as const;
 
-export const TIME_UNIT_LENGTH: MS = 1000 / 120; // 120hz
+export const UPDATE_INTERVAL: MS = 1000 / 120; // 120hz
 
-export const TIME_UNITS_PER_RENDER = 2;
+export const UPDATES_PER_RENDER = 2; // 60hz
+
+export const UPDATES_PER_TICK = 48; // 400ms

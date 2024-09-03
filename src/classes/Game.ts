@@ -4,9 +4,12 @@ import { State } from "@/classes";
 import {
   BUTTONS,
   COLOR_BLUE,
+  COLOR_TRANSPARENT,
+  COLOR_WHITE,
   MIN_VELOCITY,
-  TIME_UNIT_LENGTH,
-  TIME_UNITS_PER_RENDER,
+  UPDATE_INTERVAL,
+  UPDATES_PER_RENDER,
+  UPDATES_PER_TICK,
 } from "@/constants";
 import {
   Block,
@@ -21,24 +24,42 @@ import {
   QuestionBlock,
   Wall,
 } from "@/entities";
-import { Button, Entity, MS, Neighbors, Position, Side } from "@/types";
+import { Bitmap, Button, Entity, MS, Neighbors, Position, Side } from "@/types";
 import {
   clamp,
+  drawBitmap,
   gridUnits,
   gridUnitsPerSecondPerSecond,
   int,
   isCollidable,
   isOverlapByDimension,
   isMovable,
+  pixels,
 } from "@/utils";
 
+const T = COLOR_TRANSPARENT;
+const W = COLOR_WHITE;
+
+// prettier-ignore
+const X_BITMAP: Bitmap = [
+  [W,T,T,T,W],
+  [T,W,T,W,T],
+  [T,T,W,T,T],
+  [T,W,T,W,T],
+  [W,T,T,T,W],
+];
+
+const X = drawBitmap(X_BITMAP);
+
 export class Game {
+  static initialTime = 400;
+
   static get initialState(): State {
     return new State({
       entities: [
         new Wall(0, 0, 69, 4),
         new Hill(0, 4, "large"),
-        new Cloud(9, 12, "small"),
+        new Cloud(8, 12, "small"),
         new Bush(11, 4, "large"),
         new Hill(16, 4, "small"),
         new QuestionBlock(16, 7),
@@ -224,7 +245,7 @@ export class Game {
         new Cloud(219, 12, "large"),
         new Flag(198.4375, 5),
         new Castle(202, 4),
-        new Mario(2.125, 4, "small"),
+        new Mario(2.5625, 4, "small"),
       ].toSorted((a, b) => a.position.z - b.position.z),
       universe: {
         acceleration: {
@@ -256,10 +277,12 @@ export class Game {
 
   private buttons = new Set<Button>();
   private numUpdatesSinceRender = 0;
+  private numUpdatesSinceTick = 0;
   private pauseTime: MS | null = null;
   private prevUpdateTime: MS | null = null;
   private stopTime: MS | null = null;
 
+  coins: number;
   context: CanvasRenderingContext2D;
   keyBinding: Record<Button, Set<string>> = {
     a: new Set(["Shift", "z", "Z"]), // run
@@ -270,7 +293,9 @@ export class Game {
     start: new Set(["Enter"]), // pause
     up: new Set(["w", "W", "ArrowUp"]), // [nothing]
   };
+  score: number;
   state: State;
+  time: number;
 
   get isPaused() {
     return this.pauseTime !== null;
@@ -280,8 +305,11 @@ export class Game {
   }
 
   constructor(canvas: HTMLCanvasElement) {
+    this.coins = 0;
     this.context = canvas.getContext("2d")!;
+    this.score = 0;
     this.state = Game.initialState;
+    this.time = Game.initialTime;
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -312,8 +340,49 @@ export class Game {
     this.context.reset();
     this.context.canvas.height = this.state.viewport.length.y;
     this.context.canvas.width = this.state.viewport.length.x;
+
+    // render universe
     this.context.canvas.style.backgroundColor = this.state.universe.color;
 
+    // render text
+    this.context.font = `${pixels(11)}px PixelEmulator`;
+    this.context.fillStyle = COLOR_WHITE;
+
+    const sectionWidth = this.state.viewport.length.x / 4;
+    const top = pixels(12);
+    const bottom = pixels(21);
+
+    let x = sectionWidth * 0 + pixels(24);
+    this.context.fillText("MARIO", x, top);
+    this.context.fillText(String(this.score).padStart(6, "0"), x, bottom);
+
+    x = sectionWidth * 1 + pixels(30);
+    this.context.drawImage(
+      X,
+      x + pixels(8),
+      bottom - pixels(5),
+      pixels(5),
+      pixels(5)
+    );
+    this.context.fillText(
+      String(this.coins).padStart(2, "0"),
+      x + pixels(16),
+      bottom
+    );
+
+    x = sectionWidth * 2 + pixels(14);
+    this.context.fillText("WORLD", x, top);
+    this.context.fillText("1-1", x + pixels(11), bottom);
+
+    x = sectionWidth * 3 + pixels(8);
+    this.context.fillText("TIME", x, top);
+    this.context.fillText(
+      String(this.time).padStart(3, "0"),
+      x + pixels(6),
+      bottom
+    );
+
+    // render entities
     for (const entity of this.state.entities) {
       // only render entities within viewport
       if (
@@ -363,9 +432,21 @@ export class Game {
       const elapsedTime =
         this.prevUpdateTime === null ? 0 : now - this.prevUpdateTime;
 
-      if (elapsedTime >= TIME_UNIT_LENGTH) {
+      if (elapsedTime >= UPDATE_INTERVAL) {
         this.numUpdatesSinceRender++;
-        this.prevUpdateTime = now - (elapsedTime - TIME_UNIT_LENGTH);
+        this.prevUpdateTime = now - (elapsedTime - UPDATE_INTERVAL);
+
+        // update time
+        if (this.numUpdatesSinceTick === UPDATES_PER_TICK) {
+          this.numUpdatesSinceTick = 0;
+          this.time--;
+
+          if (this.time === 0) {
+            console.debug("lose");
+          }
+        } else {
+          this.numUpdatesSinceTick++;
+        }
 
         // only update entities within viewport
         const entitiesToUpdate = this.state.entities.filter(
@@ -387,9 +468,9 @@ export class Game {
         // apply acceleration
         for (const movableEntity of movableEntities) {
           movableEntity.velocity.x +=
-            movableEntity.acceleration.x * TIME_UNIT_LENGTH;
+            movableEntity.acceleration.x * UPDATE_INTERVAL;
           movableEntity.velocity.y +=
-            movableEntity.acceleration.y * TIME_UNIT_LENGTH;
+            movableEntity.acceleration.y * UPDATE_INTERVAL;
         }
 
         let collisions: [
@@ -400,7 +481,7 @@ export class Game {
         ][] = [];
 
         // collision detection
-        let timeRemaining = TIME_UNIT_LENGTH;
+        let timeRemaining = UPDATE_INTERVAL;
         do {
           collisions = [];
 
@@ -747,13 +828,13 @@ export class Game {
               } else {
                 entity.velocity.x -=
                   entity.velocity.x *
-                  (entity.friction * (TIME_UNIT_LENGTH / 1000));
+                  (entity.friction * (UPDATE_INTERVAL / 1000));
               }
             }
 
             // apply gravity
             entity.velocity.y +=
-              this.state.universe.acceleration.y * TIME_UNIT_LENGTH;
+              this.state.universe.acceleration.y * UPDATE_INTERVAL;
 
             // clamp velocity
             entity.velocity.x = clamp(
@@ -812,10 +893,10 @@ export class Game {
           }
 
           // update entity
-          entity.update?.(this.buttons, neighbors);
+          entity.update?.(this.time, this.buttons, neighbors);
         }
 
-        if (this.numUpdatesSinceRender === TIME_UNITS_PER_RENDER) {
+        if (this.numUpdatesSinceRender === UPDATES_PER_RENDER) {
           this.render();
           this.numUpdatesSinceRender = 0;
         }
@@ -831,8 +912,12 @@ export class Game {
 
   // @todo
   reset = (): void => {
+    this.coins = 0;
     this.pauseTime = null;
+    this.score = 0;
+    this.state = Game.initialState;
     this.stopTime = null;
+    this.time = Game.initialTime;
   };
 
   start = (): void => {
@@ -840,8 +925,12 @@ export class Game {
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
     this.context.canvas.focus();
 
-    this.stopTime = null;
+    this.coins = 0;
     this.prevUpdateTime = performance.now();
+    this.score = 0;
+    this.state = Game.initialState;
+    this.stopTime = null;
+    this.time = Game.initialTime;
     this.update();
   };
 

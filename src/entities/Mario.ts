@@ -20,6 +20,8 @@ import {
   pixels,
 } from "@/utils";
 
+import { Flag } from "./Flag";
+
 const G = COLOR_GREEN_DARK;
 const R = COLOR_RED;
 const T = COLOR_TRANSPARENT;
@@ -157,7 +159,15 @@ export class Mario implements CollidableEntity, MovableEntity {
     );
   }
 
-  update(buttons: Set<Button>, neighbors: Neighbors): void {
+  update(time: number, buttons: Set<Button>, neighbors: Neighbors): void {
+    if (neighbors.right.some((neighbor) => neighbor instanceof Flag)) {
+      console.debug("win");
+    }
+
+    if (this.position.y < 0) {
+      console.debug("lose");
+    }
+
     const isPressingA = buttons.has("a");
     const isPressingB = buttons.has("b");
     const isPressingDown = buttons.has("down") && !buttons.has("up");
