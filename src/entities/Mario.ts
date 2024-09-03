@@ -10,7 +10,6 @@ import {
   Button,
   CollidableEntity,
   MovableEntity,
-  MS,
   Neighbors,
 } from "@/types";
 import {
@@ -75,14 +74,14 @@ const STANDING_LEFT_SMALL = drawBitmap(
 const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
 const ACCELERATION: Acceleration = {
-  x: gridUnitsPerSecondPerSecond(12),
-  y: gridUnitsPerSecondPerSecond(640),
+  x: gridUnitsPerSecondPerSecond(13),
+  y: gridUnitsPerSecondPerSecond(900),
   z: 0,
 };
-const JUMP_INPUT_DURATION: MS = 200;
+const MAX_NUM_JUMP_INPUT_FRAMES = 24;
 
 export class Mario implements CollidableEntity, MovableEntity {
-  private jumpTime: MS | null = null;
+  private numJumpInputFrames = 0;
 
   private get Image(): OffscreenCanvas {
     // @todo
@@ -133,8 +132,8 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
   get vmax() {
     return {
-      x: gridUnitsPerSecond(this.isAccelerating ? 12 : 6),
-      y: gridUnitsPerSecond(18),
+      x: gridUnitsPerSecond(6.4) * (this.isAccelerating ? 2 : 1),
+      y: gridUnitsPerSecond(16),
       z: 0,
     };
   }
@@ -169,7 +168,7 @@ export class Mario implements CollidableEntity, MovableEntity {
     const isTouchingRight = neighbors.right.length !== 0;
 
     if (!isPressingB) {
-      this.jumpTime = null;
+      this.numJumpInputFrames = 0;
     }
     if (isPressingLeft) {
       this.isFacingLeft = true;
@@ -196,17 +195,20 @@ export class Mario implements CollidableEntity, MovableEntity {
     }
 
     if (isPressingB) {
-      const now = performance.now();
-
-      if (!this.isJumping && this.jumpTime === null && isTouchingBottom) {
+      if (
+        !this.isJumping &&
+        this.numJumpInputFrames === 0 &&
+        isTouchingBottom
+      ) {
         this.isJumping = true;
-        this.jumpTime = now;
+        this.numJumpInputFrames = 1;
         this.acceleration.y = ACCELERATION.y;
       } else if (
         this.isJumping &&
-        this.jumpTime !== null &&
-        now - this.jumpTime < JUMP_INPUT_DURATION
+        this.numJumpInputFrames !== 0 &&
+        this.numJumpInputFrames < MAX_NUM_JUMP_INPUT_FRAMES
       ) {
+        this.numJumpInputFrames++;
         this.acceleration.y = ACCELERATION.y / 8;
       }
 

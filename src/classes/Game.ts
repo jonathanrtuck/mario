@@ -1,5 +1,13 @@
+import "setimmediate";
+
 import { State } from "@/classes";
-import { BUTTONS, COLOR_BLUE, MIN_VELOCITY } from "@/constants";
+import {
+  BUTTONS,
+  COLOR_BLUE,
+  MIN_VELOCITY,
+  TIME_UNIT_LENGTH,
+  TIME_UNITS_PER_RENDER,
+} from "@/constants";
 import {
   Block,
   Brick,
@@ -221,7 +229,7 @@ export class Game {
       universe: {
         acceleration: {
           x: 0,
-          y: gridUnitsPerSecondPerSecond(-56),
+          y: gridUnitsPerSecondPerSecond(-64),
           z: 0,
         },
         color: COLOR_BLUE,
@@ -246,12 +254,11 @@ export class Game {
     });
   }
 
-  private animationFrameRequest: ReturnType<
-    typeof requestAnimationFrame
-  > | null = null;
   private buttons = new Set<Button>();
+  private numUpdatesSinceRender = 0;
   private pauseTime: MS | null = null;
   private prevUpdateTime: MS | null = null;
+  private stopTime: MS | null = null;
 
   context: CanvasRenderingContext2D;
   keyBinding: Record<Button, Set<string>> = {
@@ -267,6 +274,9 @@ export class Game {
 
   get isPaused() {
     return this.pauseTime !== null;
+  }
+  get isStopped() {
+    return this.stopTime !== null;
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -345,463 +355,484 @@ export class Game {
   private update = (): void => {
     const now = performance.now();
 
+    if (this.isStopped) {
+      return;
+    }
+
     if (!this.isPaused) {
       const elapsedTime =
         this.prevUpdateTime === null ? 0 : now - this.prevUpdateTime;
-      this.prevUpdateTime = now;
 
-      // only update entities within viewport
-      const entitiesToUpdate = this.state.entities.filter(
-        (entity) =>
-          entity.position.x <
-            this.state.viewport.position.x +
-              this.state.viewport.length.x +
-              gridUnits(2) &&
-          entity.position.x + entity.length.x >
-            this.state.viewport.position.x - gridUnits(2) &&
-          entity.position.z <=
-            this.state.viewport.position.z + this.state.viewport.length.z &&
-          entity.position.z + entity.length.z >= this.state.viewport.position.z
-      );
-      const collidableEntities = entitiesToUpdate.filter(isCollidable);
-      const movableEntities = entitiesToUpdate.filter(isMovable);
+      if (elapsedTime >= TIME_UNIT_LENGTH) {
+        this.numUpdatesSinceRender++;
+        this.prevUpdateTime = now - (elapsedTime - TIME_UNIT_LENGTH);
 
-      // apply acceleration
-      for (const movableEntity of movableEntities) {
-        movableEntity.velocity.x += movableEntity.acceleration.x * elapsedTime;
-        movableEntity.velocity.y += movableEntity.acceleration.y * elapsedTime;
-      }
+        // only update entities within viewport
+        const entitiesToUpdate = this.state.entities.filter(
+          (entity) =>
+            entity.position.x <
+              this.state.viewport.position.x +
+                this.state.viewport.length.x +
+                gridUnits(2) &&
+            entity.position.x + entity.length.x >
+              this.state.viewport.position.x - gridUnits(2) &&
+            entity.position.z <=
+              this.state.viewport.position.z + this.state.viewport.length.z &&
+            entity.position.z + entity.length.z >=
+              this.state.viewport.position.z
+        );
+        const collidableEntities = entitiesToUpdate.filter(isCollidable);
+        const movableEntities = entitiesToUpdate.filter(isMovable);
 
-      let collisions: [
-        time: MS,
-        movableEntityIndex: number,
-        side: Side,
-        collidableEntityIndex: number
-      ][] = [];
-
-      // collision detection
-      let timeRemaining = elapsedTime;
-      do {
-        collisions = [];
-
-        // get movableEntities' projected positions based on their velocity and remaining time
-        const projectedPositions = new Array<Position>(movableEntities.length);
-
-        for (let i = 0; i !== movableEntities.length; i++) {
-          const movableEntity = movableEntities[i];
-
-          projectedPositions[i] = {
-            x: int(
-              movableEntity.position.x +
-                movableEntity.velocity.x * timeRemaining
-            ),
-            y: int(
-              movableEntity.position.y +
-                movableEntity.velocity.y * timeRemaining
-            ),
-            z: movableEntity.position.z,
-          };
+        // apply acceleration
+        for (const movableEntity of movableEntities) {
+          movableEntity.velocity.x +=
+            movableEntity.acceleration.x * TIME_UNIT_LENGTH;
+          movableEntity.velocity.y +=
+            movableEntity.acceleration.y * TIME_UNIT_LENGTH;
         }
 
-        // get collisions
-        for (
-          let movableEntityIndex = 0;
-          movableEntityIndex !== movableEntities.length;
-          movableEntityIndex++
-        ) {
-          const movableEntity = movableEntities[movableEntityIndex];
+        let collisions: [
+          time: MS,
+          movableEntityIndex: number,
+          side: Side,
+          collidableEntityIndex: number
+        ][] = [];
 
-          if (!isCollidable(movableEntity)) {
-            continue;
+        // collision detection
+        let timeRemaining = TIME_UNIT_LENGTH;
+        do {
+          collisions = [];
+
+          // get movableEntities' projected positions based on their velocity and remaining time
+          const projectedPositions = new Array<Position>(
+            movableEntities.length
+          );
+
+          for (let i = 0; i !== movableEntities.length; i++) {
+            const movableEntity = movableEntities[i];
+
+            projectedPositions[i] = {
+              x: int(
+                movableEntity.position.x +
+                  movableEntity.velocity.x * timeRemaining
+              ),
+              y: int(
+                movableEntity.position.y +
+                  movableEntity.velocity.y * timeRemaining
+              ),
+              z: movableEntity.position.z,
+            };
           }
 
-          const movablePosition = projectedPositions[movableEntityIndex];
-          let movableEntitiesIndex = 0;
-
+          // get collisions
           for (
-            let collidableEntityIndex = 0;
-            collidableEntityIndex !== collidableEntities.length;
-            collidableEntityIndex++
+            let movableEntityIndex = 0;
+            movableEntityIndex !== movableEntities.length;
+            movableEntityIndex++
           ) {
-            const collidableEntity = collidableEntities[collidableEntityIndex];
-            const collidablePosition = isMovable(collidableEntity)
-              ? projectedPositions[movableEntitiesIndex++]
-              : collidableEntity.position;
-
-            if ((movableEntity as Entity) === (collidableEntity as Entity)) {
-              continue;
-            }
-
-            if (
-              isOverlapByDimension(
-                movablePosition.x,
-                movableEntity.length.x,
-                collidablePosition.x,
-                collidableEntity.length.x
-              ) &&
-              isOverlapByDimension(
-                movablePosition.y,
-                movableEntity.length.y,
-                collidablePosition.y,
-                collidableEntity.length.y
-              ) &&
-              isOverlapByDimension(
-                movablePosition.z,
-                movableEntity.length.z,
-                collidablePosition.z,
-                collidableEntity.length.z
-              )
-            ) {
-              const collisionsBySide: [time: MS, side: Side][] = [];
-
-              if (
-                movableEntity.collidableSides.bottom &&
-                collidableEntity.collidableSides.top &&
-                movableEntity.position.y >=
-                  collidableEntity.position.y + collidableEntity.length.y &&
-                movablePosition.y <
-                  collidablePosition.y + collidableEntity.length.y
-              ) {
-                const prevLengthBetween =
-                  movableEntity.position.y -
-                  (collidableEntity.position.y + collidableEntity.length.y);
-                const totalLengthDelta =
-                  movableEntity.position.y - movablePosition.y;
-
-                collisionsBySide.push([
-                  (prevLengthBetween / totalLengthDelta) * timeRemaining,
-                  "bottom",
-                ]);
-              }
-              if (
-                movableEntity.collidableSides.left &&
-                collidableEntity.collidableSides.right &&
-                movableEntity.position.x >=
-                  collidableEntity.position.x + collidableEntity.length.x &&
-                movablePosition.x <
-                  collidablePosition.x + collidableEntity.length.x
-              ) {
-                const prevLengthBetween =
-                  movableEntity.position.x -
-                  (collidableEntity.position.x + collidableEntity.length.x);
-                const totalLengthDelta =
-                  movableEntity.position.x - movablePosition.x;
-
-                collisionsBySide.push([
-                  (prevLengthBetween / totalLengthDelta) * timeRemaining,
-                  "left",
-                ]);
-              }
-              if (
-                movableEntity.collidableSides.right &&
-                collidableEntity.collidableSides.left &&
-                movableEntity.position.x + movableEntity.length.x <=
-                  collidableEntity.position.x &&
-                movablePosition.x + movableEntity.length.x >
-                  collidablePosition.x
-              ) {
-                const prevLengthBetween =
-                  movableEntity.position.x +
-                  movableEntity.length.x -
-                  collidableEntity.position.x;
-                const totalLengthDelta =
-                  movableEntity.position.x - movablePosition.x;
-
-                collisionsBySide.push([
-                  (prevLengthBetween / totalLengthDelta) * timeRemaining,
-                  "right",
-                ]);
-              }
-              if (
-                movableEntity.collidableSides.top &&
-                collidableEntity.collidableSides.bottom &&
-                movableEntity.position.y + movableEntity.length.y <=
-                  collidableEntity.position.y &&
-                movablePosition.y + movableEntity.length.y >
-                  collidablePosition.y
-              ) {
-                const prevLengthBetween =
-                  movableEntity.position.y +
-                  movableEntity.length.y -
-                  collidableEntity.position.y;
-                const totalLengthDelta =
-                  movableEntity.position.y - movablePosition.y;
-
-                collisionsBySide.push([
-                  (prevLengthBetween / totalLengthDelta) * timeRemaining,
-                  "top",
-                ]);
-              }
-
-              if (collisionsBySide.length !== 0) {
-                collisionsBySide.sort(([aTime], [bTime]) => aTime - bTime);
-
-                const [time, side] = collisionsBySide[0];
-
-                collisions.push([
-                  time,
-                  movableEntityIndex,
-                  side,
-                  collidableEntityIndex,
-                ]);
-              }
-            }
-          }
-        }
-
-        // sort collisions by time
-        if (collisions.length !== 0) {
-          collisions.sort(([aTime], [bTime]) => aTime - bTime);
-
-          const [earliestTime] = collisions[0];
-
-          // update entities' positions up to earliestTime
-          for (const movableEntity of movableEntities) {
-            movableEntity.position.x = int(
-              movableEntity.position.x + movableEntity.velocity.x * earliestTime
-            );
-            movableEntity.position.y = int(
-              movableEntity.position.y + movableEntity.velocity.y * earliestTime
-            );
-          }
-
-          for (const collision of collisions) {
-            const [time, movableEntityIndex, side, collidableEntityIndex] =
-              collision;
-
-            if (time !== earliestTime) {
-              break;
-            }
-
             const movableEntity = movableEntities[movableEntityIndex];
-            const collidableEntity = collidableEntities[collidableEntityIndex];
 
-            switch (side) {
-              case "bottom":
-                movableEntity.position.y =
-                  collidableEntity.position.y + collidableEntity.length.y;
-                movableEntity.velocity.y =
-                  -movableEntity.velocity.y * movableEntity.elasticity;
-                break;
-              case "left":
-                movableEntity.position.x =
-                  collidableEntity.position.x + collidableEntity.length.x;
-                movableEntity.velocity.x =
-                  -movableEntity.velocity.x * movableEntity.elasticity;
-                break;
-              case "right":
-                movableEntity.position.x =
-                  collidableEntity.position.x - movableEntity.length.x;
-                movableEntity.velocity.x =
-                  -movableEntity.velocity.x * movableEntity.elasticity;
-                break;
-              case "top":
-                movableEntity.position.y =
-                  collidableEntity.position.y - movableEntity.length.y;
-                movableEntity.velocity.y =
-                  -movableEntity.velocity.y * movableEntity.elasticity;
-                break;
-            }
-          }
-
-          timeRemaining -= earliestTime;
-        } else {
-          // update entities' positions up to now
-          for (const movableEntity of movableEntities) {
-            movableEntity.position.x = int(
-              movableEntity.position.x +
-                movableEntity.velocity.x * timeRemaining
-            );
-            movableEntity.position.y = int(
-              movableEntity.position.y +
-                movableEntity.velocity.y * timeRemaining
-            );
-          }
-        }
-      } while (collisions.length !== 0);
-
-      for (const entity of entitiesToUpdate) {
-        const neighbors: Neighbors = {
-          bottom: [],
-          left: [],
-          right: [],
-          top: [],
-        };
-
-        // get neighbors
-        if (isCollidable(entity)) {
-          for (const collidableEntity of collidableEntities) {
-            if (collidableEntity === entity) {
+            if (!isCollidable(movableEntity)) {
               continue;
             }
 
-            if (
-              entity.collidableSides.bottom &&
-              collidableEntity.collidableSides.top &&
-              collidableEntity.position.y + collidableEntity.length.y ===
-                entity.position.y &&
-              isOverlapByDimension(
-                entity.position.x,
-                entity.length.x,
-                collidableEntity.position.x,
-                collidableEntity.length.x
-              )
+            const movablePosition = projectedPositions[movableEntityIndex];
+            let movableEntitiesIndex = 0;
+
+            for (
+              let collidableEntityIndex = 0;
+              collidableEntityIndex !== collidableEntities.length;
+              collidableEntityIndex++
             ) {
-              neighbors.bottom.push(collidableEntity);
+              const collidableEntity =
+                collidableEntities[collidableEntityIndex];
+              const collidablePosition = isMovable(collidableEntity)
+                ? projectedPositions[movableEntitiesIndex++]
+                : collidableEntity.position;
+
+              if ((movableEntity as Entity) === (collidableEntity as Entity)) {
+                continue;
+              }
+
+              if (
+                isOverlapByDimension(
+                  movablePosition.x,
+                  movableEntity.length.x,
+                  collidablePosition.x,
+                  collidableEntity.length.x
+                ) &&
+                isOverlapByDimension(
+                  movablePosition.y,
+                  movableEntity.length.y,
+                  collidablePosition.y,
+                  collidableEntity.length.y
+                ) &&
+                isOverlapByDimension(
+                  movablePosition.z,
+                  movableEntity.length.z,
+                  collidablePosition.z,
+                  collidableEntity.length.z
+                )
+              ) {
+                const collisionsBySide: [time: MS, side: Side][] = [];
+
+                if (
+                  movableEntity.collidableSides.bottom &&
+                  collidableEntity.collidableSides.top &&
+                  movableEntity.position.y >=
+                    collidableEntity.position.y + collidableEntity.length.y &&
+                  movablePosition.y <
+                    collidablePosition.y + collidableEntity.length.y
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.y -
+                    (collidableEntity.position.y + collidableEntity.length.y);
+                  const totalLengthDelta =
+                    movableEntity.position.y - movablePosition.y;
+
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "bottom",
+                  ]);
+                }
+                if (
+                  movableEntity.collidableSides.left &&
+                  collidableEntity.collidableSides.right &&
+                  movableEntity.position.x >=
+                    collidableEntity.position.x + collidableEntity.length.x &&
+                  movablePosition.x <
+                    collidablePosition.x + collidableEntity.length.x
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.x -
+                    (collidableEntity.position.x + collidableEntity.length.x);
+                  const totalLengthDelta =
+                    movableEntity.position.x - movablePosition.x;
+
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "left",
+                  ]);
+                }
+                if (
+                  movableEntity.collidableSides.right &&
+                  collidableEntity.collidableSides.left &&
+                  movableEntity.position.x + movableEntity.length.x <=
+                    collidableEntity.position.x &&
+                  movablePosition.x + movableEntity.length.x >
+                    collidablePosition.x
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.x +
+                    movableEntity.length.x -
+                    collidableEntity.position.x;
+                  const totalLengthDelta =
+                    movableEntity.position.x - movablePosition.x;
+
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "right",
+                  ]);
+                }
+                if (
+                  movableEntity.collidableSides.top &&
+                  collidableEntity.collidableSides.bottom &&
+                  movableEntity.position.y + movableEntity.length.y <=
+                    collidableEntity.position.y &&
+                  movablePosition.y + movableEntity.length.y >
+                    collidablePosition.y
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.y +
+                    movableEntity.length.y -
+                    collidableEntity.position.y;
+                  const totalLengthDelta =
+                    movableEntity.position.y - movablePosition.y;
+
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "top",
+                  ]);
+                }
+
+                if (collisionsBySide.length !== 0) {
+                  collisionsBySide.sort(([aTime], [bTime]) => aTime - bTime);
+
+                  const [time, side] = collisionsBySide[0];
+
+                  collisions.push([
+                    time,
+                    movableEntityIndex,
+                    side,
+                    collidableEntityIndex,
+                  ]);
+                }
+              }
             }
-            if (
-              entity.collidableSides.left &&
-              collidableEntity.collidableSides.right &&
-              collidableEntity.position.x + collidableEntity.length.x ===
-                entity.position.x &&
-              isOverlapByDimension(
-                entity.position.y,
-                entity.length.y,
-                collidableEntity.position.y,
-                collidableEntity.length.y
-              )
-            ) {
-              neighbors.left.push(collidableEntity);
-            }
-            if (
-              entity.collidableSides.right &&
-              collidableEntity.collidableSides.left &&
-              collidableEntity.position.x ===
-                entity.position.x + entity.length.x &&
-              isOverlapByDimension(
-                entity.position.y,
-                entity.length.y,
-                collidableEntity.position.y,
-                collidableEntity.length.y
-              )
-            ) {
-              neighbors.right.push(collidableEntity);
-            }
-            if (
-              entity.collidableSides.top &&
-              collidableEntity.collidableSides.bottom &&
-              collidableEntity.position.y ===
-                entity.position.y + entity.length.y &&
-              isOverlapByDimension(
-                entity.position.x,
-                entity.length.x,
-                collidableEntity.position.x,
-                collidableEntity.length.x
-              )
-            ) {
-              neighbors.top.push(collidableEntity);
-            }
-          }
-        }
-
-        if (isMovable(entity)) {
-          // update velocity based on neighbors
-          if (neighbors.bottom.length && entity.velocity.y < 0) {
-            entity.velocity.y = 0;
-          }
-          if (neighbors.left.length && entity.velocity.x < 0) {
-            entity.velocity.x = 0;
-          }
-          if (neighbors.right.length && entity.velocity.x > 0) {
-            entity.velocity.x = 0;
-          }
-          if (neighbors.top.length && entity.velocity.y > 0) {
-            entity.velocity.y = 0;
           }
 
-          // apply friction
-          // realistically we should also require `&& neighbors.bottom.length`, but mario slows even in the air
-          if (
-            entity.friction &&
-            ((entity.velocity.x > 0 && entity.acceleration.x <= 0) ||
-              (entity.velocity.x < 0 && entity.acceleration.x >= 0))
-          ) {
-            if (Math.abs(entity.velocity.x) < MIN_VELOCITY) {
-              entity.velocity.x = 0;
-            } else {
-              entity.velocity.x -=
-                entity.velocity.x * (entity.friction * (elapsedTime / 1000));
-            }
-          }
+          // sort collisions by time
+          if (collisions.length !== 0) {
+            collisions.sort(([aTime], [bTime]) => aTime - bTime);
 
-          // apply gravity
-          entity.velocity.y += this.state.universe.acceleration.y * elapsedTime;
+            const [earliestTime] = collisions[0];
 
-          // clamp velocity
-          entity.velocity.x = clamp(
-            -entity.vmax.x,
-            entity.velocity.x,
-            entity.vmax.x
-          );
-          entity.velocity.y = clamp(
-            -entity.vmax.y,
-            entity.velocity.y,
-            entity.vmax.y
-          );
-
-          // update viewport
-          if (entity instanceof Mario) {
-            const entityCenterX = entity.position.x + entity.length.x / 2;
-            const viewportCenterX =
-              this.state.viewport.position.x + this.state.viewport.length.x / 2;
-            const maxViewportPositionX =
-              this.state.universe.length.x - this.state.viewport.length.x;
-
-            // follow entity with viewport
-            if (
-              entityCenterX > viewportCenterX &&
-              this.state.viewport.position.x < maxViewportPositionX
-            ) {
-              this.state.viewport.position.x = clamp(
-                this.state.viewport.position.x,
-                entityCenterX - this.state.viewport.length.x / 2,
-                maxViewportPositionX
+            // update entities' positions up to earliestTime
+            for (const movableEntity of movableEntities) {
+              movableEntity.position.x = int(
+                movableEntity.position.x +
+                  movableEntity.velocity.x * earliestTime
+              );
+              movableEntity.position.y = int(
+                movableEntity.position.y +
+                  movableEntity.velocity.y * earliestTime
               );
             }
 
-            const minPositionX = this.state.viewport.position.x;
-            const maxPositionX =
-              this.state.viewport.position.x +
-              this.state.viewport.length.x -
-              entity.length.x;
+            for (const collision of collisions) {
+              const [time, movableEntityIndex, side, collidableEntityIndex] =
+                collision;
 
-            // prevent entity from overflowing viewport
-            if (entity.position.x < minPositionX) {
-              entity.position.x = minPositionX;
-
-              if (entity.velocity.x < 0) {
-                entity.velocity.x = 0;
+              if (time !== earliestTime) {
+                break;
               }
-            } else if (entity.position.x > maxPositionX) {
-              entity.position.x = maxPositionX;
 
-              if (entity.velocity.x > 0) {
-                entity.velocity.x = 0;
+              const movableEntity = movableEntities[movableEntityIndex];
+              const collidableEntity =
+                collidableEntities[collidableEntityIndex];
+
+              switch (side) {
+                case "bottom":
+                  movableEntity.position.y =
+                    collidableEntity.position.y + collidableEntity.length.y;
+                  movableEntity.velocity.y =
+                    -movableEntity.velocity.y * movableEntity.elasticity;
+                  break;
+                case "left":
+                  movableEntity.position.x =
+                    collidableEntity.position.x + collidableEntity.length.x;
+                  movableEntity.velocity.x =
+                    -movableEntity.velocity.x * movableEntity.elasticity;
+                  break;
+                case "right":
+                  movableEntity.position.x =
+                    collidableEntity.position.x - movableEntity.length.x;
+                  movableEntity.velocity.x =
+                    -movableEntity.velocity.x * movableEntity.elasticity;
+                  break;
+                case "top":
+                  movableEntity.position.y =
+                    collidableEntity.position.y - movableEntity.length.y;
+                  movableEntity.velocity.y =
+                    -movableEntity.velocity.y * movableEntity.elasticity;
+                  break;
+              }
+            }
+
+            timeRemaining -= earliestTime;
+          } else {
+            // update entities' positions up to now
+            for (const movableEntity of movableEntities) {
+              movableEntity.position.x = int(
+                movableEntity.position.x +
+                  movableEntity.velocity.x * timeRemaining
+              );
+              movableEntity.position.y = int(
+                movableEntity.position.y +
+                  movableEntity.velocity.y * timeRemaining
+              );
+            }
+          }
+        } while (collisions.length !== 0);
+
+        for (const entity of entitiesToUpdate) {
+          const neighbors: Neighbors = {
+            bottom: [],
+            left: [],
+            right: [],
+            top: [],
+          };
+
+          // get neighbors
+          if (isCollidable(entity)) {
+            for (const collidableEntity of collidableEntities) {
+              if (collidableEntity === entity) {
+                continue;
+              }
+
+              if (
+                entity.collidableSides.bottom &&
+                collidableEntity.collidableSides.top &&
+                collidableEntity.position.y + collidableEntity.length.y ===
+                  entity.position.y &&
+                isOverlapByDimension(
+                  entity.position.x,
+                  entity.length.x,
+                  collidableEntity.position.x,
+                  collidableEntity.length.x
+                )
+              ) {
+                neighbors.bottom.push(collidableEntity);
+              }
+              if (
+                entity.collidableSides.left &&
+                collidableEntity.collidableSides.right &&
+                collidableEntity.position.x + collidableEntity.length.x ===
+                  entity.position.x &&
+                isOverlapByDimension(
+                  entity.position.y,
+                  entity.length.y,
+                  collidableEntity.position.y,
+                  collidableEntity.length.y
+                )
+              ) {
+                neighbors.left.push(collidableEntity);
+              }
+              if (
+                entity.collidableSides.right &&
+                collidableEntity.collidableSides.left &&
+                collidableEntity.position.x ===
+                  entity.position.x + entity.length.x &&
+                isOverlapByDimension(
+                  entity.position.y,
+                  entity.length.y,
+                  collidableEntity.position.y,
+                  collidableEntity.length.y
+                )
+              ) {
+                neighbors.right.push(collidableEntity);
+              }
+              if (
+                entity.collidableSides.top &&
+                collidableEntity.collidableSides.bottom &&
+                collidableEntity.position.y ===
+                  entity.position.y + entity.length.y &&
+                isOverlapByDimension(
+                  entity.position.x,
+                  entity.length.x,
+                  collidableEntity.position.x,
+                  collidableEntity.length.x
+                )
+              ) {
+                neighbors.top.push(collidableEntity);
               }
             }
           }
+
+          if (isMovable(entity)) {
+            // update velocity based on neighbors
+            if (neighbors.bottom.length && entity.velocity.y < 0) {
+              entity.velocity.y = 0;
+            }
+            if (neighbors.left.length && entity.velocity.x < 0) {
+              entity.velocity.x = 0;
+            }
+            if (neighbors.right.length && entity.velocity.x > 0) {
+              entity.velocity.x = 0;
+            }
+            if (neighbors.top.length && entity.velocity.y > 0) {
+              entity.velocity.y = 0;
+            }
+
+            // apply friction
+            // realistically we should also require `&& neighbors.bottom.length`, but mario slows even in the air
+            if (
+              entity.friction &&
+              ((entity.velocity.x > 0 && entity.acceleration.x <= 0) ||
+                (entity.velocity.x < 0 && entity.acceleration.x >= 0))
+            ) {
+              if (Math.abs(entity.velocity.x) < MIN_VELOCITY) {
+                entity.velocity.x = 0;
+              } else {
+                entity.velocity.x -=
+                  entity.velocity.x *
+                  (entity.friction * (TIME_UNIT_LENGTH / 1000));
+              }
+            }
+
+            // apply gravity
+            entity.velocity.y +=
+              this.state.universe.acceleration.y * TIME_UNIT_LENGTH;
+
+            // clamp velocity
+            entity.velocity.x = clamp(
+              -entity.vmax.x,
+              entity.velocity.x,
+              entity.vmax.x
+            );
+            entity.velocity.y = clamp(
+              -entity.vmax.y,
+              entity.velocity.y,
+              entity.vmax.y
+            );
+
+            // update viewport
+            if (entity instanceof Mario) {
+              const entityCenterX = entity.position.x + entity.length.x / 2;
+              const viewportCenterX =
+                this.state.viewport.position.x +
+                this.state.viewport.length.x / 2;
+              const maxViewportPositionX =
+                this.state.universe.length.x - this.state.viewport.length.x;
+
+              // follow entity with viewport
+              if (
+                entityCenterX > viewportCenterX &&
+                this.state.viewport.position.x < maxViewportPositionX
+              ) {
+                this.state.viewport.position.x = clamp(
+                  this.state.viewport.position.x,
+                  entityCenterX - this.state.viewport.length.x / 2,
+                  maxViewportPositionX
+                );
+              }
+
+              const minPositionX = this.state.viewport.position.x;
+              const maxPositionX =
+                this.state.viewport.position.x +
+                this.state.viewport.length.x -
+                entity.length.x;
+
+              // prevent entity from overflowing viewport
+              if (entity.position.x < minPositionX) {
+                entity.position.x = minPositionX;
+
+                if (entity.velocity.x < 0) {
+                  entity.velocity.x = 0;
+                }
+              } else if (entity.position.x > maxPositionX) {
+                entity.position.x = maxPositionX;
+
+                if (entity.velocity.x > 0) {
+                  entity.velocity.x = 0;
+                }
+              }
+            }
+          }
+
+          // update entity
+          entity.update?.(this.buttons, neighbors);
         }
 
-        // update entity
-        entity.update?.(this.buttons, neighbors);
+        if (this.numUpdatesSinceRender === TIME_UNITS_PER_RENDER) {
+          this.render();
+          this.numUpdatesSinceRender = 0;
+        }
       }
     }
 
-    this.render();
-    this.animationFrameRequest = requestAnimationFrame(this.update);
+    setImmediate(this.update);
   };
 
   pause = (): void => {
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
-
     this.pauseTime = performance.now();
   };
 
   // @todo
   reset = (): void => {
     this.pauseTime = null;
+    this.stopTime = null;
   };
 
   start = (): void => {
@@ -809,19 +840,17 @@ export class Game {
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
     this.context.canvas.focus();
 
+    this.stopTime = null;
     this.prevUpdateTime = performance.now();
-    this.animationFrameRequest = requestAnimationFrame(this.update);
+    this.update();
   };
 
   stop = (): void => {
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
-
     this.context.canvas.removeEventListener("keydown", this.onKeyDown);
     this.context.canvas.removeEventListener("keyup", this.onKeyUp);
 
     this.pauseTime = null;
+    this.stopTime = performance.now();
   };
 
   unpause = (): void => {
@@ -831,6 +860,6 @@ export class Game {
     }
 
     this.pauseTime = null;
-    this.animationFrameRequest = requestAnimationFrame(this.update);
+    this.update();
   };
 }
