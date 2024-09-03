@@ -76,7 +76,7 @@ const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
 
 const ACCELERATION: Acceleration = {
   x: gridUnitsPerSecondPerSecond(12),
-  y: gridUnitsPerSecondPerSecond(422),
+  y: gridUnitsPerSecondPerSecond(640),
   z: 0,
 };
 const JUMP_INPUT_DURATION: MS = 200;
@@ -207,7 +207,7 @@ export class Mario implements CollidableEntity, MovableEntity {
         this.jumpTime !== null &&
         now - this.jumpTime < JUMP_INPUT_DURATION
       ) {
-        this.acceleration.y = ACCELERATION.y / 4;
+        this.acceleration.y = ACCELERATION.y / 8;
       }
 
       // @todo if has flower, throw fireball
