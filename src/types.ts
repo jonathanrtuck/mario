@@ -1,29 +1,48 @@
-import { KEYS, PATTERNS, SIDES } from "@/constants";
+import { BUTTONS, SIDES } from "@/constants";
 
 export type Acceleration = {
-  x: number; // m/s^2 (>= 0)
+  x: number; // planckUnits/ms^2 (>= 0)
   y: number;
   z: number;
 };
 
-export type Bitmap = Uint8ClampedArray[];
+export type Bitmap = Color[][];
 
-export type Color = Uint8ClampedArray;
+export type Button = (typeof BUTTONS)[number];
 
-export type ColorIndex = number;
+export interface CollidableEntity extends Entity {
+  collidableSides: Record<Side, boolean>;
+}
 
-export type Key = (typeof KEYS)[number];
+export type Color = `rgba(${number}, ${number}, ${number}, ${number})`;
+
+export interface Entity {
+  length: Length;
+  position: Position;
+  render(context: CanvasRenderingContext2D): void;
+  update?(buttons: Set<Button>, neighbors: Neighbors): void;
+}
 
 export type Length = {
-  x: number; // m (>= 0)
+  x: number; // planckUnits (>= 0)
   y: number;
   z: number;
 };
 
-export type Pattern = (typeof PATTERNS)[number];
+export interface MovableEntity extends Entity {
+  acceleration: Acceleration;
+  elasticity: number; // (>= 0)
+  friction: number; // (>= 0)
+  velocity: Velocity;
+  vmax: Velocity;
+}
+
+export type MS = number; // milliseconds
+
+export type Neighbors = Record<Side, CollidableEntity[]>;
 
 export type Position = {
-  x: number; // m (>= 0)
+  x: number; // planckUnits (>= 0)
   y: number;
   z: number;
 };
@@ -32,12 +51,12 @@ export type Side = (typeof SIDES)[number];
 
 export type Universe = {
   acceleration: Acceleration; // gravity
-  color: ColorIndex;
+  color: Color;
   length: Length;
 };
 
 export type Velocity = {
-  x: number; // m/s (>= 0. - -> left, + -> right)
+  x: number; // planckUnits/ms (>= 0. - -> left, + -> right)
   y: number; // (- -> down, + -> up)
   z: number; // (- -> backward, + -> forward)
 };

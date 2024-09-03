@@ -1,57 +1,36 @@
+import "setimmediate";
+
+import { State } from "@/classes";
 import {
-  COLORS,
-  GRID_UNIT_LENGTH,
-  IS_DEBUG_MODE,
-  KEY_BINDING,
-  KEYS,
-  PIXEL_LENGTH,
-  PIXEL_SCALE,
+  BUTTONS,
+  COLOR_BLUE,
+  MIN_VELOCITY,
+  TIME_UNIT_LENGTH,
+  TIME_UNITS_PER_RENDER,
 } from "@/constants";
-import { Bitmap, Key, Length, Pattern, Position, Side } from "@/types";
+import {
+  Block,
+  Brick,
+  Bush,
+  Castle,
+  Cloud,
+  Flag,
+  Hill,
+  Mario,
+  Pipe,
+  QuestionBlock,
+  Wall,
+} from "@/entities";
+import { Button, Entity, MS, Neighbors, Position, Side } from "@/types";
 import {
   clamp,
-  getIsCollision,
-  getIsCollisionByDimension,
-  getRGBA,
+  gridUnits,
+  gridUnitsPerSecondPerSecond,
+  int,
   isCollidable,
-  isEqual,
-  isGreaterThan,
-  isLessThan,
+  isOverlapByDimension,
   isMovable,
 } from "@/utils";
-
-import { Block } from "./Block";
-import { Brick } from "./Brick";
-import { Bush } from "./Bush";
-import { Castle } from "./Castle";
-import { Cloud } from "./Cloud";
-import { CollidableEntity } from "./CollidableEntity";
-import { Entity } from "./Entity";
-import { Flag } from "./Flag";
-import { Hill } from "./Hill";
-import { Mario } from "./Mario";
-import { MovableEntity } from "./MovableEntity";
-import { Pipe } from "./Pipe";
-import { QuestionBlock } from "./QuestionBlock";
-import { State } from "./State";
-import { Wall } from "./Wall";
-
-const BITMAPS_BY_PATTERN: Partial<Record<Pattern, Bitmap>> = {
-  ...("patterns" in Block ? Block.patterns : {}),
-  ...("patterns" in Brick ? Brick.patterns : {}),
-  ...("patterns" in Bush ? Bush.patterns : {}),
-  ...("patterns" in Castle ? Castle.patterns : {}),
-  ...("patterns" in Cloud ? Cloud.patterns : {}),
-  ...("patterns" in Flag ? Flag.patterns : {}),
-  ...("patterns" in Hill ? Hill.patterns : {}),
-  ...("patterns" in Mario ? Mario.patterns : {}),
-  ...("patterns" in Pipe ? Pipe.patterns : {}),
-  ...("patterns" in QuestionBlock ? QuestionBlock.patterns : {}),
-  ...("patterns" in Wall ? Wall.patterns : {}),
-};
-const JUMP_INPUT_DURATION = 250; // ms
-const PATTERN_KEYS = Object.keys(BITMAPS_BY_PATTERN) as Pattern[];
-const PATTERN_VALUES = Object.values(BITMAPS_BY_PATTERN);
 
 export class Game {
   static get initialState(): State {
@@ -243,972 +222,644 @@ export class Game {
         new Cloud(211, 13, "small"),
         new Bush(215, 4, "small"),
         new Cloud(219, 12, "large"),
-        new Mario(2, 4, "small"),
-        new Flag(198.25, 5),
+        new Flag(198.4375, 5),
         new Castle(202, 4),
-      ],
+        new Mario(2.125, 4, "small"),
+      ].toSorted((a, b) => a.position.z - b.position.z),
       universe: {
         acceleration: {
           x: 0,
-          y: -9.8 * 4,
+          y: gridUnitsPerSecondPerSecond(-64),
           z: 0,
         },
-        color: 5,
+        color: COLOR_BLUE,
         length: {
-          x: GRID_UNIT_LENGTH * 210,
-          y: GRID_UNIT_LENGTH * 15,
+          x: gridUnits(210),
+          y: gridUnits(15),
           z: 5,
         },
       },
       viewport: {
         length: {
-          x: GRID_UNIT_LENGTH * 16,
-          y: GRID_UNIT_LENGTH * 15,
+          x: gridUnits(16),
+          y: gridUnits(15),
           z: 5,
         },
         position: {
           x: 0,
-          y: GRID_UNIT_LENGTH * 2,
+          y: gridUnits(2),
           z: -4,
         },
       },
     });
   }
 
-  private animationFrameRequest: ReturnType<
-    typeof requestAnimationFrame
-  > | null = null;
-  private elapsedMsSincePrevSecond: number = 0;
-  private keydowns: Set<Key> = new Set<Key>();
-  private keyups: Set<Key> = new Set<Key>();
-  private elapsedMsSincePressB: number | null = null;
-  private pauseMs: number | null = null; // ms
-  private prevRenderMs: number | null = null; // ms
-  private prevUpdateMs: number | null = null; // ms
+  private buttons = new Set<Button>();
+  private numUpdatesSinceRender = 0;
+  private pauseTime: MS | null = null;
+  private prevUpdateTime: MS | null = null;
+  private stopTime: MS | null = null;
 
   context: CanvasRenderingContext2D;
-  fps: number = 0;
-  patterns: Partial<Record<Pattern, CanvasPattern>> = {};
+  keyBinding: Record<Button, Set<string>> = {
+    a: new Set(["Shift", "z", "Z"]), // run
+    b: new Set([" ", "x", "X"]), // jump
+    down: new Set(["s", "S", "ArrowDown"]), // crouch
+    left: new Set(["a", "A", "ArrowLeft"]), // left
+    right: new Set(["d", "D", "ArrowRight"]), // right
+    start: new Set(["Enter"]), // pause
+    up: new Set(["w", "W", "ArrowUp"]), // [nothing]
+  };
   state: State;
+
+  get isPaused() {
+    return this.pauseTime !== null;
+  }
+  get isStopped() {
+    return this.stopTime !== null;
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.context = canvas.getContext("2d")!;
     this.state = Game.initialState;
   }
 
-  private onKeyDown = (e: KeyboardEvent) => {
-    if (this.pauseMs === null) {
-      for (let i = 0; i !== KEYS.length; i++) {
-        const key = KEYS[i];
-
-        if (KEY_BINDING[key].has(e.key)) {
-          e.preventDefault();
-
-          this.keydowns.add(key);
-        }
-      }
-    }
-  };
-
-  private onKeyUp = (e: KeyboardEvent) => {
-    for (let i = 0; i !== KEYS.length; i++) {
-      const key = KEYS[i];
-
-      if (KEY_BINDING[key].has(e.key)) {
+  private onKeyDown = (e: KeyboardEvent): void => {
+    for (const button of BUTTONS) {
+      if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        this.keyups.add(key);
+        if (button === "start") {
+          (this.isPaused ? this.unpause : this.pause)();
+        } else {
+          this.buttons.add(button);
+        }
       }
     }
   };
 
-  private render = () => {
-    const now = Date.now();
-    const elapsedMs = this.prevRenderMs === null ? 0 : now - this.prevRenderMs;
+  private onKeyUp = (e: KeyboardEvent): void => {
+    for (const button of BUTTONS) {
+      if (this.keyBinding[button].has(e.key)) {
+        e.preventDefault();
 
-    if (IS_DEBUG_MODE) {
-      this.elapsedMsSincePrevSecond += elapsedMs;
-      this.fps += 1;
-
-      if (this.elapsedMsSincePrevSecond >= 1000) {
-        // eslint-disable-next-line no-console
-        console.debug("fps", this.fps);
-
-        this.elapsedMsSincePrevSecond = 0;
-        this.fps = 0;
+        this.buttons.delete(button);
       }
     }
+  };
 
+  private render = (): void => {
     this.context.reset();
-    this.context.canvas.height =
-      (this.state.viewport.length.y / PIXEL_LENGTH) * PIXEL_SCALE;
-    this.context.canvas.width =
-      (this.state.viewport.length.x / PIXEL_LENGTH) * PIXEL_SCALE;
-    this.context.canvas.style.backgroundColor = getRGBA(
-      this.state.universe.color
-    );
+    this.context.canvas.height = this.state.viewport.length.y;
+    this.context.canvas.width = this.state.viewport.length.x;
+    this.context.canvas.style.backgroundColor = this.state.universe.color;
 
-    // render entities
-    for (let i = 0; i !== this.state.entities.length; i++) {
-      const entity = this.state.entities[i];
-
+    for (const entity of this.state.entities) {
       // only render entities within viewport
       if (
-        getIsCollision(
-          entity.position,
-          entity.length,
-          this.state.viewport.position,
-          this.state.viewport.length
-        )
+        entity.position.x + entity.length.x <
+          this.state.viewport.position.x - gridUnits(1) ||
+        entity.position.x >
+          this.state.viewport.position.x +
+            this.state.viewport.length.x +
+            gridUnits(1) ||
+        entity.position.y + entity.length.y <
+          this.state.viewport.position.y - gridUnits(1) ||
+        entity.position.y >
+          this.state.viewport.position.y +
+            this.state.viewport.length.y +
+            gridUnits(1) ||
+        entity.position.z + entity.length.z < this.state.viewport.position.z ||
+        entity.position.z >
+          this.state.viewport.position.z + this.state.viewport.length.z
       ) {
-        this.context.fillStyle =
-          (typeof entity.fill === "number"
-            ? getRGBA(entity.fill)
-            : this.patterns[entity.fill]) ?? "rgba(0,0,0,0)";
-        this.context.save();
-        this.context.translate(
-          ((entity.position.x - this.state.viewport.position.x) /
-            PIXEL_LENGTH) *
-            PIXEL_SCALE,
-          ((this.state.viewport.length.y +
-            this.state.viewport.position.y -
-            entity.position.y -
-            entity.length.y) /
-            PIXEL_LENGTH) *
-            PIXEL_SCALE
-        );
-        this.context.fillRect(
-          0,
-          0,
-          (entity.length.x / PIXEL_LENGTH) * PIXEL_SCALE,
-          (entity.length.y / PIXEL_LENGTH) * PIXEL_SCALE
-        );
-        this.context.restore();
+        continue;
       }
-    }
 
-    this.prevRenderMs = now;
+      this.context.save();
+      this.context.translate(
+        entity.position.x - this.state.viewport.position.x,
+        this.state.viewport.length.y +
+          this.state.viewport.position.y -
+          entity.position.y -
+          entity.length.y
+      );
+
+      entity.render(this.context);
+
+      this.context.restore();
+    }
   };
 
-  private update = () => {
-    const now = Date.now();
-    const elapsedMs = this.prevUpdateMs === null ? 0 : now - this.prevUpdateMs;
-    const seconds = elapsedMs === 0 ? 0 : 1 / (1000 / elapsedMs);
-    const isPressingA = this.keydowns.has("a");
-    const isPressingB = this.keydowns.has("b");
-    const isPressingLeft =
-      this.keydowns.has("left") && !this.keydowns.has("right");
-    const isPressingRight =
-      this.keydowns.has("right") && !this.keydowns.has("left");
-    const isReleasingA = this.keyups.has("a");
-    const isReleasingB = this.keyups.has("b");
+  // @recursive
+  private update = (): void => {
+    const now = performance.now();
 
-    if (isPressingB) {
-      if (this.elapsedMsSincePressB === null) {
-        this.elapsedMsSincePressB = 0;
-      } else {
-        this.elapsedMsSincePressB += elapsedMs;
-      }
+    if (this.isStopped) {
+      return;
     }
 
-    // only update entities within viewport
-    const viewportLength: Length = {
-      x: this.state.viewport.length.x + GRID_UNIT_LENGTH * 4,
-      y: this.state.viewport.length.y + GRID_UNIT_LENGTH * 15,
-      z: this.state.viewport.length.z,
-    };
-    const viewportPosition: Position = {
-      x: this.state.viewport.position.x - GRID_UNIT_LENGTH * 2,
-      y: this.state.viewport.position.y,
-      z: this.state.viewport.position.z,
-    };
-    const entitiesToUpdate = new Array<Entity>(this.state.entities.length);
-    let nextEntityToUpdateIndex = 0;
-    for (let i = 0; i !== this.state.entities.length; i++) {
-      const entity = this.state.entities[i];
+    if (!this.isPaused) {
+      const elapsedTime =
+        this.prevUpdateTime === null ? 0 : now - this.prevUpdateTime;
 
-      if (
-        getIsCollision(
-          viewportPosition,
-          viewportLength,
-          entity.position,
-          entity.length
-        )
-      ) {
-        entitiesToUpdate[nextEntityToUpdateIndex++] = entity;
-      }
-    }
-    entitiesToUpdate.length = nextEntityToUpdateIndex;
+      if (elapsedTime >= TIME_UNIT_LENGTH) {
+        this.numUpdatesSinceRender++;
+        this.prevUpdateTime = now - (elapsedTime - TIME_UNIT_LENGTH);
 
-    // only check collisions invloving collidable/movable entities
-    const collidableEntities = new Array<CollidableEntity>(
-      entitiesToUpdate.length
-    );
-    const movableEntities = new Array<MovableEntity>(entitiesToUpdate.length);
-    let collidableEntitiesIndex = 0;
-    let movableEntitiesIndex = 0;
-    for (let i = 0; i !== entitiesToUpdate.length; i++) {
-      const entity = entitiesToUpdate[i];
+        // only update entities within viewport
+        const entitiesToUpdate = this.state.entities.filter(
+          (entity) =>
+            entity.position.x <
+              this.state.viewport.position.x +
+                this.state.viewport.length.x +
+                gridUnits(2) &&
+            entity.position.x + entity.length.x >
+              this.state.viewport.position.x - gridUnits(2) &&
+            entity.position.z <=
+              this.state.viewport.position.z + this.state.viewport.length.z &&
+            entity.position.z + entity.length.z >=
+              this.state.viewport.position.z
+        );
+        const collidableEntities = entitiesToUpdate.filter(isCollidable);
+        const movableEntities = entitiesToUpdate.filter(isMovable);
 
-      if (isCollidable(entity)) {
-        collidableEntities[collidableEntitiesIndex++] = entity;
-      }
-      if (isMovable(entity)) {
-        movableEntities[movableEntitiesIndex++] = entity;
-      }
-    }
-    collidableEntities.length = collidableEntitiesIndex;
-    movableEntities.length = movableEntitiesIndex;
-
-    // handle collisions
-    let collisions: [
-      coefficientOfTime: number,
-      movableEntityIndex: number,
-      side: Side,
-      collidableEntityIndex: number
-    ][];
-    let collisionsIndex: number;
-    let coefficientOfTime = 1; // percentage of `elapsedMs` until now
-    do {
-      collisions = new Array(movableEntities.length);
-      collisionsIndex = 0;
-
-      const collidableEntityHitboxLengths = new Array<Length>(
-        collidableEntities.length
-      );
-      const collidableEntityHitboxPositions = new Array<Position>(
-        collidableEntities.length
-      );
-      const collidableEntityHitboxNextPositions = new Array<Position>(
-        collidableEntities.length
-      );
-      let collidableEntityHitboxLengthsIndex = 0;
-      let collidableEntityHitboxPositionsIndex = 0;
-      let collidableEntityHitboxNextPositionsIndex = 0;
-      for (let i = 0; i !== collidableEntities.length; i++) {
-        const collidableEntity = collidableEntities[i];
-
-        collidableEntityHitboxLengths[collidableEntityHitboxLengthsIndex++] = {
-          x:
-            collidableEntity.length.x - collidableEntity.collidableOffset.x * 2,
-          y:
-            collidableEntity.length.y - collidableEntity.collidableOffset.y * 2,
-          z:
-            collidableEntity.length.z - collidableEntity.collidableOffset.z * 2,
-        };
-        collidableEntityHitboxPositions[
-          collidableEntityHitboxPositionsIndex++
-        ] = {
-          x: collidableEntity.position.x + collidableEntity.collidableOffset.x,
-          y: collidableEntity.position.y + collidableEntity.collidableOffset.y,
-          z: collidableEntity.position.z + collidableEntity.collidableOffset.z,
-        };
-        collidableEntityHitboxNextPositions[
-          collidableEntityHitboxNextPositionsIndex++
-        ] = {
-          x:
-            collidableEntity.position.x +
-            collidableEntity.collidableOffset.x +
-            (isMovable(collidableEntity) ? collidableEntity.velocity.x : 0) *
-              seconds *
-              coefficientOfTime,
-          y:
-            collidableEntity.position.y +
-            collidableEntity.collidableOffset.y +
-            (isMovable(collidableEntity) ? collidableEntity.velocity.y : 0) *
-              seconds *
-              coefficientOfTime,
-          z:
-            collidableEntity.position.z +
-            collidableEntity.collidableOffset.z +
-            (isMovable(collidableEntity) ? collidableEntity.velocity.z : 0) *
-              seconds *
-              coefficientOfTime,
-        };
-      }
-
-      // get first collision with each of the other collidable viewport entities (and, in the case of mario, viewport edges)
-      for (
-        let movableEntityIndex = 0;
-        movableEntityIndex !== movableEntities.length;
-        movableEntityIndex++
-      ) {
-        const movableEntity = movableEntities[movableEntityIndex];
-        const movableEntityHitboxLength: Length = {
-          x: movableEntity.length.x - movableEntity.collidableOffset.x * 2,
-          y: movableEntity.length.y - movableEntity.collidableOffset.y * 2,
-          z: movableEntity.length.z - movableEntity.collidableOffset.z * 2,
-        };
-        const movableEntityHitboxPosition: Position = {
-          x: movableEntity.position.x + movableEntity.collidableOffset.x,
-          y: movableEntity.position.y + movableEntity.collidableOffset.y,
-          z: movableEntity.position.z + movableEntity.collidableOffset.z,
-        };
-        const movableEntityHitboxNextPosition: Position = {
-          x:
-            movableEntity.position.x +
-            movableEntity.collidableOffset.x +
-            movableEntity.velocity.x * (seconds * coefficientOfTime),
-          y:
-            movableEntity.position.y +
-            movableEntity.collidableOffset.y +
-            movableEntity.velocity.y * (seconds * coefficientOfTime),
-          z:
-            movableEntity.position.z +
-            movableEntity.collidableOffset.z +
-            movableEntity.velocity.z * (seconds * coefficientOfTime),
-        };
-
-        for (
-          let collidableEntityIndex = 0;
-          collidableEntityIndex !== collidableEntities.length;
-          collidableEntityIndex++
-        ) {
-          const collidableEntity = collidableEntities[collidableEntityIndex];
-
-          if (movableEntity === collidableEntity) {
-            continue;
-          }
-
-          const collidableEntityHitboxLength =
-            collidableEntityHitboxLengths[collidableEntityIndex];
-          const collidableEntityHitboxPosition =
-            collidableEntityHitboxPositions[collidableEntityIndex];
-          const collidableEntityHitboxNextPosition =
-            collidableEntityHitboxNextPositions[collidableEntityIndex];
-
-          if (
-            getIsCollision(
-              movableEntityHitboxNextPosition,
-              movableEntityHitboxLength,
-              collidableEntityHitboxNextPosition,
-              collidableEntityHitboxLength
-            )
-          ) {
-            const collidableEntityHitboxNextPosition: Position = {
-              x: collidableEntityHitboxPosition.x,
-              y: collidableEntityHitboxPosition.y,
-              z: collidableEntityHitboxPosition.z,
-            };
-
-            if (isMovable(collidableEntity)) {
-              collidableEntityHitboxNextPosition.x +=
-                collidableEntity.velocity.x * (seconds * coefficientOfTime);
-              collidableEntityHitboxNextPosition.y +=
-                collidableEntity.velocity.y * (seconds * coefficientOfTime);
-              collidableEntityHitboxNextPosition.z +=
-                collidableEntity.velocity.z * (seconds * coefficientOfTime);
-            }
-
-            const collisionsBySide = new Array<
-              [coefficientOfTime: number, side: Side]
-            >(4);
-            let collisionsBySideIndex = 0;
-
-            if (
-              movableEntity.collidableSides.bottom &&
-              collidableEntity.collidableSides.top &&
-              movableEntityHitboxPosition.y + Number.EPSILON >=
-                collidableEntityHitboxPosition.y +
-                  collidableEntityHitboxLength.y &&
-              movableEntityHitboxNextPosition.y <
-                collidableEntityHitboxNextPosition.y +
-                  collidableEntityHitboxLength.y +
-                  Number.EPSILON &&
-              movableEntityHitboxNextPosition.y + Number.EPSILON >=
-                collidableEntityHitboxNextPosition.y
-            ) {
-              const prevLengthBetween =
-                movableEntityHitboxPosition.y -
-                (collidableEntityHitboxPosition.y +
-                  collidableEntityHitboxLength.y);
-              const totalLengthDelta =
-                movableEntityHitboxPosition.y -
-                movableEntityHitboxNextPosition.y;
-
-              collisionsBySide[collisionsBySideIndex++] = [
-                prevLengthBetween / totalLengthDelta,
-                "bottom",
-              ];
-
-              if (movableEntity instanceof Mario) {
-                movableEntity.isInputtingJump = false;
-                movableEntity.isJumping = false;
-              }
-            }
-            if (
-              movableEntity.collidableSides.left &&
-              collidableEntity.collidableSides.right &&
-              movableEntityHitboxPosition.x + Number.EPSILON >=
-                collidableEntityHitboxPosition.x +
-                  collidableEntityHitboxLength.x &&
-              movableEntityHitboxNextPosition.x <
-                collidableEntityHitboxNextPosition.x +
-                  collidableEntityHitboxLength.x +
-                  Number.EPSILON &&
-              movableEntityHitboxNextPosition.x + Number.EPSILON >=
-                collidableEntityHitboxNextPosition.x
-            ) {
-              const prevLengthBetween =
-                movableEntityHitboxPosition.x -
-                (collidableEntityHitboxPosition.x +
-                  collidableEntityHitboxLength.x);
-              const totalLengthDelta =
-                movableEntityHitboxPosition.x -
-                movableEntityHitboxNextPosition.x;
-
-              collisionsBySide[collisionsBySideIndex++] = [
-                prevLengthBetween / totalLengthDelta,
-                "left",
-              ];
-            }
-            if (
-              movableEntity.collidableSides.right &&
-              collidableEntity.collidableSides.left &&
-              (isLessThan(
-                movableEntityHitboxPosition.x + movableEntityHitboxLength.x,
-                collidableEntityHitboxPosition.x
-              ) ||
-                isEqual(
-                  movableEntityHitboxPosition.x + movableEntityHitboxLength.x,
-                  collidableEntityHitboxPosition.x
-                )) &&
-              isGreaterThan(
-                movableEntityHitboxNextPosition.x + movableEntityHitboxLength.x,
-                collidableEntityHitboxNextPosition.x
-              ) &&
-              isLessThan(
-                movableEntityHitboxNextPosition.x,
-                collidableEntityHitboxNextPosition.x
-              )
-            ) {
-              const prevLengthBetween =
-                collidableEntityHitboxPosition.x -
-                (movableEntityHitboxPosition.x + movableEntityHitboxLength.x);
-              const totalLengthDelta =
-                movableEntityHitboxNextPosition.x -
-                movableEntityHitboxPosition.x;
-
-              collisionsBySide[collisionsBySideIndex++] = [
-                prevLengthBetween / totalLengthDelta,
-                "right",
-              ];
-            }
-            if (
-              movableEntity.collidableSides.top &&
-              collidableEntity.collidableSides.bottom &&
-              movableEntityHitboxPosition.y + movableEntityHitboxLength.y <=
-                collidableEntityHitboxPosition.y + Number.EPSILON &&
-              movableEntityHitboxNextPosition.y +
-                movableEntityHitboxLength.y +
-                Number.EPSILON >
-                collidableEntityHitboxNextPosition.y &&
-              movableEntityHitboxNextPosition.y <=
-                collidableEntityHitboxNextPosition.y + Number.EPSILON
-            ) {
-              const prevLengthBetween =
-                collidableEntityHitboxPosition.y -
-                (movableEntityHitboxPosition.y + movableEntityHitboxLength.y);
-              const totalLengthDelta =
-                movableEntityHitboxNextPosition.y -
-                movableEntityHitboxPosition.y;
-
-              collisionsBySide[collisionsBySideIndex++] = [
-                prevLengthBetween / totalLengthDelta,
-                "top",
-              ];
-            }
-
-            collisionsBySide.length = collisionsBySideIndex;
-
-            if (collisionsBySide.length !== 0) {
-              collisionsBySide.sort(([a], [b]) => a - b);
-
-              const [coefficientOfTime, side] = collisionsBySide[0];
-
-              collisions[collisionsIndex++] = [
-                coefficientOfTime,
-                movableEntityIndex,
-                side,
-                collidableEntityIndex,
-              ];
-            }
-          }
-        }
-
-        collisions.length = collisionsIndex;
-      }
-
-      // percentage of `elapsedMs` between prev update and earliest collision (or now)
-      const updateCoefficientOfTime =
-        (collisions[0]?.[0] ?? 1) * coefficientOfTime;
-
-      const movableEntityNextPositions = new Array<Position>(
-        movableEntities.length
-      );
-      let movableEntityNextPositionsIndex = 0;
-      for (let i = 0; i !== movableEntities.length; i++) {
-        const movableEntity = movableEntities[i];
-
-        movableEntityNextPositions[movableEntityNextPositionsIndex++] = {
-          x:
-            movableEntity.position.x +
-            movableEntity.velocity.x * (seconds * updateCoefficientOfTime),
-          y:
-            movableEntity.position.y +
-            movableEntity.velocity.y * (seconds * updateCoefficientOfTime),
-          z:
-            movableEntity.position.z +
-            movableEntity.velocity.z * (seconds * updateCoefficientOfTime),
-        };
-      }
-
-      if (collisions.length !== 0) {
-        // sort collisions by time
-        collisions.sort(([a], [b]) => a - b);
-
-        const earliestCollisionCoefficientOfTime = collisions[0][0];
-
-        // for each of earliest collision(s), update corresponding entity(s) position/velocity
-        let index = 0;
-        while (
-          index !== collisions.length &&
-          collisions[index][0] === earliestCollisionCoefficientOfTime
-        ) {
-          const [, movableEntityIndex, side, collidableEntityIndex] =
-            collisions[index];
-          const movableEntity = movableEntities[movableEntityIndex];
-          const collidableEntity = collidableEntities[collidableEntityIndex];
-
-          if (movableEntity instanceof Mario) {
-            if (collidableEntity instanceof Flag) {
-              console.debug("win!"); // @todo
-            }
-
-            // if enemy, lose
-          }
-
-          switch (side) {
-            case "bottom":
-              movableEntityNextPositions[movableEntityIndex].y =
-                collidableEntity.position.y +
-                collidableEntity.length.y -
-                collidableEntity.collidableOffset.y -
-                movableEntity.collidableOffset.y;
-              movableEntity.velocity.y =
-                -movableEntity.velocity.y * movableEntity.elasticity;
-              break;
-            case "left":
-              movableEntityNextPositions[movableEntityIndex].x =
-                collidableEntity.position.x +
-                collidableEntity.length.x -
-                collidableEntity.collidableOffset.x -
-                movableEntity.collidableOffset.x;
-              movableEntity.velocity.x =
-                -movableEntity.velocity.x * movableEntity.elasticity;
-              break;
-            case "right":
-              movableEntityNextPositions[movableEntityIndex].x =
-                collidableEntity.position.x +
-                collidableEntity.collidableOffset.x -
-                (movableEntity.length.x - movableEntity.collidableOffset.x);
-              movableEntity.velocity.x =
-                -movableEntity.velocity.x * movableEntity.elasticity;
-              break;
-            case "top":
-              movableEntityNextPositions[movableEntityIndex].y =
-                collidableEntity.position.y +
-                collidableEntity.collidableOffset.y -
-                (movableEntity.length.y - movableEntity.collidableOffset.y);
-              movableEntity.velocity.y =
-                -movableEntity.velocity.y * movableEntity.elasticity;
-              break;
-          }
-
-          index++;
-        }
-      }
-
-      coefficientOfTime -= updateCoefficientOfTime;
-
-      // update movable entities' positions
-      for (let i = 0; i !== movableEntities.length; i++) {
-        const movableEntity = movableEntities[i];
-
-        movableEntity.position = movableEntityNextPositions[i];
-
-        // update viewport based on mario's position
-        if (movableEntity instanceof Mario) {
-          const entityCenterX =
-            movableEntity.position.x + movableEntity.length.x / 2;
-          const viewportCenterX =
-            this.state.viewport.position.x + this.state.viewport.length.x / 2;
-          const maxViewportPositionX =
-            this.state.universe.length.x - this.state.viewport.length.x;
-
-          // follow entity with viewport
-          if (
-            entityCenterX > viewportCenterX &&
-            this.state.viewport.position.x < maxViewportPositionX
-          ) {
-            this.state.viewport.position.x = clamp(
-              this.state.viewport.position.x,
-              entityCenterX - this.state.viewport.length.x / 2,
-              maxViewportPositionX
-            );
-          }
-
-          const minPositionX = this.state.viewport.position.x;
-          const maxPositionX =
-            this.state.viewport.position.x +
-            this.state.viewport.length.x -
-            movableEntity.length.x;
-
-          // prevent mario from overflowing viewport
-          if (movableEntity.position.x < minPositionX) {
-            movableEntity.position.x = minPositionX;
-
-            if (movableEntity.velocity.x < 0) {
-              movableEntity.velocity.x = 0;
-            }
-          } else if (movableEntity.position.x > maxPositionX) {
-            movableEntity.position.x = maxPositionX;
-
-            if (movableEntity.velocity.x > 0) {
-              movableEntity.velocity.x = 0;
-            }
-          }
-        }
-      }
-    } while (collisions.length !== 0);
-
-    // update movable entities' velocities
-    for (let i = 0; i !== movableEntities.length; i++) {
-      const movableEntity = movableEntities[i];
-
-      // apply gravity
-      if (movableEntity.mass !== 0 && movableEntity.mass !== Infinity) {
-        movableEntity.velocity.x +=
-          this.state.universe.acceleration.x * seconds;
-        movableEntity.velocity.y +=
-          this.state.universe.acceleration.y * seconds;
-        movableEntity.velocity.z +=
-          this.state.universe.acceleration.z * seconds;
-      }
-
-      if (movableEntity instanceof Mario) {
-        let isTouchingBottom = false;
-        let isTouchingLeft = false;
-        let isTouchingRight = false;
-        let isTouchingTop = false;
-
-        for (let j = 0; j !== collidableEntities.length; j++) {
-          const collidableEntity = collidableEntities[j];
-
-          if (movableEntity === collidableEntity) {
-            continue;
-          }
-
-          if (
-            !getIsCollisionByDimension(
-              movableEntity.position.z + movableEntity.collidableOffset.z,
-              movableEntity.length.z - movableEntity.collidableOffset.z * 2,
-              collidableEntity.position.z + collidableEntity.collidableOffset.z,
-              collidableEntity.length.z -
-                collidableEntity.collidableOffset.z * 2
-            )
-          ) {
-            continue;
-          }
-
-          const isOverlappingHorizontally = getIsCollisionByDimension(
-            movableEntity.position.x + movableEntity.collidableOffset.x,
-            movableEntity.length.x - movableEntity.collidableOffset.x * 2,
-            collidableEntity.position.x + collidableEntity.collidableOffset.x,
-            collidableEntity.length.x - collidableEntity.collidableOffset.x * 2
-          );
-          const isOverlappingVertically = getIsCollisionByDimension(
-            movableEntity.position.y + movableEntity.collidableOffset.y,
-            movableEntity.length.y - movableEntity.collidableOffset.y * 2,
-            collidableEntity.position.y + collidableEntity.collidableOffset.y,
-            collidableEntity.length.y - collidableEntity.collidableOffset.y * 2
-          );
-
-          if (
-            isOverlappingHorizontally &&
-            isEqual(
-              movableEntity.position.y - movableEntity.collidableOffset.y,
-              collidableEntity.position.y +
-                collidableEntity.length.y -
-                collidableEntity.collidableOffset.y
-            )
-          ) {
-            isTouchingBottom = true;
-          }
-          if (
-            isOverlappingVertically &&
-            isEqual(
-              movableEntity.position.x - movableEntity.collidableOffset.x,
-              collidableEntity.position.x +
-                collidableEntity.length.x -
-                collidableEntity.collidableOffset.x
-            )
-          ) {
-            isTouchingLeft = true;
-          }
-          if (
-            isOverlappingVertically &&
-            isEqual(
-              collidableEntity.position.x - collidableEntity.collidableOffset.x,
-              movableEntity.position.x +
-                movableEntity.length.x -
-                movableEntity.collidableOffset.x
-            )
-          ) {
-            isTouchingRight = true;
-          }
-          if (
-            isOverlappingHorizontally &&
-            isEqual(
-              collidableEntity.position.y - collidableEntity.collidableOffset.y,
-              movableEntity.position.y +
-                movableEntity.length.y -
-                movableEntity.collidableOffset.y
-            )
-          ) {
-            isTouchingTop = true;
-          }
-        }
-
-        // update mario's state
-        if (
-          isTouchingBottom &&
-          (isPressingLeft || isPressingRight) &&
-          isPressingA
-        ) {
-          movableEntity.isRunning = true;
-        }
-        if (isReleasingA) {
-          movableEntity.isRunning = false;
-        }
-        if (isReleasingB) {
-          movableEntity.isInputtingJump = false;
-        }
-        /*
-        if (
-          isTouchingBottom &&
-          ((isPressingLeft && isLessThan(movableEntity.velocity.x, 0)) ||
-            (isPressingRight && isGreaterThan(movableEntity.velocity.x, 0)))
-        ) {
-          if (isPressingA) {
-            movableEntity.isRunning = true;
-            movableEntity.isWalking = false;
-          } else {
-            movableEntity.isRunning = false;
-            movableEntity.isWalking = true;
-          }
-        }
-        if (
-          isTouchingBottom &&
-          ((isPressingLeft && isGreaterThan(movableEntity.velocity.x, 0)) ||
-            (isPressingRight && isLessThan(movableEntity.velocity.x, 0)))
-        ) {
-          movableEntity.isSliding = true;
-        } else {
-          movableEntity.isSliding = false;
-        }
-        */
-
-        // decelerate if moving left but no longer pressing left
-        if (movableEntity.velocity.x < 0 && !isPressingLeft) {
-          movableEntity.velocity.x += Math.min(
-            movableEntity.deceleration.x * seconds,
-            -movableEntity.velocity.x
-          );
-        }
-
-        // decelerate if moving right but no longer pressing right
-        if (movableEntity.velocity.x > 0 && !isPressingRight) {
-          movableEntity.velocity.x -= Math.min(
-            movableEntity.deceleration.x * seconds,
-            movableEntity.velocity.x
-          );
-        }
-
-        // accelerate if pressing left
-        if (isPressingLeft && !isTouchingLeft) {
-          movableEntity.velocity.x -=
-            movableEntity.acceleration.x *
-            seconds *
-            (movableEntity.isRunning ? 2 : 1);
-          movableEntity.isFacingLeft = true;
-        }
-
-        // accelerate if pressing right
-        if (isPressingRight && !isTouchingRight) {
+        // apply acceleration
+        for (const movableEntity of movableEntities) {
           movableEntity.velocity.x +=
-            movableEntity.acceleration.x *
-            seconds *
-            (movableEntity.isRunning ? 2 : 1);
-          movableEntity.isFacingLeft = false;
+            movableEntity.acceleration.x * TIME_UNIT_LENGTH;
+          movableEntity.velocity.y +=
+            movableEntity.acceleration.y * TIME_UNIT_LENGTH;
         }
 
-        // jump
-        if (isPressingB) {
-          if (
-            !movableEntity.isInputtingJump &&
-            isTouchingBottom &&
-            this.elapsedMsSincePressB === 0
-          ) {
-            movableEntity.isInputtingJump = true;
-            movableEntity.isJumping = true;
-            movableEntity.velocity.y += movableEntity.acceleration.y;
-          } else if (
-            movableEntity.isInputtingJump &&
-            !isTouchingBottom &&
-            this.elapsedMsSincePressB !== null &&
-            this.elapsedMsSincePressB < JUMP_INPUT_DURATION
-          ) {
-            movableEntity.velocity.y += movableEntity.acceleration.y / 9.8;
+        let collisions: [
+          time: MS,
+          movableEntityIndex: number,
+          side: Side,
+          collidableEntityIndex: number
+        ][] = [];
+
+        // collision detection
+        let timeRemaining = TIME_UNIT_LENGTH;
+        do {
+          collisions = [];
+
+          // get movableEntities' projected positions based on their velocity and remaining time
+          const projectedPositions = new Array<Position>(
+            movableEntities.length
+          );
+
+          for (let i = 0; i !== movableEntities.length; i++) {
+            const movableEntity = movableEntities[i];
+
+            projectedPositions[i] = {
+              x: int(
+                movableEntity.position.x +
+                  movableEntity.velocity.x * timeRemaining
+              ),
+              y: int(
+                movableEntity.position.y +
+                  movableEntity.velocity.y * timeRemaining
+              ),
+              z: movableEntity.position.z,
+            };
           }
-        }
-      }
 
-      if (movableEntity.vmax) {
-        movableEntity.velocity.x = clamp(
-          -movableEntity.vmax.x,
-          movableEntity.velocity.x,
-          movableEntity.vmax.x
-        );
-        movableEntity.velocity.y = clamp(
-          -movableEntity.vmax.y,
-          movableEntity.velocity.y,
-          movableEntity.vmax.y
-        );
-        movableEntity.velocity.z = clamp(
-          -movableEntity.vmax.z,
-          movableEntity.velocity.z,
-          movableEntity.vmax.z
-        );
-      }
-    }
+          // get collisions
+          for (
+            let movableEntityIndex = 0;
+            movableEntityIndex !== movableEntities.length;
+            movableEntityIndex++
+          ) {
+            const movableEntity = movableEntities[movableEntityIndex];
 
-    if (this.keyups.has("b")) {
-      this.elapsedMsSincePressB = null;
-    }
+            if (!isCollidable(movableEntity)) {
+              continue;
+            }
 
-    for (const key of this.keyups) {
-      this.keydowns.delete(key);
-    }
+            const movablePosition = projectedPositions[movableEntityIndex];
+            let movableEntitiesIndex = 0;
 
-    this.keyups.clear();
+            for (
+              let collidableEntityIndex = 0;
+              collidableEntityIndex !== collidableEntities.length;
+              collidableEntityIndex++
+            ) {
+              const collidableEntity =
+                collidableEntities[collidableEntityIndex];
+              const collidablePosition = isMovable(collidableEntity)
+                ? projectedPositions[movableEntitiesIndex++]
+                : collidableEntity.position;
 
-    this.render();
-    this.prevUpdateMs = now;
-    this.animationFrameRequest = requestAnimationFrame(this.update);
-  };
+              if ((movableEntity as Entity) === (collidableEntity as Entity)) {
+                continue;
+              }
 
-  destroy = () => {
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
+              if (
+                isOverlapByDimension(
+                  movablePosition.x,
+                  movableEntity.length.x,
+                  collidablePosition.x,
+                  collidableEntity.length.x
+                ) &&
+                isOverlapByDimension(
+                  movablePosition.y,
+                  movableEntity.length.y,
+                  collidablePosition.y,
+                  collidableEntity.length.y
+                ) &&
+                isOverlapByDimension(
+                  movablePosition.z,
+                  movableEntity.length.z,
+                  collidablePosition.z,
+                  collidableEntity.length.z
+                )
+              ) {
+                const collisionsBySide: [time: MS, side: Side][] = [];
 
-    this.context.canvas.removeEventListener("keydown", this.onKeyDown);
-    this.context.canvas.removeEventListener("keyup", this.onKeyUp);
-  };
+                if (
+                  movableEntity.collidableSides.bottom &&
+                  collidableEntity.collidableSides.top &&
+                  movableEntity.position.y >=
+                    collidableEntity.position.y + collidableEntity.length.y &&
+                  movablePosition.y <
+                    collidablePosition.y + collidableEntity.length.y
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.y -
+                    (collidableEntity.position.y + collidableEntity.length.y);
+                  const totalLengthDelta =
+                    movableEntity.position.y - movablePosition.y;
 
-  init = () => {
-    Promise.all(
-      PATTERN_VALUES.map((bitmap) => {
-        const numColumns = bitmap[0].length;
-        const numRows = bitmap.length;
-        const height = numRows * PIXEL_SCALE;
-        const width = numColumns * PIXEL_SCALE;
-        const arr = new Uint8ClampedArray(height * width * 4);
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "bottom",
+                  ]);
+                }
+                if (
+                  movableEntity.collidableSides.left &&
+                  collidableEntity.collidableSides.right &&
+                  movableEntity.position.x >=
+                    collidableEntity.position.x + collidableEntity.length.x &&
+                  movablePosition.x <
+                    collidablePosition.x + collidableEntity.length.x
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.x -
+                    (collidableEntity.position.x + collidableEntity.length.x);
+                  const totalLengthDelta =
+                    movableEntity.position.x - movablePosition.x;
 
-        let index = 0;
-        for (let row of bitmap) {
-          for (let i = 0; i !== PIXEL_SCALE; i++) {
-            for (let pixelColorIndex of row) {
-              const [r, g, b, a] = COLORS[pixelColorIndex];
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "left",
+                  ]);
+                }
+                if (
+                  movableEntity.collidableSides.right &&
+                  collidableEntity.collidableSides.left &&
+                  movableEntity.position.x + movableEntity.length.x <=
+                    collidableEntity.position.x &&
+                  movablePosition.x + movableEntity.length.x >
+                    collidablePosition.x
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.x +
+                    movableEntity.length.x -
+                    collidableEntity.position.x;
+                  const totalLengthDelta =
+                    movableEntity.position.x - movablePosition.x;
 
-              for (let j = 0; j !== PIXEL_SCALE; j++) {
-                arr[index++] = r;
-                arr[index++] = g;
-                arr[index++] = b;
-                arr[index++] = a;
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "right",
+                  ]);
+                }
+                if (
+                  movableEntity.collidableSides.top &&
+                  collidableEntity.collidableSides.bottom &&
+                  movableEntity.position.y + movableEntity.length.y <=
+                    collidableEntity.position.y &&
+                  movablePosition.y + movableEntity.length.y >
+                    collidablePosition.y
+                ) {
+                  const prevLengthBetween =
+                    movableEntity.position.y +
+                    movableEntity.length.y -
+                    collidableEntity.position.y;
+                  const totalLengthDelta =
+                    movableEntity.position.y - movablePosition.y;
+
+                  collisionsBySide.push([
+                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    "top",
+                  ]);
+                }
+
+                if (collisionsBySide.length !== 0) {
+                  collisionsBySide.sort(([aTime], [bTime]) => aTime - bTime);
+
+                  const [time, side] = collisionsBySide[0];
+
+                  collisions.push([
+                    time,
+                    movableEntityIndex,
+                    side,
+                    collidableEntityIndex,
+                  ]);
+                }
               }
             }
           }
+
+          // sort collisions by time
+          if (collisions.length !== 0) {
+            collisions.sort(([aTime], [bTime]) => aTime - bTime);
+
+            const [earliestTime] = collisions[0];
+
+            // update entities' positions up to earliestTime
+            for (const movableEntity of movableEntities) {
+              movableEntity.position.x = int(
+                movableEntity.position.x +
+                  movableEntity.velocity.x * earliestTime
+              );
+              movableEntity.position.y = int(
+                movableEntity.position.y +
+                  movableEntity.velocity.y * earliestTime
+              );
+            }
+
+            for (const collision of collisions) {
+              const [time, movableEntityIndex, side, collidableEntityIndex] =
+                collision;
+
+              if (time !== earliestTime) {
+                break;
+              }
+
+              const movableEntity = movableEntities[movableEntityIndex];
+              const collidableEntity =
+                collidableEntities[collidableEntityIndex];
+
+              switch (side) {
+                case "bottom":
+                  movableEntity.position.y =
+                    collidableEntity.position.y + collidableEntity.length.y;
+                  movableEntity.velocity.y =
+                    -movableEntity.velocity.y * movableEntity.elasticity;
+                  break;
+                case "left":
+                  movableEntity.position.x =
+                    collidableEntity.position.x + collidableEntity.length.x;
+                  movableEntity.velocity.x =
+                    -movableEntity.velocity.x * movableEntity.elasticity;
+                  break;
+                case "right":
+                  movableEntity.position.x =
+                    collidableEntity.position.x - movableEntity.length.x;
+                  movableEntity.velocity.x =
+                    -movableEntity.velocity.x * movableEntity.elasticity;
+                  break;
+                case "top":
+                  movableEntity.position.y =
+                    collidableEntity.position.y - movableEntity.length.y;
+                  movableEntity.velocity.y =
+                    -movableEntity.velocity.y * movableEntity.elasticity;
+                  break;
+              }
+            }
+
+            timeRemaining -= earliestTime;
+          } else {
+            // update entities' positions up to now
+            for (const movableEntity of movableEntities) {
+              movableEntity.position.x = int(
+                movableEntity.position.x +
+                  movableEntity.velocity.x * timeRemaining
+              );
+              movableEntity.position.y = int(
+                movableEntity.position.y +
+                  movableEntity.velocity.y * timeRemaining
+              );
+            }
+          }
+        } while (collisions.length !== 0);
+
+        for (const entity of entitiesToUpdate) {
+          const neighbors: Neighbors = {
+            bottom: [],
+            left: [],
+            right: [],
+            top: [],
+          };
+
+          // get neighbors
+          if (isCollidable(entity)) {
+            for (const collidableEntity of collidableEntities) {
+              if (collidableEntity === entity) {
+                continue;
+              }
+
+              if (
+                entity.collidableSides.bottom &&
+                collidableEntity.collidableSides.top &&
+                collidableEntity.position.y + collidableEntity.length.y ===
+                  entity.position.y &&
+                isOverlapByDimension(
+                  entity.position.x,
+                  entity.length.x,
+                  collidableEntity.position.x,
+                  collidableEntity.length.x
+                )
+              ) {
+                neighbors.bottom.push(collidableEntity);
+              }
+              if (
+                entity.collidableSides.left &&
+                collidableEntity.collidableSides.right &&
+                collidableEntity.position.x + collidableEntity.length.x ===
+                  entity.position.x &&
+                isOverlapByDimension(
+                  entity.position.y,
+                  entity.length.y,
+                  collidableEntity.position.y,
+                  collidableEntity.length.y
+                )
+              ) {
+                neighbors.left.push(collidableEntity);
+              }
+              if (
+                entity.collidableSides.right &&
+                collidableEntity.collidableSides.left &&
+                collidableEntity.position.x ===
+                  entity.position.x + entity.length.x &&
+                isOverlapByDimension(
+                  entity.position.y,
+                  entity.length.y,
+                  collidableEntity.position.y,
+                  collidableEntity.length.y
+                )
+              ) {
+                neighbors.right.push(collidableEntity);
+              }
+              if (
+                entity.collidableSides.top &&
+                collidableEntity.collidableSides.bottom &&
+                collidableEntity.position.y ===
+                  entity.position.y + entity.length.y &&
+                isOverlapByDimension(
+                  entity.position.x,
+                  entity.length.x,
+                  collidableEntity.position.x,
+                  collidableEntity.length.x
+                )
+              ) {
+                neighbors.top.push(collidableEntity);
+              }
+            }
+          }
+
+          if (isMovable(entity)) {
+            // update velocity based on neighbors
+            if (neighbors.bottom.length && entity.velocity.y < 0) {
+              entity.velocity.y = 0;
+            }
+            if (neighbors.left.length && entity.velocity.x < 0) {
+              entity.velocity.x = 0;
+            }
+            if (neighbors.right.length && entity.velocity.x > 0) {
+              entity.velocity.x = 0;
+            }
+            if (neighbors.top.length && entity.velocity.y > 0) {
+              entity.velocity.y = 0;
+            }
+
+            // apply friction
+            // realistically we should also require `&& neighbors.bottom.length`, but mario slows even in the air
+            if (
+              entity.friction &&
+              ((entity.velocity.x > 0 && entity.acceleration.x <= 0) ||
+                (entity.velocity.x < 0 && entity.acceleration.x >= 0))
+            ) {
+              if (Math.abs(entity.velocity.x) < MIN_VELOCITY) {
+                entity.velocity.x = 0;
+              } else {
+                entity.velocity.x -=
+                  entity.velocity.x *
+                  (entity.friction * (TIME_UNIT_LENGTH / 1000));
+              }
+            }
+
+            // apply gravity
+            entity.velocity.y +=
+              this.state.universe.acceleration.y * TIME_UNIT_LENGTH;
+
+            // clamp velocity
+            entity.velocity.x = clamp(
+              -entity.vmax.x,
+              entity.velocity.x,
+              entity.vmax.x
+            );
+            entity.velocity.y = clamp(
+              -entity.vmax.y,
+              entity.velocity.y,
+              entity.vmax.y
+            );
+
+            // update viewport
+            if (entity instanceof Mario) {
+              const entityCenterX = entity.position.x + entity.length.x / 2;
+              const viewportCenterX =
+                this.state.viewport.position.x +
+                this.state.viewport.length.x / 2;
+              const maxViewportPositionX =
+                this.state.universe.length.x - this.state.viewport.length.x;
+
+              // follow entity with viewport
+              if (
+                entityCenterX > viewportCenterX &&
+                this.state.viewport.position.x < maxViewportPositionX
+              ) {
+                this.state.viewport.position.x = clamp(
+                  this.state.viewport.position.x,
+                  entityCenterX - this.state.viewport.length.x / 2,
+                  maxViewportPositionX
+                );
+              }
+
+              const minPositionX = this.state.viewport.position.x;
+              const maxPositionX =
+                this.state.viewport.position.x +
+                this.state.viewport.length.x -
+                entity.length.x;
+
+              // prevent entity from overflowing viewport
+              if (entity.position.x < minPositionX) {
+                entity.position.x = minPositionX;
+
+                if (entity.velocity.x < 0) {
+                  entity.velocity.x = 0;
+                }
+              } else if (entity.position.x > maxPositionX) {
+                entity.position.x = maxPositionX;
+
+                if (entity.velocity.x > 0) {
+                  entity.velocity.x = 0;
+                }
+              }
+            }
+          }
+
+          // update entity
+          entity.update?.(this.buttons, neighbors);
         }
 
-        const imageData = new ImageData(arr, width, height);
-
-        return createImageBitmap(imageData, 0, 0, width, height);
-      })
-    )
-      .then((imageBitmaps) => {
-        for (let i = 0; i !== imageBitmaps.length; i++) {
-          const pattern: Pattern = PATTERN_KEYS[i];
-          const imageBitmap = imageBitmaps[i];
-
-          this.patterns[pattern] =
-            this.context.createPattern(imageBitmap, "repeat") ?? undefined;
+        if (this.numUpdatesSinceRender === TIME_UNITS_PER_RENDER) {
+          this.render();
+          this.numUpdatesSinceRender = 0;
         }
-      })
-      .then(() => {
-        this.context.canvas.addEventListener("keydown", this.onKeyDown);
-        this.context.canvas.addEventListener("keyup", this.onKeyUp);
-
-        this.context.canvas.focus();
-
-        this.animationFrameRequest = requestAnimationFrame(this.update);
-      });
-  };
-
-  pause = () => {
-    if (this.pauseMs === null) {
-      this.pauseMs = Date.now();
-
-      if (this.animationFrameRequest) {
-        cancelAnimationFrame(this.animationFrameRequest);
-        this.animationFrameRequest = null;
       }
     }
+
+    setImmediate(this.update);
   };
 
-  reset = () => {
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
+  pause = (): void => {
+    this.pauseTime = performance.now();
+  };
 
-    this.keydowns.clear();
-    this.keyups.clear();
+  // @todo
+  reset = (): void => {
+    this.pauseTime = null;
+    this.stopTime = null;
+  };
 
-    this.elapsedMsSincePrevSecond = 0;
-    this.elapsedMsSincePressB = null;
-    this.pauseMs = null;
-    this.prevRenderMs = null;
-    this.prevUpdateMs = null;
-    this.state = Game.initialState;
-
+  start = (): void => {
+    this.context.canvas.addEventListener("keydown", this.onKeyDown);
+    this.context.canvas.addEventListener("keyup", this.onKeyUp);
     this.context.canvas.focus();
 
-    this.animationFrameRequest = requestAnimationFrame(this.update);
+    this.stopTime = null;
+    this.prevUpdateTime = performance.now();
+    this.update();
   };
 
-  unpause = () => {
-    if (this.pauseMs !== null) {
-      const now = Date.now();
+  stop = (): void => {
+    this.context.canvas.removeEventListener("keydown", this.onKeyDown);
+    this.context.canvas.removeEventListener("keyup", this.onKeyUp);
 
-      if (this.prevRenderMs !== null) {
-        this.prevRenderMs += now - this.pauseMs;
-      }
-      if (this.prevUpdateMs !== null) {
-        this.prevUpdateMs += now - this.pauseMs;
-      }
-      this.pauseMs = null;
-      this.animationFrameRequest = requestAnimationFrame(this.update);
+    this.pauseTime = null;
+    this.stopTime = performance.now();
+  };
+
+  unpause = (): void => {
+    if (this.pauseTime !== null && this.prevUpdateTime !== null) {
+      this.prevUpdateTime =
+        performance.now() - (this.pauseTime - this.prevUpdateTime);
     }
+
+    this.pauseTime = null;
+    this.update();
   };
 }

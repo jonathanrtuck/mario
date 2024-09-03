@@ -1,61 +1,36 @@
-import { Color, Key } from "@/types";
+import { Color, MS } from "@/types";
 
-export const COLORS: Color[] = [
-  new Uint8ClampedArray([0, 0, 0, 0]), //          0 - Transparent
-  new Uint8ClampedArray([0, 0, 0, 255]), //        1 - Black
-  new Uint8ClampedArray([255, 255, 255, 255]), //  2 - White
-  new Uint8ClampedArray([154, 95, 32, 255]), //    3 - Brown
-  new Uint8ClampedArray([248, 211, 205, 255]), //  4 - BrownLight
-  new Uint8ClampedArray([155, 157, 248, 255]), //  5 - Blue
-  new Uint8ClampedArray([128, 184, 249, 255]), //  6 - BlueLight
-  new Uint8ClampedArray([75, 154, 44, 255]), //    7 - Green
-  new Uint8ClampedArray([121, 121, 36, 255]), //   8 - GreenDark
-  new Uint8ClampedArray([164, 216, 67, 255]), //   9 - GreenLight
-  new Uint8ClampedArray([227, 169, 76, 255]), //  10 - YellowDark
-  new Uint8ClampedArray([231, 62, 37, 255]), //   11 - Red
+export const BUTTONS = [
+  "a",
+  "b",
+  "down",
+  "left",
+  "right",
+  "start",
+  "up",
 ] as const;
 
-export const GRID_UNIT_LENGTH = 0.775; // m
+export const COLOR_BLACK: Color = "rgba(0, 0, 0, 255)";
+export const COLOR_BLUE: Color = "rgba(155, 157, 248, 255)";
+export const COLOR_BLUE_LIGHT: Color = "rgba(128, 184, 249, 255)";
+export const COLOR_BROWN: Color = "rgba(154, 95, 32, 255)";
+export const COLOR_BROWN_LIGHT: Color = "rgba(248, 211, 205, 255)";
+export const COLOR_GREEN: Color = "rgba(75, 154, 44, 255)";
+export const COLOR_GREEN_DARK: Color = "rgba(121, 121, 36, 255)";
+export const COLOR_GREEN_LIGHT: Color = "rgba(164, 216, 67, 255)";
+export const COLOR_RED: Color = "rgba(231, 62, 37, 255)";
+export const COLOR_TRANSPARENT: Color = "rgba(0, 0, 0, 0)";
+export const COLOR_WHITE: Color = "rgba(255, 255, 255, 255)";
+export const COLOR_YELLOW_DARK: Color = "rgba(227, 169, 76, 255)";
 
-export const IS_DEBUG_MODE = process.env.NODE_ENV === "development";
+export const MIN_VELOCITY = 0.25;
 
-export const KEY_BINDING: Record<Key, Set<string>> = {
-  a: new Set(["z"]), // run
-  b: new Set(["x"]), // jump
-  down: new Set(["ArrowDown"]),
-  left: new Set(["ArrowLeft"]),
-  right: new Set(["ArrowRight"]),
-  up: new Set(["ArrowUp"]), // nothing
-};
+export const PIXEL_LENGTH = 16; // planckUnits
 
-export const KEYS = ["a", "b", "down", "left", "right", "up"] as const;
-
-export const NUM_PIXELS_PER_GRID_UNIT = 16;
-
-export const PATTERNS = [
-  "Block",
-  "Brick",
-  "BushLarge",
-  "BushMedium",
-  "BushSmall",
-  "Castle",
-  "CloudLarge",
-  "CloudMedium",
-  "CloudSmall",
-  "Flag",
-  "HillLarge",
-  "HillSmall",
-  "MarioSmallJumpingLeft",
-  "MarioSmallJumpingRight",
-  "MarioSmallStandingLeft",
-  "MarioSmallStandingRight",
-  "Pipe",
-  "QuestionBlock",
-  "Wall",
-] as const;
-
-export const PIXEL_LENGTH = GRID_UNIT_LENGTH / NUM_PIXELS_PER_GRID_UNIT;
-
-export const PIXEL_SCALE = 4;
+export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16; // planckUnits
 
 export const SIDES = ["bottom", "left", "right", "top"] as const;
+
+export const TIME_UNIT_LENGTH: MS = 1000 / 120; // 120hz
+
+export const TIME_UNITS_PER_RENDER = 2;

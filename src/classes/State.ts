@@ -1,6 +1,4 @@
-import { Universe, Viewport } from "@/types";
-
-import { Entity } from "./Entity";
+import { Entity, Universe, Viewport } from "@/types";
 
 export class State {
   entities: Entity[];
