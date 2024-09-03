@@ -3,9 +3,12 @@ import "setimmediate";
 import { State } from "@/classes";
 import {
   BUTTONS,
+  COLOR_BLACK,
   COLOR_BLUE,
+  COLOR_BROWN,
   COLOR_TRANSPARENT,
   COLOR_WHITE,
+  COLOR_YELLOW_DARK,
   MIN_VELOCITY,
   UPDATE_INTERVAL,
   UPDATES_PER_RENDER,
@@ -37,9 +40,23 @@ import {
   pixels,
 } from "@/utils";
 
+const B = COLOR_BROWN;
+const K = COLOR_BLACK;
 const T = COLOR_TRANSPARENT;
 const W = COLOR_WHITE;
+const Y = COLOR_YELLOW_DARK;
 
+// prettier-ignore
+const COIN_BITMAP: Bitmap = [
+  [T,Y,Y,K,T],
+  [Y,Y,Y,Y,K],
+  [Y,Y,Y,Y,K],
+  [Y,Y,Y,Y,K],
+  [Y,Y,Y,Y,K],
+  [Y,Y,Y,Y,K],
+  [K,Y,Y,K,B],
+  [T,K,K,B,T],
+];
 // prettier-ignore
 const X_BITMAP: Bitmap = [
   [W,T,T,T,W],
@@ -49,6 +66,7 @@ const X_BITMAP: Bitmap = [
   [W,T,T,T,W],
 ];
 
+const COIN = drawBitmap(COIN_BITMAP);
 const X = drawBitmap(X_BITMAP);
 
 export class Game {
@@ -293,9 +311,11 @@ export class Game {
     start: new Set(["Enter"]), // pause
     up: new Set(["w", "W", "ArrowUp"]), // [nothing]
   };
+  level: number;
   score: number;
   state: State;
   time: number;
+  world: number;
 
   get isPaused() {
     return this.pauseTime !== null;
@@ -307,9 +327,11 @@ export class Game {
   constructor(canvas: HTMLCanvasElement) {
     this.coins = 0;
     this.context = canvas.getContext("2d")!;
+    this.level = 1;
     this.score = 0;
     this.state = Game.initialState;
     this.time = Game.initialTime;
+    this.world = 1;
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -338,10 +360,10 @@ export class Game {
 
   private render = (): void => {
     this.context.reset();
-    this.context.canvas.height = this.state.viewport.length.y;
-    this.context.canvas.width = this.state.viewport.length.x;
 
     // render universe
+    this.context.canvas.height = this.state.viewport.length.y;
+    this.context.canvas.width = this.state.viewport.length.x;
     this.context.canvas.style.backgroundColor = this.state.universe.color;
 
     // render text
@@ -356,14 +378,9 @@ export class Game {
     this.context.fillText("MARIO", x, top);
     this.context.fillText(String(this.score).padStart(6, "0"), x, bottom);
 
-    x = sectionWidth * 1 + pixels(30);
-    this.context.drawImage(
-      X,
-      x + pixels(8),
-      bottom - pixels(5),
-      pixels(5),
-      pixels(5)
-    );
+    x = sectionWidth * 1 + pixels(28);
+    this.context.drawImage(COIN, x, bottom, pixels(5), -pixels(8));
+    this.context.drawImage(X, x + pixels(8), bottom, pixels(5), -pixels(5));
     this.context.fillText(
       String(this.coins).padStart(2, "0"),
       x + pixels(16),
@@ -372,7 +389,11 @@ export class Game {
 
     x = sectionWidth * 2 + pixels(14);
     this.context.fillText("WORLD", x, top);
-    this.context.fillText("1-1", x + pixels(11), bottom);
+    this.context.fillText(
+      `${this.world}-${this.level}`,
+      x + pixels(11),
+      bottom
+    );
 
     x = sectionWidth * 3 + pixels(8);
     this.context.fillText("TIME", x, top);
@@ -910,14 +931,15 @@ export class Game {
     this.pauseTime = performance.now();
   };
 
-  // @todo
   reset = (): void => {
     this.coins = 0;
+    this.level = 1;
     this.pauseTime = null;
     this.score = 0;
     this.state = Game.initialState;
     this.stopTime = null;
     this.time = Game.initialTime;
+    this.world = 1;
   };
 
   start = (): void => {
@@ -926,11 +948,14 @@ export class Game {
     this.context.canvas.focus();
 
     this.coins = 0;
+    this.level = 1;
     this.prevUpdateTime = performance.now();
     this.score = 0;
     this.state = Game.initialState;
     this.stopTime = null;
     this.time = Game.initialTime;
+    this.world = 1;
+
     this.update();
   };
 
