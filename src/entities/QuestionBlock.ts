@@ -6,8 +6,10 @@ import {
   COLOR_YELLOW_DARK,
   RENDERS_PER_TICK,
 } from "@/constants";
-import { Bitmap, CollidableEntity } from "@/types";
+import { Bitmap, CollidableEntity, Neighbors } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
+
+import { Mario } from "./Mario";
 
 const B = COLOR_BROWN;
 const D = COLOR_BROWN_DARK;
@@ -33,6 +35,25 @@ const QUESTION_BLOCK_DARK_BITMAP: Bitmap = [
   [B,D,K,D,D,D,D,D,K,K,D,D,D,K,D,K],
   [B,D,D,D,D,D,D,D,D,D,D,D,D,D,D,K],
   [K,K,K,K,K,K,K,K,K,K,K,K,K,K,K,K],
+];
+// prettier-ignore
+const QUESTION_BLOCK_DISABLED_BITMAP: Bitmap = [
+  [T,K,K,K,K,K,K,K,K,K,K,K,K,K,K,T],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,K,B,B,B,B,B,B,B,B,B,B,K,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [K,B,K,B,B,B,B,B,B,B,B,B,B,K,B,K],
+  [K,B,B,B,B,B,B,B,B,B,B,B,B,B,B,K],
+  [T,K,K,K,K,K,K,K,K,K,K,K,K,K,K,T],
 ];
 // prettier-ignore
 const QUESTION_BLOCK_LIGHT_BITMAP: Bitmap = [
@@ -74,12 +95,14 @@ const QUESTION_BLOCK_MEDIUM_BITMAP: Bitmap = [
 ];
 
 const QUESTION_BLOCK_DARK = drawBitmap(QUESTION_BLOCK_DARK_BITMAP);
+const QUESTION_BLOCK_DISABLED = drawBitmap(QUESTION_BLOCK_DISABLED_BITMAP);
 const QUESTION_BLOCK_LIGHT = drawBitmap(QUESTION_BLOCK_LIGHT_BITMAP);
 const QUESTION_BLOCK_MEDIUM = drawBitmap(QUESTION_BLOCK_MEDIUM_BITMAP);
 
 export class QuestionBlock implements CollidableEntity {
   private numRenders: number; // resets each tick
 
+  isDisabled = false;
   isVisible: boolean;
   length = {
     x: gridUnits(1),
@@ -125,7 +148,9 @@ export class QuestionBlock implements CollidableEntity {
 
     if (this.isVisible) {
       context.drawImage(
-        time % 2 === 0
+        this.isDisabled
+          ? QUESTION_BLOCK_DISABLED
+          : time % 2 === 0
           ? QUESTION_BLOCK_LIGHT
           : this.numRenders < RENDERS_PER_TICK / 3 ||
             this.numRenders >= (RENDERS_PER_TICK / 3) * 2
@@ -136,6 +161,14 @@ export class QuestionBlock implements CollidableEntity {
         this.length.x,
         this.length.y
       );
+    }
+  }
+
+  update(_: never, neighbors: Neighbors): void {
+    if (neighbors.bottom.some((entity) => entity instanceof Mario)) {
+      this.isDisabled = true;
+
+      // @todo animate position
     }
   }
 }

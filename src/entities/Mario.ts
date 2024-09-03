@@ -160,7 +160,7 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
 
   update(buttons: Set<Button>, neighbors: Neighbors): void {
-    if (neighbors.right.some((neighbor) => neighbor instanceof Flag)) {
+    if (neighbors.right.some((entity) => entity instanceof Flag)) {
       console.debug("win");
     }
 
