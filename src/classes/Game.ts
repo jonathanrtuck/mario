@@ -379,6 +379,7 @@ export class Game {
         collidableEntityIndex: number
       ][] = [];
 
+      // collision detection
       let timeRemaining = elapsedTime;
       do {
         collisions = [];
@@ -830,6 +831,6 @@ export class Game {
     }
 
     this.pauseTime = null;
-    this.animationFrameRequest = requestAnimationFrame(this.render);
+    this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 }
