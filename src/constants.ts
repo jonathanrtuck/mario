@@ -1,4 +1,4 @@
-import { Color, MS } from "@/types";
+import { Color } from "@/types";
 
 export const BUTTONS = [
   "a",
@@ -30,5 +30,3 @@ export const PIXEL_LENGTH = 16; // planckUnits
 export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16; // planckUnits
 
 export const SIDES = ["bottom", "left", "right", "top"] as const;
-
-export const TIME_UNIT_LENGTH: MS = 1000 / 60; // 60hz
