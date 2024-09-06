@@ -1,5 +1,5 @@
 import { GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
-import { Bitmap, CollidableEntity, Entity, MovableEntity } from "@/types";
+import { Bitmap, CollidableEntity, Entity, MovableEntity, Side } from "@/types";
 
 export const clamp = (min: number, num: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
@@ -51,5 +51,18 @@ export const isOverlapByDimension = (
 
 export const isMovable = (entity: Entity): entity is MovableEntity =>
   (entity as MovableEntity).velocity !== undefined;
+
+export const oppositeSide = (side: Side): Side => {
+  switch (side) {
+    case "bottom":
+      return "top";
+    case "left":
+      return "right";
+    case "right":
+      return "left";
+    case "top":
+      return "bottom";
+  }
+};
 
 export const pixels = (num: number): number => int(num * PIXEL_LENGTH);

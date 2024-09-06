@@ -6,10 +6,12 @@ import {
   COLOR_YELLOW_DARK,
   RENDERS_PER_TICK,
 } from "@/constants";
-import { Bitmap, CollidableEntity, Neighbors } from "@/types";
-import { drawBitmap, gridUnits } from "@/utils";
+import { Bitmap, CollidableEntity, Length, Side } from "@/types";
+import { drawBitmap, gridUnits, pixels } from "@/utils";
 
 import { Mario } from "./Mario";
+
+const NUM_ANIMATION_RENDERS = RENDERS_PER_TICK / 2;
 
 const B = COLOR_BROWN;
 const D = COLOR_BROWN_DARK;
@@ -100,7 +102,12 @@ const QUESTION_BLOCK_LIGHT = drawBitmap(QUESTION_BLOCK_LIGHT_BITMAP);
 const QUESTION_BLOCK_MEDIUM = drawBitmap(QUESTION_BLOCK_MEDIUM_BITMAP);
 
 export class QuestionBlock implements CollidableEntity {
-  private numRenders: number; // resets each tick
+  private numRenders: number;
+  private offset: Length = {
+    x: 0,
+    y: 0,
+    z: 0,
+  };
 
   isDisabled = false;
   isVisible: boolean;
@@ -139,14 +146,29 @@ export class QuestionBlock implements CollidableEntity {
     };
   }
 
-  render(context: CanvasRenderingContext2D, time: number): void {
-    this.numRenders++;
-
-    if (time % 2 === 0) {
+  collide(side: Side, entity: CollidableEntity): void {
+    if (!this.isDisabled && side === "bottom" && entity instanceof Mario) {
+      this.isDisabled = true;
       this.numRenders = 0;
+    }
+  }
+
+  render(context: CanvasRenderingContext2D, time: number): void {
+    if (!this.isDisabled) {
+      this.numRenders++;
+
+      if (time % 2 === 0) {
+        this.numRenders = 0;
+      }
     }
 
     if (this.isVisible) {
+      if (this.isDisabled && this.numRenders <= NUM_ANIMATION_RENDERS) {
+        this.offset.y -=
+          pixels(NUM_ANIMATION_RENDERS / 2 - this.numRenders) / 3;
+        this.numRenders++;
+      }
+
       context.drawImage(
         this.isDisabled
           ? QUESTION_BLOCK_DISABLED
@@ -157,18 +179,10 @@ export class QuestionBlock implements CollidableEntity {
           ? QUESTION_BLOCK_MEDIUM
           : QUESTION_BLOCK_DARK,
         0,
-        0,
+        0 + this.offset.y,
         this.length.x,
         this.length.y
       );
-    }
-  }
-
-  update(_: never, neighbors: Neighbors): void {
-    if (neighbors.bottom.some((entity) => entity instanceof Mario)) {
-      this.isDisabled = true;
-
-      // @todo animate position
     }
   }
 }

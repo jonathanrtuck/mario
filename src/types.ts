@@ -12,6 +12,7 @@ export type Button = (typeof BUTTONS)[number];
 
 export interface CollidableEntity extends Entity {
   collidableSides: Record<Side, boolean>;
+  collide?(side: Side, collidableEntity: CollidableEntity): void;
 }
 
 export type Color = `rgba(${number}, ${number}, ${number}, ${number})`;

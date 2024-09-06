@@ -1,6 +1,15 @@
-import { COLOR_BLACK, COLOR_BROWN, COLOR_BROWN_LIGHT } from "@/constants";
-import { Bitmap, CollidableEntity } from "@/types";
-import { drawBitmap, gridUnits } from "@/utils";
+import {
+  COLOR_BLACK,
+  COLOR_BROWN,
+  COLOR_BROWN_LIGHT,
+  RENDERS_PER_TICK,
+} from "@/constants";
+import { Bitmap, CollidableEntity, Length, Side } from "@/types";
+import { drawBitmap, gridUnits, pixels } from "@/utils";
+
+import { Mario } from "./Mario";
+
+const NUM_ANIMATION_RENDERS = RENDERS_PER_TICK / 2;
 
 const B = COLOR_BROWN;
 const K = COLOR_BLACK;
@@ -29,6 +38,13 @@ const BRICK_BITMAP: Bitmap = [
 const BRICK = drawBitmap(BRICK_BITMAP);
 
 export class Brick implements CollidableEntity {
+  private numRenders: number;
+  private offset: Length = {
+    x: 0,
+    y: 0,
+    z: 0,
+  };
+
   collidableSides = {
     bottom: true,
     left: true,
@@ -43,6 +59,7 @@ export class Brick implements CollidableEntity {
   position;
 
   constructor(gridX: number, gridY: number) {
+    this.numRenders = -1;
     this.position = {
       x: gridUnits(gridX),
       y: gridUnits(gridY),
@@ -50,7 +67,30 @@ export class Brick implements CollidableEntity {
     };
   }
 
+  collide(side: Side, entity: CollidableEntity): void {
+    if (
+      side === "bottom" &&
+      entity instanceof Mario &&
+      entity.size === "small"
+    ) {
+      this.numRenders = 0;
+    }
+  }
+
   render(context: CanvasRenderingContext2D): void {
-    context.drawImage(BRICK, 0, 0, this.length.x, this.length.y);
+    if (this.numRenders !== -1 && this.numRenders <= NUM_ANIMATION_RENDERS) {
+      this.offset.y -= pixels(NUM_ANIMATION_RENDERS / 2 - this.numRenders) / 3;
+      this.numRenders++;
+    } else {
+      this.offset.y = 0;
+    }
+
+    context.drawImage(
+      BRICK,
+      0,
+      0 + this.offset.y,
+      this.length.x,
+      this.length.y
+    );
   }
 }

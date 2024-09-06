@@ -37,6 +37,7 @@ import {
   isCollidable,
   isOverlapByDimension,
   isMovable,
+  oppositeSide,
   pixels,
 } from "@/utils";
 
@@ -379,8 +380,8 @@ export class Game {
     this.context.fillText(String(this.score).padStart(6, "0"), x, bottom);
 
     x = sectionWidth * 1 + pixels(28);
-    this.context.drawImage(COIN, x, bottom, pixels(5), -pixels(8));
-    this.context.drawImage(X, x + pixels(8), bottom, pixels(5), -pixels(5));
+    this.context.drawImage(COIN, x, bottom, pixels(5), pixels(-8));
+    this.context.drawImage(X, x + pixels(8), bottom, pixels(5), pixels(-5));
     this.context.fillText(
       String(this.coins).padStart(2, "0"),
       x + pixels(16),
@@ -460,10 +461,11 @@ export class Game {
         // update time
         if (this.numUpdatesSinceTick === UPDATES_PER_TICK) {
           this.numUpdatesSinceTick = 0;
-          this.time--;
 
           if (this.time === 0) {
             console.debug("lose");
+          } else {
+            this.time--;
           }
         } else {
           this.numUpdatesSinceTick++;
@@ -674,11 +676,74 @@ export class Game {
             }
           }
 
-          // sort collisions by time
           if (collisions.length !== 0) {
+            // sort collisions by time
             collisions.sort(([aTime], [bTime]) => aTime - bTime);
 
             const [earliestTime] = collisions[0];
+
+            // only handle one collision per movableEntity
+            const uniqueCollisions = new Array<(typeof collisions)[number]>();
+
+            for (const collision of collisions) {
+              const [time, movableEntityIndex, side, collidableEntityIndex] =
+                collision;
+
+              if (time !== earliestTime) {
+                break;
+              }
+
+              const prevCollision = uniqueCollisions.find(
+                ([, index]) => index === movableEntityIndex
+              );
+
+              if (prevCollision) {
+                const [, , prevSide, prevCollidableEntityIndex] = prevCollision;
+
+                if (prevSide === side) {
+                  const collidableEntity =
+                    collidableEntities[collidableEntityIndex];
+                  const prevCollidableEntity =
+                    collidableEntities[prevCollidableEntityIndex];
+
+                  if (
+                    !isMovable(collidableEntity) &&
+                    !isMovable(prevCollidableEntity)
+                  ) {
+                    const movableEntity = movableEntities[movableEntityIndex];
+                    const overlap = Math.min(
+                      collidableEntity.position.x +
+                        collidableEntity.length.x -
+                        movableEntity.position.x,
+                      movableEntity.position.x +
+                        movableEntity.length.x -
+                        collidableEntity.position.x
+                    );
+                    const prevOverlap = Math.min(
+                      prevCollidableEntity.position.x +
+                        prevCollidableEntity.length.x -
+                        movableEntity.position.x,
+                      movableEntity.position.x +
+                        movableEntity.length.x -
+                        prevCollidableEntity.position.x
+                    );
+
+                    if (overlap > prevOverlap) {
+                      const prevCollisionIndex =
+                        uniqueCollisions.indexOf(prevCollision);
+
+                      uniqueCollisions.splice(prevCollisionIndex, 1, collision);
+                    }
+                  } else {
+                    uniqueCollisions.push(collision);
+                  }
+                } else {
+                  uniqueCollisions.push(collision);
+                }
+              } else {
+                uniqueCollisions.push(collision);
+              }
+            }
 
             // update entities' positions up to earliestTime
             for (const movableEntity of movableEntities) {
@@ -692,7 +757,8 @@ export class Game {
               );
             }
 
-            for (const collision of collisions) {
+            // handle collisions
+            for (const collision of uniqueCollisions) {
               const [time, movableEntityIndex, side, collidableEntityIndex] =
                 collision;
 
@@ -706,29 +772,39 @@ export class Game {
 
               switch (side) {
                 case "bottom":
+                  movableEntity.acceleration.y = 0;
                   movableEntity.position.y =
                     collidableEntity.position.y + collidableEntity.length.y;
                   movableEntity.velocity.y =
                     -movableEntity.velocity.y * movableEntity.elasticity;
                   break;
                 case "left":
+                  movableEntity.acceleration.x = 0;
                   movableEntity.position.x =
                     collidableEntity.position.x + collidableEntity.length.x;
                   movableEntity.velocity.x =
                     -movableEntity.velocity.x * movableEntity.elasticity;
                   break;
                 case "right":
+                  movableEntity.acceleration.x = 0;
                   movableEntity.position.x =
                     collidableEntity.position.x - movableEntity.length.x;
                   movableEntity.velocity.x =
                     -movableEntity.velocity.x * movableEntity.elasticity;
                   break;
                 case "top":
+                  movableEntity.acceleration.y = 0;
                   movableEntity.position.y =
                     collidableEntity.position.y - movableEntity.length.y;
                   movableEntity.velocity.y =
                     -movableEntity.velocity.y * movableEntity.elasticity;
                   break;
+              }
+
+              // this will always be true
+              if (isCollidable(movableEntity)) {
+                movableEntity.collide?.(side, collidableEntity);
+                collidableEntity.collide?.(oppositeSide(side), movableEntity);
               }
             }
 

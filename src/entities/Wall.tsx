@@ -4,7 +4,7 @@ import {
   COLOR_BROWN_LIGHT,
   COLOR_TRANSPARENT,
 } from "@/constants";
-import { Bitmap, Button, CollidableEntity, MS } from "@/types";
+import { Bitmap, CollidableEntity } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
 
 const B = COLOR_BROWN;
