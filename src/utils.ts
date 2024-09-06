@@ -28,6 +28,9 @@ export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
   return offscreenCanvas;
 };
 
+export const flip = (bitmap: Bitmap): Bitmap =>
+  bitmap.map((row) => row.toReversed());
+
 export const gridUnits = (num: number): number => int(num * GRID_UNIT_LENGTH);
 
 export const gridUnitsPerSecond = (num: number): number =>

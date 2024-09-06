@@ -34,7 +34,6 @@ On each update, determine where each rendered entity should be now based on its 
 
 ## todo
 
-- animate question block, brick position when mario hits
 - mario bitmaps/animation
 - enemies
 - items
