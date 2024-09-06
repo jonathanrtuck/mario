@@ -162,13 +162,13 @@ export class QuestionBlock implements CollidableEntity {
       }
     }
 
-    if (this.isVisible) {
-      if (this.isDisabled && this.numRenders <= NUM_ANIMATION_RENDERS) {
-        this.offset.y -=
-          pixels(NUM_ANIMATION_RENDERS / 2 - this.numRenders) / 3;
-        this.numRenders++;
-      }
+    if (this.isDisabled && this.numRenders <= NUM_ANIMATION_RENDERS) {
+      this.isVisible = true;
+      this.offset.y -= pixels(NUM_ANIMATION_RENDERS / 2 - this.numRenders) / 3;
+      this.numRenders++;
+    }
 
+    if (this.isVisible) {
       context.drawImage(
         this.isDisabled
           ? QUESTION_BLOCK_DISABLED
