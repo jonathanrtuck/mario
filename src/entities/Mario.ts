@@ -31,6 +31,25 @@ const T = COLOR_TRANSPARENT;
 const Y = COLOR_YELLOW_DARK;
 
 // prettier-ignore
+const HANGING_RIGHT_SMALL_BITMAP: Bitmap = [
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,R,R,R,R,R,T,T,T,T,T],
+  [T,T,T,T,T,R,R,R,R,R,R,R,R,R,T,T],
+  [T,T,T,T,T,G,G,G,Y,Y,G,Y,T,T,T,T],
+  [T,T,T,T,G,Y,G,Y,Y,Y,G,Y,Y,Y,T,T],
+  [T,T,T,T,G,Y,G,G,Y,Y,Y,G,Y,Y,Y,T],
+  [T,T,T,T,G,G,Y,Y,Y,Y,G,G,G,G,T,T],
+  [T,T,T,T,T,T,Y,Y,Y,Y,Y,Y,Y,T,T,T],
+  [T,T,T,T,T,T,R,R,G,G,G,G,G,Y,Y,T],
+  [T,T,T,T,T,R,R,G,G,G,G,G,G,Y,Y,Y],
+  [T,T,T,T,R,R,R,G,G,G,G,G,G,Y,Y,Y],
+  [T,T,T,T,R,R,R,R,R,Y,R,T,T,T,T,T],
+  [T,T,T,T,R,R,R,R,R,R,R,T,T,T,T,G],
+  [T,T,T,T,R,R,R,R,R,R,R,R,R,R,G,G],
+  [T,T,T,T,T,R,R,R,R,R,R,R,R,R,G,G],
+  [T,T,T,T,T,T,R,R,R,R,R,R,R,R,G,G],
+];
+// prettier-ignore
 const JUMPING_RIGHT_SMALL_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,T,T,T,T,T,T,Y,Y,Y],
   [T,T,T,T,T,T,R,R,R,R,R,T,T,Y,Y,Y],
@@ -145,6 +164,7 @@ const WALKING_RIGHT_SMALL_C_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,G,G,G,G,T,T,T,T,T],
 ];
 
+const HANGING_RIGHT_SMALL = drawBitmap(HANGING_RIGHT_SMALL_BITMAP);
 const JUMPING_RIGHT_SMALL = drawBitmap(JUMPING_RIGHT_SMALL_BITMAP);
 const SLIDING_RIGHT_SMALL = drawBitmap(SLIDING_RIGHT_SMALL_BITMAP);
 const STANDING_RIGHT_SMALL = drawBitmap(STANDING_RIGHT_SMALL_BITMAP);
@@ -152,6 +172,7 @@ const WALKING_RIGHT_SMALL_A = drawBitmap(WALKING_RIGHT_SMALL_A_BITMAP);
 const WALKING_RIGHT_SMALL_B = drawBitmap(WALKING_RIGHT_SMALL_B_BITMAP);
 const WALKING_RIGHT_SMALL_C = drawBitmap(WALKING_RIGHT_SMALL_C_BITMAP);
 
+const HANGING_LEFT_SMALL = drawBitmap(flip(HANGING_RIGHT_SMALL_BITMAP));
 const JUMPING_LEFT_SMALL = drawBitmap(flip(JUMPING_RIGHT_SMALL_BITMAP));
 const SLIDING_LEFT_SMALL = drawBitmap(flip(SLIDING_RIGHT_SMALL_BITMAP));
 const STANDING_LEFT_SMALL = drawBitmap(flip(STANDING_RIGHT_SMALL_BITMAP));
@@ -173,6 +194,10 @@ export class Mario implements CollidableEntity, MovableEntity {
   private get Image(): OffscreenCanvas {
     if (this.size === "large") {
       return STANDING_RIGHT_SMALL;
+    }
+
+    if (this.isHanging) {
+      return this.isFacingLeft ? HANGING_LEFT_SMALL : HANGING_RIGHT_SMALL;
     }
 
     if (this.isJumping) {
@@ -225,6 +250,7 @@ export class Mario implements CollidableEntity, MovableEntity {
   isAccelerating = false;
   isCrouching = false;
   isFacingLeft = false;
+  isHanging = false; // on the flag
   isJumping = false;
   isSliding = false;
   isWalking = false;
@@ -306,6 +332,10 @@ export class Mario implements CollidableEntity, MovableEntity {
 
     this.isAccelerating = isPressingA;
     this.isCrouching = this.size === "large" && isPressingDown;
+    this.isHanging =
+      (isTouchingLeft || isTouchingRight) &&
+      (neighbors.left.some((entity) => entity instanceof Flag) ||
+        neighbors.right.some((entity) => entity instanceof Flag));
     this.isSliding = false;
 
     this.acceleration.x = 0;
