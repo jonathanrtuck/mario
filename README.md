@@ -9,6 +9,7 @@
 | `a`, `LeftArrow`  | move left            |
 | `d`, `RightArrow` | move right           |
 | `s`, `DownArrow`  | crouch               |
+| `Enter`           | pause                |
 
 ## physics
 

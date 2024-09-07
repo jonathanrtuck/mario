@@ -1047,9 +1047,7 @@ export class Game {
     if (this.pauseTime !== null && this.prevUpdateTime !== null) {
       this.prevUpdateTime =
         performance.now() - (this.pauseTime - this.prevUpdateTime);
+      this.pauseTime = null;
     }
-
-    this.pauseTime = null;
-    this.update();
   };
 }
