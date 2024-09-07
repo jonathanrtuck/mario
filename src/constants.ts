@@ -9,7 +9,6 @@ export const BUTTONS = [
   "start",
   "up",
 ] as const;
-
 export const COLORS = [
   "BLACK",
   "BLUE",
@@ -25,6 +24,7 @@ export const COLORS = [
   "WHITE",
   "YELLOW_DARK",
 ] as const;
+export const SIDES = ["bottom", "left", "right", "top"] as const;
 
 export const COLOR_VALUES: Record<Color, ColorValue> = {
   BLACK: "rgba(0, 0, 0, 255)",
@@ -43,15 +43,12 @@ export const COLOR_VALUES: Record<Color, ColorValue> = {
 };
 
 export const PIXEL_LENGTH = 16; // planckUnits
-
 export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16; // planckUnits
 
-export const SIDES = ["bottom", "left", "right", "top"] as const;
-
+export const RENDER_INTERVAL: MS = 1000 / 60; // 60hz
+export const TICK_INTERVAL: MS = 400;
 export const UPDATE_INTERVAL: MS = 1000 / 120; // 120hz
 
-export const UPDATES_PER_RENDER = 2; // 60hz
-
-export const UPDATES_PER_TICK = 48; // 400ms
-
-export const RENDERS_PER_TICK = UPDATES_PER_TICK / UPDATES_PER_RENDER;
+export const RENDERS_PER_TICK = TICK_INTERVAL / RENDER_INTERVAL;
+export const UPDATES_PER_RENDER = RENDER_INTERVAL / UPDATE_INTERVAL;
+export const UPDATES_PER_TICK = TICK_INTERVAL / UPDATE_INTERVAL;

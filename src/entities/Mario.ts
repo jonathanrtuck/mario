@@ -1,4 +1,4 @@
-import { COLOR_VALUES, UPDATES_PER_TICK } from "@/constants";
+import { COLOR_VALUES, UPDATE_INTERVAL, UPDATES_PER_TICK } from "@/constants";
 import { Flag } from "@/entities";
 import {
   Acceleration,
@@ -15,6 +15,7 @@ import {
   gridUnits,
   gridUnitsPerSecond,
   gridUnitsPerSecondPerSecond,
+  int,
   pixels,
 } from "@/utils";
 
@@ -175,7 +176,7 @@ const ACCELERATION: Acceleration = {
   y: gridUnitsPerSecondPerSecond(900),
   z: 0,
 };
-const MAX_NUM_JUMP_INPUT_FRAMES = 24;
+const MAX_NUM_JUMP_INPUT_FRAMES = int(200 / UPDATE_INTERVAL); // 200ms
 
 export class Mario implements CollidableEntity, MovableEntity {
   private numJumpInputFrames = 0;
