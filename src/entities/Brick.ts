@@ -1,9 +1,4 @@
-import {
-  COLOR_BLACK,
-  COLOR_BROWN,
-  COLOR_BROWN_LIGHT,
-  RENDERS_PER_TICK,
-} from "@/constants";
+import { COLOR_VALUES, RENDERS_PER_TICK } from "@/constants";
 import { Bitmap, CollidableEntity, Length, Side } from "@/types";
 import { drawBitmap, gridUnits, pixels } from "@/utils";
 
@@ -11,9 +6,7 @@ import { Mario } from "./Mario";
 
 const NUM_ANIMATION_RENDERS = RENDERS_PER_TICK / 2;
 
-const B = COLOR_BROWN;
-const K = COLOR_BLACK;
-const L = COLOR_BROWN_LIGHT;
+const { BLACK: K, BROWN: B, BROWN_LIGHT: L } = COLOR_VALUES;
 
 // prettier-ignore
 const BRICK_BITMAP: Bitmap = [

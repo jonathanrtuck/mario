@@ -3,12 +3,7 @@ import "setimmediate";
 import { State } from "@/classes";
 import {
   BUTTONS,
-  COLOR_BLACK,
-  COLOR_BLUE,
-  COLOR_BROWN,
-  COLOR_TRANSPARENT,
-  COLOR_WHITE,
-  COLOR_YELLOW_DARK,
+  COLOR_VALUES,
   MIN_VELOCITY,
   UPDATE_INTERVAL,
   UPDATES_PER_RENDER,
@@ -41,11 +36,13 @@ import {
   pixels,
 } from "@/utils";
 
-const B = COLOR_BROWN;
-const K = COLOR_BLACK;
-const T = COLOR_TRANSPARENT;
-const W = COLOR_WHITE;
-const Y = COLOR_YELLOW_DARK;
+const {
+  BLACK: K,
+  BROWN: B,
+  TRANSPARENT: T,
+  WHITE: W,
+  YELLOW_DARK: Y,
+} = COLOR_VALUES;
 
 // prettier-ignore
 const COIN_BITMAP: Bitmap = [
@@ -272,7 +269,7 @@ export class Game {
           y: gridUnitsPerSecondPerSecond(-64),
           z: 0,
         },
-        color: COLOR_BLUE,
+        color: COLOR_VALUES.BLUE,
         length: {
           x: gridUnits(210),
           y: gridUnits(15),
@@ -369,7 +366,7 @@ export class Game {
 
     // render text
     this.context.font = `${pixels(11)}px PixelEmulator`;
-    this.context.fillStyle = COLOR_WHITE;
+    this.context.fillStyle = COLOR_VALUES.WHITE;
 
     const sectionWidth = this.state.viewport.length.x / 4;
     const top = pixels(12);

@@ -1,10 +1,4 @@
-import {
-  COLOR_GREEN_DARK,
-  COLOR_RED,
-  COLOR_TRANSPARENT,
-  COLOR_YELLOW_DARK,
-  UPDATES_PER_TICK,
-} from "@/constants";
+import { COLOR_VALUES, UPDATES_PER_TICK } from "@/constants";
 import {
   Acceleration,
   Bitmap,
@@ -25,10 +19,7 @@ import {
 
 import { Flag } from "./Flag";
 
-const G = COLOR_GREEN_DARK;
-const R = COLOR_RED;
-const T = COLOR_TRANSPARENT;
-const Y = COLOR_YELLOW_DARK;
+const { GREEN_DARK: G, RED: R, TRANSPARENT: T, YELLOW_DARK: Y } = COLOR_VALUES;
 
 // prettier-ignore
 const HANGING_RIGHT_SMALL_BITMAP: Bitmap = [

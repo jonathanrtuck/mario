@@ -1,4 +1,4 @@
-import { BUTTONS, SIDES } from "@/constants";
+import { BUTTONS, COLORS, SIDES } from "@/constants";
 
 export type Acceleration = {
   x: number; // planckUnits/ms^2 (>= 0)
@@ -6,7 +6,7 @@ export type Acceleration = {
   z: number;
 };
 
-export type Bitmap = Color[][];
+export type Bitmap = ColorValue[][];
 
 export type Button = (typeof BUTTONS)[number];
 
@@ -15,7 +15,9 @@ export interface CollidableEntity extends Entity {
   collide?(side: Side, collidableEntity: CollidableEntity): void;
 }
 
-export type Color = `rgba(${number}, ${number}, ${number}, ${number})`;
+export type Color = (typeof COLORS)[number];
+
+export type ColorValue = `rgba(${number}, ${number}, ${number}, ${number})`;
 
 export interface Entity {
   length: Length;
@@ -52,7 +54,7 @@ export type Side = (typeof SIDES)[number];
 
 export type Universe = {
   acceleration: Acceleration; // gravity
-  color: Color;
+  color: ColorValue;
   length: Length;
 };
 

@@ -1,16 +1,8 @@
-import {
-  COLOR_BLACK,
-  COLOR_BROWN,
-  COLOR_BROWN_LIGHT,
-  COLOR_TRANSPARENT,
-} from "@/constants";
+import { COLOR_VALUES } from "@/constants";
 import { Bitmap, Entity } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
 
-const B = COLOR_BROWN;
-const K = COLOR_BLACK;
-const L = COLOR_BROWN_LIGHT;
-const T = COLOR_TRANSPARENT;
+const { BLACK: K, BROWN: B, BROWN_LIGHT: L, TRANSPARENT: T } = COLOR_VALUES;
 
 // prettier-ignore
 const CASTLE_BITMAP: Bitmap = [

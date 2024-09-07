@@ -1,10 +1,8 @@
-import { COLOR_BLACK, COLOR_BROWN, COLOR_BROWN_LIGHT } from "@/constants";
+import { COLOR_VALUES } from "@/constants";
 import { Bitmap, CollidableEntity } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
 
-const B = COLOR_BROWN;
-const K = COLOR_BLACK;
-const L = COLOR_BROWN_LIGHT;
+const { BLACK: K, BROWN: B, BROWN_LIGHT: L } = COLOR_VALUES;
 
 // prettier-ignore
 const BLOCK_BITMAP: Bitmap = [

@@ -1,16 +1,8 @@
-import {
-  COLOR_BLUE_LIGHT,
-  COLOR_BLACK,
-  COLOR_TRANSPARENT,
-  COLOR_WHITE,
-} from "@/constants";
+import { COLOR_VALUES } from "@/constants";
 import { Bitmap, Entity } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
 
-const B = COLOR_BLUE_LIGHT;
-const K = COLOR_BLACK;
-const T = COLOR_TRANSPARENT;
-const W = COLOR_WHITE;
+const { BLACK: K, BLUE_LIGHT: L, TRANSPARENT: T, WHITE: W } = COLOR_VALUES;
 
 // prettier-ignore
 const LARGE_BITMAP: Bitmap = [
@@ -19,9 +11,9 @@ const LARGE_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,W,W,W,W,W,W,K,T,T,T,T,T,T,T,K,K,W,W,W,W,W,W,K,T,T,T,T,T,T,T,K,K,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,K,T,K,T,T,T,T,K,W,W,W,W,W,W,W,W,K,T,K,T,T,T,T,K,W,W,W,W,W,W,W,W,K,T,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,K,W,K,T,T,T,K,W,W,W,W,W,W,W,W,W,K,W,K,T,T,T,K,W,W,W,W,W,W,W,W,W,K,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,B,W,W,W,W,W,K,T,T,K,W,W,W,W,W,W,B,W,W,W,W,W,K,T,T,K,W,W,W,W,W,W,B,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,B,B,W,W,W,B,W,W,W,W,K,T,K,W,W,W,B,B,W,W,W,B,W,W,W,W,K,T,K,W,W,W,B,B,W,W,W,B,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,B,W,W,W,W,W,W,W,W,W,W,K,K,W,W,W,B,W,W,W,W,W,W,W,W,W,W,K,K,W,W,W,B,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,L,W,W,W,W,W,K,T,T,K,W,W,W,W,W,W,L,W,W,W,W,W,K,T,T,K,W,W,W,W,W,W,L,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,L,L,W,W,W,L,W,W,W,W,K,T,K,W,W,W,L,L,W,W,W,L,W,W,W,W,K,T,K,W,W,W,L,L,W,W,W,L,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,L,W,W,W,W,W,W,W,W,W,W,K,K,W,W,W,L,W,W,W,W,W,W,W,W,W,W,K,K,W,W,W,L,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,K,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,K,W,K,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,W,W,K,T,T,T,T,T,T,T,T,T,T,T],
@@ -30,11 +22,11 @@ const LARGE_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,K,W,W,B,W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,K,W,W,B,W,W,B,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,B,B,B,B,W,W,W,B,B,B,B,W,W,W,W,B,W,B,B,B,W,W,W,B,B,B,B,W,W,W,W,B,W,B,B,B,W,W,W,B,B,B,B,W,W,W,W,B,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,B,B,B,B,B,B,W,B,B,B,B,B,W,W,W,W,B,B,B,B,B,B,W,B,B,B,B,B,W,W,W,W,B,B,B,B,B,B,W,B,B,B,B,B,W,W,W,W,W,W,W,W,W,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,B,B,W,W,W,W,B,B,B,W,W,W,W,W,W,W,B,B,W,W,W,W,B,B,B,W,W,W,W,W,W,W,B,B,W,W,W,W,B,B,B,W,W,W,W,W,W,W,W,K,K,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,K,W,W,L,W,W,W,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,K,W,W,L,W,W,L,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,L,L,L,L,W,W,W,L,L,L,L,W,W,W,W,L,W,L,L,L,W,W,W,L,L,L,L,W,W,W,W,L,W,L,L,L,W,W,W,L,L,L,L,W,W,W,W,L,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,L,L,L,L,L,L,W,L,L,L,L,L,W,W,W,W,L,L,L,L,L,L,W,L,L,L,L,L,W,W,W,W,L,L,L,L,L,L,W,L,L,L,L,L,W,W,W,W,W,W,W,W,W,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,L,L,W,W,W,W,L,L,L,W,W,W,W,W,W,W,L,L,W,W,W,W,L,L,L,W,W,W,W,W,W,W,L,L,W,W,W,W,L,L,L,W,W,W,W,W,W,W,W,K,K,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,K,W,W,W,W,W,W,W,W,K,W,W,W,W,W,W,K,W,W,W,W,W,W,W,W,K,W,W,W,W,W,W,K,W,W,W,W,W,W,W,W,K,W,W,K,K,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,W,W,W,K,T,K,K,W,W,W,W,K,K,T,K,K,W,W,W,K,T,K,K,W,W,W,W,K,K,T,K,K,W,W,W,K,T,K,K,W,W,W,W,K,K,T,K,K,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,T,T,T,T,K,K,K,K,T,T,T,T,T,K,K,K,T,T,T,T,K,K,K,K,T,T,T,T,T,K,K,K,T,T,T,T,K,K,K,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
@@ -54,9 +46,9 @@ const MEDIUM_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,W,W,W,W,W,W,K,T,T,T,T,T,T,T,K,K,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,K,T,K,T,T,T,T,K,W,W,W,W,W,W,W,W,K,T,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,K,W,K,T,T,T,K,W,W,W,W,W,W,W,W,W,K,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,B,W,W,W,W,W,K,T,T,K,W,W,W,W,W,W,B,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,B,B,W,W,W,B,W,W,W,W,K,T,K,W,W,W,B,B,W,W,W,B,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,B,W,W,W,W,W,W,W,W,W,W,K,K,W,W,W,B,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,L,W,W,W,W,W,K,T,T,K,W,W,W,W,W,W,L,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,L,L,W,W,W,L,W,W,W,W,K,T,K,W,W,W,L,L,W,W,W,L,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,L,W,W,W,W,W,W,W,W,W,W,K,K,W,W,W,L,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,K,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,K,W,K,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,W,W,K,T,T,T,T,T,T,T,T,T,T,T],
@@ -65,11 +57,11 @@ const MEDIUM_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,K,W,W,B,W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,K,W,W,B,W,W,B,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,B,B,B,B,W,W,W,B,B,B,B,W,W,W,W,B,W,B,B,B,W,W,W,B,B,B,B,W,W,W,W,B,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,B,B,B,B,B,B,W,B,B,B,B,B,W,W,W,W,B,B,B,B,B,B,W,B,B,B,B,B,W,W,W,W,W,W,W,W,W,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,B,B,W,W,W,W,B,B,B,W,W,W,W,W,W,W,B,B,W,W,W,W,B,B,B,W,W,W,W,W,W,W,W,K,K,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,K,W,W,L,W,W,W,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,K,W,W,L,W,W,L,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,L,L,L,L,W,W,W,L,L,L,L,W,W,W,W,L,W,L,L,L,W,W,W,L,L,L,L,W,W,W,W,L,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,L,L,L,L,L,L,W,L,L,L,L,L,W,W,W,W,L,L,L,L,L,L,W,L,L,L,L,L,W,W,W,W,W,W,W,W,W,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,L,L,W,W,W,W,L,L,L,W,W,W,W,W,W,W,L,L,W,W,W,W,L,L,L,W,W,W,W,W,W,W,W,K,K,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,K,W,W,W,W,W,W,W,W,K,W,W,W,W,W,W,K,W,W,W,W,W,W,W,W,K,W,W,K,K,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,W,W,W,K,T,K,K,W,W,W,W,K,K,T,K,K,W,W,W,K,T,K,K,W,W,W,W,K,K,T,K,K,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,T,T,T,T,K,K,K,K,T,T,T,T,T,K,K,K,T,T,T,T,K,K,K,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
@@ -89,9 +81,9 @@ const SMALL_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,K,T,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,K,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,B,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,B,B,W,W,W,B,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,B,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,L,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,L,L,W,W,W,L,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,L,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,K,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,K,W,K,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,W,W,K,T,T,T,T,T,T,T,T,T,T,T],
@@ -100,11 +92,11 @@ const SMALL_BITMAP: Bitmap = [
   [T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,K,W,W,B,W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,K,W,W,B,W,W,B,W,W,W,W,W,W,B,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,B,B,B,B,W,W,W,B,B,B,B,W,W,W,W,B,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,B,B,B,B,B,B,W,B,B,B,B,B,W,W,W,W,W,W,W,W,W,T,T,T,T,T,T,T,T,T],
-  [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,B,B,W,W,W,W,B,B,B,W,W,W,W,W,W,W,W,K,K,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,K,W,W,L,W,W,W,W,W,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,K,W,W,L,W,W,L,W,W,W,W,W,W,L,W,W,W,W,W,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,L,L,L,L,W,W,W,L,L,L,L,W,W,W,W,L,W,W,W,W,W,W,W,W,K,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,L,L,L,L,L,L,W,L,L,L,L,L,W,W,W,W,W,W,W,W,W,T,T,T,T,T,T,T,T,T],
+  [T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,W,W,W,W,L,L,W,W,W,W,L,L,L,W,W,W,W,W,W,W,W,K,K,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,W,W,W,W,W,W,K,W,W,W,W,W,W,W,W,K,W,W,K,K,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,W,W,W,K,T,K,K,W,W,W,W,K,K,T,K,K,T,T,T,T,T,T,T,T,T,T,T,T,T],
   [T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,K,K,K,T,T,T,T,K,K,K,K,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T],

@@ -1,15 +1,8 @@
-import {
-  COLOR_BLACK,
-  COLOR_BROWN,
-  COLOR_BROWN_LIGHT,
-  COLOR_TRANSPARENT,
-} from "@/constants";
+import { COLOR_VALUES } from "@/constants";
 import { Bitmap, CollidableEntity } from "@/types";
 import { drawBitmap, gridUnits } from "@/utils";
 
-const B = COLOR_BROWN;
-const K = COLOR_BLACK;
-const L = COLOR_BROWN_LIGHT;
+const { BLACK: K, BROWN: B, BROWN_LIGHT: L } = COLOR_VALUES;
 
 // prettier-ignore
 const STONE_BITMAP: Bitmap = [
@@ -63,7 +56,7 @@ export class Wall implements CollidableEntity {
 
   render(context: CanvasRenderingContext2D): void {
     context.fillStyle =
-      context.createPattern(STONE, "repeat") ?? COLOR_TRANSPARENT;
+      context.createPattern(STONE, "repeat") ?? COLOR_VALUES.TRANSPARENT;
     context.fillRect(0, 0, this.length.x, this.length.y);
   }
 }
