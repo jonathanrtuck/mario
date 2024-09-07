@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/mario/static/css/main.d32ce00f.css",
+    "main.js": "/mario/static/js/main.8e37ff56.js",
+    "index.html": "/mario/index.html",
+    "main.d32ce00f.css.map": "/mario/static/css/main.d32ce00f.css.map",
+    "main.8e37ff56.js.map": "/mario/static/js/main.8e37ff56.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d32ce00f.css",
+    "static/js/main.8e37ff56.js"
+  ]
+}
