@@ -24,6 +24,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/setimmediate": "^1.0.4",
     "assemblyscript": "^0.27.29",
+    "gh-pages": "^6.1.1",
     "react-scripts": "^5.0.1"
   },
   "eslintConfig": {
@@ -63,11 +64,14 @@
       ]
     }
   },
+  "homepage": "https://jonathanrtuck.github.io/mario/",
   "name": "mario",
   "scripts": {
     "build": "craco build",
+    "deploy": "gh-pages -d build",
     "eject": "react-scripts eject",
     "lint": "eslint ./src",
+    "predeploy": "npm run build",
     "start": "craco start"
   },
   "version": "0.3.1"
