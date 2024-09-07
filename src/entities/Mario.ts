@@ -1,4 +1,5 @@
 import { COLOR_VALUES, UPDATES_PER_TICK } from "@/constants";
+import { Flag } from "@/entities";
 import {
   Acceleration,
   Bitmap,
@@ -16,8 +17,6 @@ import {
   gridUnitsPerSecondPerSecond,
   pixels,
 } from "@/utils";
-
-import { Flag } from "./Flag";
 
 const { GREEN_DARK: G, RED: R, TRANSPARENT: T, YELLOW_DARK: Y } = COLOR_VALUES;
 

@@ -1,8 +1,7 @@
 import { COLOR_VALUES, RENDERS_PER_TICK } from "@/constants";
+import { Mario } from "@/entities";
 import { Bitmap, CollidableEntity, Length, Side } from "@/types";
 import { drawBitmap, gridUnits, pixels } from "@/utils";
-
-import { Mario } from "./Mario";
 
 const NUM_ANIMATION_RENDERS = RENDERS_PER_TICK / 2;
 
