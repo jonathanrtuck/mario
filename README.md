@@ -36,7 +36,8 @@ On each update, determine where each rendered entity should be now based on its 
 ## issues
 
 It is possible that mario can hit multiple entities simultaneously. Multiple collisions within an entity are ignored, but not across entities. This seems to occur occasionally when mario enters the bottom of two aligned Bricks/QuestionBlocks at a specific angle. The problem this causes is that mario is pushed down by hitting the top of the first one, but also pushed left (assuming he was moving right during the jump) by hitting the left (and bottom, but that gets ignored) side of the second one.
-I could add some logic to ensure the bottom collision with the second Brick/QuestionBlock is preferred, but I believe the actual game prevents this by ensuring a certain minimum amount of overlap before registering a collision (jumping into the corner of a Brick/QuestionBlock pushes Mario to the side, not down).
+
+I could add some logic to ensure the bottom collision with the second Brick/QuestionBlock is preferred, but I believe the actual game prevents this by ensuring a certain minimum amount of overlap before registering a collision (jumping straight up into the corner of a Brick/QuestionBlock pushes Mario to the side, not down).
 
 ## todo
 
