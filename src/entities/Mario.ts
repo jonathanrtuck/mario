@@ -190,6 +190,7 @@ const MAX_NUM_JUMP_INPUT_FRAMES = 24;
 export class Mario implements CollidableEntity, MovableEntity {
   private numJumpInputFrames = 0;
   private numWalkingFrames = 0;
+  private prevUpdateIsPressingButtonB = false;
 
   private get Image(): OffscreenCanvas {
     if (this.size === "large") {
@@ -380,6 +381,7 @@ export class Mario implements CollidableEntity, MovableEntity {
 
     if (isPressingB) {
       if (
+        !this.prevUpdateIsPressingButtonB &&
         !this.isJumping &&
         this.numJumpInputFrames === 0 &&
         isTouchingBottom
@@ -398,5 +400,7 @@ export class Mario implements CollidableEntity, MovableEntity {
 
       // @todo if has flower, throw fireball
     }
+
+    this.prevUpdateIsPressingButtonB = isPressingB;
   }
 }
