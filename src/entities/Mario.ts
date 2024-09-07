@@ -252,6 +252,11 @@ export class Mario implements CollidableEntity, MovableEntity {
     y: 0,
     z: 0,
   };
+  vmin = {
+    x: 0.25,
+    y: 0,
+    z: 0,
+  };
 
   get length() {
     return {

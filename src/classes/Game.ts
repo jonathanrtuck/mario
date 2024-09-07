@@ -4,7 +4,6 @@ import { State } from "@/classes";
 import {
   BUTTONS,
   COLOR_VALUES,
-  MIN_VELOCITY,
   UPDATE_INTERVAL,
   UPDATES_PER_RENDER,
   UPDATES_PER_TICK,
@@ -917,7 +916,7 @@ export class Game {
               ((entity.velocity.x > 0 && entity.acceleration.x <= 0) ||
                 (entity.velocity.x < 0 && entity.acceleration.x >= 0))
             ) {
-              if (Math.abs(entity.velocity.x) < MIN_VELOCITY) {
+              if (Math.abs(entity.velocity.x) < entity.vmin.x) {
                 entity.velocity.x = 0;
               } else {
                 entity.velocity.x -=

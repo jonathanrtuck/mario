@@ -38,6 +38,7 @@ export interface MovableEntity extends Entity {
   friction: number; // (>= 0)
   velocity: Velocity;
   vmax: Velocity;
+  vmin: Velocity;
 }
 
 export type MS = number; // milliseconds

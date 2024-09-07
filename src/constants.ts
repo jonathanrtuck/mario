@@ -42,8 +42,6 @@ export const COLOR_VALUES: Record<Color, ColorValue> = {
   YELLOW_DARK: "rgba(227, 169, 76, 255)",
 };
 
-export const MIN_VELOCITY = 0.25; // planckUnits/ms
-
 export const PIXEL_LENGTH = 16; // planckUnits
 
 export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16; // planckUnits
