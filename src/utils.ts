@@ -39,7 +39,7 @@ export const gridUnitsPerSecond = (num: number): number =>
 export const gridUnitsPerSecondPerSecond = (num: number): number =>
   gridUnits(num) / 1000 / 1000; // planckUnits/ms^2
 
-export const int = (num: number): number => Math.trunc(num);
+export const int = Math.trunc;
 
 export const isCollidable = (entity: Entity): entity is CollidableEntity =>
   (entity as CollidableEntity).collidableSides !== undefined;
