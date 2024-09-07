@@ -292,8 +292,13 @@ export class Mario implements CollidableEntity, MovableEntity {
       console.debug("win");
     }
 
-    if (side === "bottom") {
-      this.isJumping = false;
+    switch (side) {
+      case "bottom":
+        this.isJumping = false;
+        break;
+      case "top":
+        this.numJumpInputFrames = MAX_NUM_JUMP_INPUT_FRAMES;
+        break;
     }
   }
 
