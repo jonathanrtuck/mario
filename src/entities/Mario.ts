@@ -179,6 +179,10 @@ const ACCELERATION: Acceleration = {
 const MAX_NUM_JUMP_INPUT_FRAMES = int(200 / UPDATE_INTERVAL); // 200ms
 
 export class Mario implements CollidableEntity, MovableEntity {
+  private flagPosition: number | undefined;
+  private isAnimatingWin = false;
+  private isHangingLeft = false;
+  private isHangingRight = false;
   private numJumpInputFrames = 0;
   private numWalkingFrames = 0;
   private prevUpdateIsPressingButtonB = false;
@@ -189,7 +193,7 @@ export class Mario implements CollidableEntity, MovableEntity {
     }
 
     if (this.isHanging) {
-      return this.isFacingLeft ? HANGING_LEFT_SMALL : HANGING_RIGHT_SMALL;
+      return this.isHangingLeft ? HANGING_LEFT_SMALL : HANGING_RIGHT_SMALL;
     }
 
     if (this.isJumping) {
@@ -240,11 +244,12 @@ export class Mario implements CollidableEntity, MovableEntity {
   elasticity = 0;
   friction = 3;
   isAccelerating = false;
+  isControllable = true;
   isCrouching = false;
   isFacingLeft = false;
-  isHanging = false; // on the flag
   isJumping = false;
   isSliding = false;
+  isVisible = true;
   isWalking = false;
   position;
   size: "small" | "large";
@@ -259,6 +264,10 @@ export class Mario implements CollidableEntity, MovableEntity {
     z: 0,
   };
 
+  // on the flag
+  get isHanging(): boolean {
+    return this.isHangingLeft || this.isHangingRight;
+  }
   get length() {
     return {
       x: gridUnits(1) - pixels(4),
@@ -283,14 +292,45 @@ export class Mario implements CollidableEntity, MovableEntity {
     this.size = size;
   }
 
-  collide(side: Side, entity: CollidableEntity): void {
+  collide(
+    side: Side,
+    entity: CollidableEntity,
+    lose: () => void,
+    win: () => void
+  ): void {
     if (entity instanceof Flag) {
-      console.debug("win");
+      win();
+
+      this.isControllable = false;
+      this.flagPosition =
+        side === "right" ? entity.position.x + entity.length.x : undefined;
     }
+
+    /*
+    if (entity instanceof [enemy]) {
+      lose();
+
+      this.isControllable = false;
+      this.position.z = 2;
+      this.velocity.x = 0;
+      this.velocity.y = 0;
+      this.acceleration.y = ACCELERATION.y;
+    }
+    */
 
     switch (side) {
       case "bottom":
         this.isJumping = false;
+
+        if (this.isHanging && this.flagPosition !== undefined) {
+          this.position.x = this.flagPosition;
+          this.isAnimatingWin = true;
+        }
+        break;
+      case "right":
+        if (this.isAnimatingWin) {
+          this.isVisible = false;
+        }
         break;
       case "top":
         this.numJumpInputFrames = MAX_NUM_JUMP_INPUT_FRAMES;
@@ -299,25 +339,30 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
 
   render(context: CanvasRenderingContext2D): void {
-    context.drawImage(
-      this.Image,
-      pixels(-2),
-      0,
-      this.length.x + pixels(4),
-      this.length.y
-    );
+    if (this.isVisible) {
+      context.drawImage(
+        this.Image,
+        pixels(-2),
+        0,
+        this.length.x + pixels(4),
+        this.length.y
+      );
+    }
   }
 
   update(buttons: Set<Button>, neighbors: Neighbors): void {
     if (this.position.y < 0) {
-      console.debug("lose");
+      this.isControllable = false;
     }
 
-    const isPressingA = buttons.has("a");
-    const isPressingB = buttons.has("b");
-    const isPressingDown = buttons.has("down") && !buttons.has("up");
-    const isPressingLeft = buttons.has("left") && !buttons.has("right");
-    const isPressingRight = buttons.has("right") && !buttons.has("left");
+    const isPressingA = this.isControllable && buttons.has("a");
+    const isPressingB = this.isControllable && buttons.has("b");
+    const isPressingDown =
+      this.isControllable && buttons.has("down") && !buttons.has("up");
+    const isPressingLeft =
+      this.isControllable && buttons.has("left") && !buttons.has("right");
+    const isPressingRight =
+      this.isControllable && buttons.has("right") && !buttons.has("left");
     const isTouchingBottom = neighbors.bottom.length !== 0;
     const isTouchingLeft = neighbors.left.length !== 0;
     const isTouchingRight = neighbors.right.length !== 0;
@@ -334,10 +379,13 @@ export class Mario implements CollidableEntity, MovableEntity {
 
     this.isAccelerating = isPressingA;
     this.isCrouching = this.size === "large" && isPressingDown;
-    this.isHanging =
-      (isTouchingLeft || isTouchingRight) &&
-      (neighbors.left.some((entity) => entity instanceof Flag) ||
-        neighbors.right.some((entity) => entity instanceof Flag));
+    this.isHangingRight =
+      isTouchingRight &&
+      neighbors.right.some((entity) => entity instanceof Flag);
+    this.isHangingLeft =
+      !this.isHangingRight &&
+      isTouchingLeft &&
+      neighbors.left.some((entity) => entity instanceof Flag);
     this.isSliding = false;
 
     this.acceleration.x = 0;
@@ -350,7 +398,7 @@ export class Mario implements CollidableEntity, MovableEntity {
         this.isSliding = true;
       }
     }
-    if (isPressingRight && !isTouchingRight) {
+    if ((isPressingRight && !isTouchingRight) || this.isAnimatingWin) {
       this.acceleration.x = ACCELERATION.x;
 
       if (isTouchingBottom && this.velocity.x < 0) {
@@ -374,7 +422,7 @@ export class Mario implements CollidableEntity, MovableEntity {
     if (
       !this.isWalking &&
       isTouchingBottom &&
-      (isPressingLeft || isPressingRight)
+      (isPressingLeft || isPressingRight || this.isAnimatingWin)
     ) {
       this.numWalkingFrames = 0;
       this.isWalking = true;

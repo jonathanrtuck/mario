@@ -261,7 +261,9 @@ export class Game {
         new Flag(198.4375, 5),
         new Castle(202, 4),
         new Mario(2.5625, 4, "small"),
-      ].toSorted((a, b) => a.position.z - b.position.z),
+      ].toSorted(
+        (a, b) => a.position.z + a.length.z - (b.position.z + b.length.z)
+      ),
       universe: {
         acceleration: {
           x: 0,
@@ -299,6 +301,8 @@ export class Game {
 
   coins: number;
   context: CanvasRenderingContext2D;
+  isLost: boolean;
+  isWon: boolean;
   keyBinding: Record<Button, Set<string>> = {
     a: new Set(["Shift", "z", "Z"]), // run
     b: new Set([" ", "x", "X"]), // jump
@@ -314,22 +318,31 @@ export class Game {
   time: number;
   world: number;
 
-  get isPaused() {
+  get isPaused(): boolean {
     return this.pauseTime !== null;
   }
-  get isStopped() {
+  get isStopped(): boolean {
     return this.stopTime !== null;
+  }
+  get isTicking(): boolean {
+    return !this.isLost && !this.isWon;
   }
 
   constructor(canvas: HTMLCanvasElement) {
     this.coins = 0;
     this.context = canvas.getContext("2d")!;
+    this.isLost = false;
+    this.isWon = false;
     this.level = 1;
     this.score = 0;
     this.state = Game.initialState;
     this.time = Game.initialTime;
     this.world = 1;
   }
+
+  private lose = (): void => {
+    this.isLost = true;
+  };
 
   private onKeyDown = (e: KeyboardEvent): void => {
     for (const button of BUTTONS) {
@@ -455,16 +468,17 @@ export class Game {
         this.prevUpdateTime = now - (elapsedTime - UPDATE_INTERVAL);
 
         // update time
-        if (this.numUpdatesSinceTick === UPDATES_PER_TICK) {
-          this.numUpdatesSinceTick = 0;
-
-          if (this.time === 0) {
-            console.debug("lose");
-          } else {
+        if (this.isTicking) {
+          if (this.numUpdatesSinceTick === UPDATES_PER_TICK) {
+            this.numUpdatesSinceTick = 0;
             this.time--;
+
+            if (this.time === 0) {
+              this.lose();
+            }
+          } else {
+            this.numUpdatesSinceTick++;
           }
-        } else {
-          this.numUpdatesSinceTick++;
         }
 
         // only update entities within viewport
@@ -799,8 +813,18 @@ export class Game {
 
               // this will always be true
               if (isCollidable(movableEntity)) {
-                movableEntity.collide?.(side, collidableEntity);
-                collidableEntity.collide?.(oppositeSide(side), movableEntity);
+                movableEntity.collide?.(
+                  side,
+                  collidableEntity,
+                  this.lose,
+                  this.win
+                );
+                collidableEntity.collide?.(
+                  oppositeSide(side),
+                  movableEntity,
+                  this.lose,
+                  this.win
+                );
               }
             }
 
@@ -952,6 +976,7 @@ export class Game {
 
               // follow entity with viewport
               if (
+                !entity.isHanging &&
                 entityCenterX > viewportCenterX &&
                 this.state.viewport.position.x < maxViewportPositionX
               ) {
@@ -999,12 +1024,18 @@ export class Game {
     setImmediate(this.update);
   };
 
+  private win = (): void => {
+    this.isWon = true;
+  };
+
   pause = (): void => {
     this.pauseTime = performance.now();
   };
 
   reset = (): void => {
     this.coins = 0;
+    this.isLost = false;
+    this.isWon = false;
     this.level = 1;
     this.pauseTime = null;
     this.score = 0;
@@ -1020,6 +1051,8 @@ export class Game {
     this.context.canvas.focus();
 
     this.coins = 0;
+    this.isLost = false;
+    this.isWon = false;
     this.level = 1;
     this.prevUpdateTime = performance.now();
     this.score = 0;
