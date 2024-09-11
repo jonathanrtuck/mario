@@ -302,8 +302,6 @@ export class Mario implements CollidableEntity, MovableEntity {
       win();
 
       this.isControllable = false;
-      this.flagPosition =
-        side === "right" ? entity.position.x + entity.length.x : undefined;
     }
 
     /*
@@ -448,6 +446,12 @@ export class Mario implements CollidableEntity, MovableEntity {
       }
 
       // @todo if has flower, throw fireball
+    }
+
+    if (this.isHangingRight && this.flagPosition === undefined) {
+      const flag = neighbors.right.find((entity) => entity instanceof Flag)!;
+
+      this.flagPosition = flag.position.x + flag.length.x;
     }
 
     this.prevUpdateIsPressingButtonB = isPressingB;
