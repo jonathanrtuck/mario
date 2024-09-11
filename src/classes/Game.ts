@@ -293,6 +293,7 @@ export class Game {
   }
 
   private buttons = new Set<Button>();
+  private context: CanvasRenderingContext2D;
   private numUpdatesSinceRender = 0;
   private numUpdatesSinceTick = 0;
   private pauseTime: MS | null = null;
@@ -300,7 +301,6 @@ export class Game {
   private stopTime: MS | null = null;
 
   coins: number;
-  context: CanvasRenderingContext2D;
   isLost: boolean;
   isWon: boolean;
   keyBinding: Record<Button, Set<string>> = {

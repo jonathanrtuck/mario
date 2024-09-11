@@ -275,6 +275,9 @@ export class Mario implements CollidableEntity, MovableEntity {
       z: 1,
     };
   }
+  get mass() {
+    return this.size === "large" ? 155 : 77.5;
+  }
   get vmax() {
     return {
       x: gridUnitsPerSecond(6.4) * (this.isAccelerating ? 2 : 1),

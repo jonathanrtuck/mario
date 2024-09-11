@@ -1,7 +1,6 @@
 import { COLOR_VALUES, RENDERS_PER_TICK } from "@/constants";
-import { Mario } from "@/entities";
 import { Bitmap, CollidableEntity, Length, Side } from "@/types";
-import { drawBitmap, gridUnits, pixels } from "@/utils";
+import { drawBitmap, gridUnits, isMovable, pixels } from "@/utils";
 
 const NUM_ANIMATION_RENDERS = RENDERS_PER_TICK / 2;
 
@@ -60,12 +59,12 @@ export class Brick implements CollidableEntity {
   }
 
   collide(side: Side, entity: CollidableEntity): void {
-    if (
-      side === "bottom" &&
-      entity instanceof Mario &&
-      entity.size === "small"
-    ) {
-      this.numRenders = 0;
+    if (side === "bottom" && isMovable(entity)) {
+      if (entity.mass > 100) {
+        // @todo break
+      } else {
+        this.numRenders = 0;
+      }
     }
   }
 
