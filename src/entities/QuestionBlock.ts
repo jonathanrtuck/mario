@@ -33,7 +33,6 @@ export class QuestionBlock implements CollidableEntity {
   length = {
     x: gridUnits(1),
     y: gridUnits(1),
-    z: 1,
   };
   position;
 

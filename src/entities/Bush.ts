@@ -21,7 +21,6 @@ export class Bush implements Entity {
     return {
       x: gridUnits(this.size === "large" ? 5 : this.size === "medium" ? 4 : 3),
       y: gridUnits(1),
-      z: 0,
     };
   }
 

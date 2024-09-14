@@ -21,7 +21,6 @@ export class Cloud implements Entity {
     return {
       x: gridUnits(this.size === "large" ? 5 : this.size === "medium" ? 4 : 3),
       y: gridUnits(2),
-      z: 0,
     };
   }
 

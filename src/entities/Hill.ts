@@ -19,7 +19,6 @@ export class Hill implements Entity {
     return {
       x: gridUnits(this.size === "large" ? 5 : 3),
       y: gridUnits(this.size === "large" ? 3 : 2),
-      z: 0,
     };
   }
 
