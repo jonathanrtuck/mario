@@ -1,8 +1,6 @@
-import "setimmediate";
-
-import { BUTTONS } from "@/constants";
+import { BUTTONS, COLORS } from "@/constants";
 import { Button, MS, State } from "@/types";
-import { gridUnits, gridUnitsPerSecondPerSecond } from "@/utils";
+import { gridUnits } from "@/utils";
 
 export class Game {
   static initialTime = 400;
@@ -13,7 +11,7 @@ export class Game {
       universe: {
         acceleration: {
           x: 0,
-          y: gridUnitsPerSecondPerSecond(-64),
+          y: -1,
           z: 0,
         },
         color: 0x4,
@@ -41,6 +39,7 @@ export class Game {
   private animationFrameRequest: ReturnType<
     typeof requestAnimationFrame
   > | null = null;
+  private buttons = new Set<Button>();
   private context: CanvasRenderingContext2D;
   private pauseMs: MS | null = null;
   private prevUpdateMs: MS | null = null;
@@ -78,19 +77,15 @@ export class Game {
     this.context = canvas.getContext("2d")!;
   }
 
-  private lose = (): void => {
-    this.isLost = true;
-  };
-
   private onKeyDown = (e: KeyboardEvent): void => {
     for (const button of BUTTONS) {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        if (button === "start") {
-          (this.isPaused ? this.unpause : this.pause)();
-        } else {
-          // @todo
+        if (!this.buttons.has(button)) {
+          this.buttons.add(button);
+
+          // @todo call ControllableEntity's `press` method
         }
       }
     }
@@ -101,28 +96,41 @@ export class Game {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        // @todo
+        if (this.buttons.has(button)) {
+          this.buttons.delete(button);
+
+          // @todo call ControllableEntity's `release` method
+        }
       }
     }
   };
 
   private render = (): void => {
-    //
+    this.context.reset();
+
+    // render universe
+    this.context.canvas.height = this.state.viewport.length.y;
+    this.context.canvas.width = this.state.viewport.length.x;
+    this.context.canvas.style.backgroundColor =
+      COLORS[this.state.universe.color];
+
+    // render text
+    // @todo
+
+    // render entities
+    // @todo
   };
 
   // @recursive
   private update = (): void => {
     const now = Date.now();
+    const elapsedMs = now - this.prevUpdateMs!;
 
-    //
+    // @todo
 
     this.render();
     this.prevUpdateMs = now;
     this.animationFrameRequest = requestAnimationFrame(this.update);
-  };
-
-  private win = (): void => {
-    this.isWon = true;
   };
 
   pause = (): void => {
@@ -156,7 +164,6 @@ export class Game {
     this.context.canvas.focus();
 
     this.prevUpdateMs = now;
-
     this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
@@ -168,7 +175,6 @@ export class Game {
     this.context.canvas.focus();
 
     this.prevUpdateMs = now;
-
     this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
@@ -191,9 +197,8 @@ export class Game {
 
     if (this.pauseMs !== null && this.prevUpdateMs !== null) {
       this.prevUpdateMs = now - (this.pauseMs - this.prevUpdateMs);
-      this.pauseMs = null;
-
       this.animationFrameRequest = requestAnimationFrame(this.update);
+      this.pauseMs = null;
     }
   };
 }
