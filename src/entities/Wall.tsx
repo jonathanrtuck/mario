@@ -22,12 +22,11 @@ export class Wall implements CollidableEntity {
     this.length = {
       x: gridUnits(gridWidth),
       y: gridUnits(gridHeight),
-      z: 4,
     };
     this.position = {
       x: gridUnits(gridX),
       y: gridUnits(gridY),
-      z: -3,
+      z: 0,
     };
   }
 

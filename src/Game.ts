@@ -1,7 +1,8 @@
+import { COIN, X } from "@/bitmaps";
 import { BUTTONS, COLORS } from "@/constants";
 import { Mario, Wall } from "@/entities";
 import { Button, MS, State } from "@/types";
-import { gridUnits, isControllable } from "@/utils";
+import { gridUnits, isControllable, pixels } from "@/utils";
 
 export class Game {
   static initialTime = 400;
@@ -121,8 +122,38 @@ export class Game {
     this.context.canvas.style.backgroundColor =
       COLORS[this.state.universe.color];
 
-    // render text
-    // @todo
+    // render HUD
+    this.context.save();
+    this.context.font = `${pixels(11)}px PixelEmulator`;
+    this.context.fillStyle = COLORS[0x2];
+    this.context.translate(0, pixels(12));
+
+    this.context.translate(pixels(24), 0);
+    this.context.fillText("MARIO", 0, 0);
+    this.context.fillText(String(this.score).padStart(6, "0"), 0, pixels(9));
+
+    this.context.translate(gridUnits(4) + pixels(4), 0);
+    this.context.drawImage(COIN, 0, pixels(9), pixels(5), pixels(-8));
+    this.context.drawImage(X, pixels(8), pixels(9), pixels(5), pixels(-5));
+    this.context.fillText(
+      String(this.coins).padStart(2, "0"),
+      pixels(16),
+      pixels(9)
+    );
+
+    this.context.translate(gridUnits(2) + pixels(18), 0);
+    this.context.fillText("WORLD", 0, 0);
+    this.context.fillText(`${this.world}-${this.level}`, pixels(11), pixels(9));
+
+    this.context.translate(gridUnits(3) + pixels(10), 0);
+    this.context.fillText("TIME", 0, 0);
+    this.context.fillText(
+      String(this.time).padStart(3, "0"),
+      pixels(6),
+      pixels(9)
+    );
+
+    this.context.restore();
 
     // render entities
     for (const entity of this.state.entities) {
@@ -164,7 +195,7 @@ export class Game {
     const now = Date.now();
     const elapsedMs = now - this.prevUpdateMs!;
 
-    // @todo
+    // @todo loop through each elapsedMs and detect collisions, update entities
 
     this.render();
     this.prevUpdateMs = now;

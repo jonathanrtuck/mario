@@ -14,7 +14,7 @@ import { gridUnits, pixels } from "@/utils";
 export class Mario
   implements CollidableEntity, ControllableEntity, MovableEntity
 {
-  private get Image(): OffscreenCanvas {
+  private get bitmap(): OffscreenCanvas {
     switch (this.size) {
       // @todo
       case "large":
@@ -42,8 +42,6 @@ export class Mario
   isCrouching = false;
   isJumping = false;
   isSliding = false;
-  isVisible = true;
-  isWalking = false;
   position;
   size: "small" | "large";
   velocity = {
@@ -55,7 +53,6 @@ export class Mario
     return {
       x: gridUnits(1) - pixels(4),
       y: gridUnits(this.size === "large" && !this.isCrouching ? 2 : 1),
-      z: 1,
     };
   }
   get mass() {
@@ -88,6 +85,10 @@ export class Mario
     if (button === "right" && !buttons.has("left")) {
       this.facing = "right";
     }
+
+    if (button === "down" && !buttons.has("up")) {
+      this.isCrouching = true;
+    }
   }
 
   release(button: Button, buttons: Set<Button>): void {
@@ -97,11 +98,15 @@ export class Mario
     if (button === "right" && buttons.has("left")) {
       this.facing = "left";
     }
+
+    if (button === "up" && !buttons.has("down")) {
+      this.isCrouching = true;
+    }
   }
 
   render(context: CanvasRenderingContext2D): void {
     context.drawImage(
-      this.Image,
+      this.bitmap,
       pixels(-2),
       0,
       this.length.x + pixels(4),
