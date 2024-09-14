@@ -123,7 +123,7 @@ export class Game {
     }
   };
 
-  private render = (): void => {
+  private render = (now: MS): void => {
     this.context.reset();
 
     // render universe
@@ -194,7 +194,7 @@ export class Game {
           entity.length.y
       );
 
-      entity.render(this.context);
+      entity.render(this.context, now);
 
       this.context.restore();
     }
@@ -217,7 +217,7 @@ export class Game {
 
     // @todo loop through each elapsedMs and detect collisions, update entities
 
-    this.render();
+    this.render(now);
     this.prevUpdateMs = now;
     this.animationFrameRequest = requestAnimationFrame(this.update);
   };

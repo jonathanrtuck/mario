@@ -24,7 +24,7 @@ export interface ControllableEntity extends Entity {
 export interface Entity {
   length: Length;
   position: Position;
-  render(context: CanvasRenderingContext2D): void;
+  render(context: CanvasRenderingContext2D, now: MS): void;
 }
 
 export type Length = {
