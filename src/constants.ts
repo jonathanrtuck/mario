@@ -1,4 +1,4 @@
-import { Color, ColorValue, MS } from "@/types";
+import { MS } from "@/types";
 
 export const BUTTONS = [
   "a",
@@ -10,37 +10,21 @@ export const BUTTONS = [
   "up",
 ] as const;
 export const COLORS = [
-  "BLACK",
-  "BLUE",
-  "BLUE_LIGHT",
-  "BROWN",
-  "BROWN_DARK",
-  "BROWN_LIGHT",
-  "GREEN",
-  "GREEN_DARK",
-  "GREEN_LIGHT",
-  "RED",
-  "TRANSPARENT",
-  "WHITE",
-  "YELLOW_DARK",
+  "rgba(0, 0, 0, 0)", //         0x0 transparent
+  "rgba(0, 0, 0, 255)", //       0x1 black
+  "rgba(255, 255, 255, 255)", // 0x2 white
+  "rgba(128, 184, 249, 255)", // 0x3 blue light
+  "rgba(155, 157, 248, 255)", // 0x4 blue
+  "rgba(164, 216, 67, 255)", //  0x5 green light
+  "rgba(75, 154, 44, 255)", //   0x6 green
+  "rgba(121, 121, 36, 255)", //  0x7 green dark
+  "rgba(227, 169, 76, 255)", //  0x8 yellow dark
+  "rgba(248, 211, 205, 255)", // 0x9 brown light
+  "rgba(154, 95, 32, 255)", //   0xA brown
+  "rgba(76, 36, 8, 255)", //     0xB brown dark
+  "rgba(231, 62, 37, 255)", //   0xC red
 ] as const;
 export const SIDES = ["bottom", "left", "right", "top"] as const;
-
-export const COLOR_VALUES: Record<Color, ColorValue> = {
-  BLACK: "rgba(0, 0, 0, 255)",
-  BLUE: "rgba(155, 157, 248, 255)",
-  BLUE_LIGHT: "rgba(128, 184, 249, 255)",
-  BROWN: "rgba(154, 95, 32, 255)",
-  BROWN_DARK: "rgba(76, 36, 8, 255)",
-  BROWN_LIGHT: "rgba(248, 211, 205, 255)",
-  GREEN: "rgba(75, 154, 44, 255)",
-  GREEN_DARK: "rgba(121, 121, 36, 255)",
-  GREEN_LIGHT: "rgba(164, 216, 67, 255)",
-  RED: "rgba(231, 62, 37, 255)",
-  TRANSPARENT: "rgba(0, 0, 0, 0)",
-  WHITE: "rgba(255, 255, 255, 255)",
-  YELLOW_DARK: "rgba(227, 169, 76, 255)",
-};
 
 export const PIXEL_LENGTH = 16; // planckUnits
 export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16; // planckUnits

@@ -6,7 +6,7 @@ export type Acceleration = {
   z: number;
 };
 
-export type Bitmap = ColorValue[][];
+export type Bitmap = Color[][];
 
 export type Button = (typeof BUTTONS)[number];
 
@@ -20,9 +20,7 @@ export interface CollidableEntity extends Entity {
   ): void;
 }
 
-export type Color = (typeof COLORS)[number];
-
-export type ColorValue = `rgba(${number}, ${number}, ${number}, ${number})`;
+export type Color = number;
 
 export interface Entity {
   length: Length;
@@ -58,9 +56,15 @@ export type Position = {
 
 export type Side = (typeof SIDES)[number];
 
+export type State = {
+  entities: Entity[];
+  universe: Universe;
+  viewport: Viewport;
+};
+
 export type Universe = {
   acceleration: Acceleration; // gravity
-  color: ColorValue;
+  color: Color;
   length: Length;
 };
 
