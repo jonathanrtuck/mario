@@ -2,7 +2,7 @@ import { FunctionComponent, useEffect, useRef } from "react";
 
 import { Game } from "@/classes";
 
-export const NES: FunctionComponent = () => {
+export const Console: FunctionComponent = () => {
   const rootRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -50,4 +50,4 @@ export const NES: FunctionComponent = () => {
   );
 };
 
-NES.displayName = "NES";
+Console.displayName = "Console";

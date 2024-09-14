@@ -1,12 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { NES } from "@/components/NES";
+import { Console } from "@/components/Console";
 
 import "./index.css";
 
 createRoot(document.body).render(
   <StrictMode>
-    <NES />
+    <Console />
   </StrictMode>
 );

@@ -1,5 +1,6 @@
 import "setimmediate";
 
+import { BUTTONS } from "@/constants";
 import { Button, MS, State } from "@/types";
 import { gridUnits, gridUnitsPerSecondPerSecond } from "@/utils";
 
@@ -37,52 +38,44 @@ export class Game {
     };
   }
 
-  private buttons = new Set<Button>();
+  private animationFrameRequest: ReturnType<
+    typeof requestAnimationFrame
+  > | null = null;
   private context: CanvasRenderingContext2D;
-  private numUpdatesSinceRender = 0;
-  private numUpdatesSinceTick = 0;
-  private pauseTime: MS | null = null;
-  private prevUpdateTime: MS | null = null;
-  private stopTime: MS | null = null;
+  private pauseMs: MS | null = null;
+  private prevUpdateMs: MS | null = null;
+  private stopMs: MS | null = null;
 
-  coins: number;
-  isLost: boolean;
-  isWon: boolean;
+  coins = 0;
+  isLost = false;
+  isWon = false;
   keyBinding: Record<Button, Set<string>> = {
-    a: new Set(["Shift", "z", "Z"]), // run
-    b: new Set([" ", "x", "X"]), // jump
-    down: new Set(["s", "S", "ArrowDown"]), // crouch
-    left: new Set(["a", "A", "ArrowLeft"]), // left
+    a: new Set(["Shift", "z", "Z"]), //          run
+    b: new Set([" ", "x", "X"]), //              jump
+    down: new Set(["s", "S", "ArrowDown"]), //   crouch
+    left: new Set(["a", "A", "ArrowLeft"]), //   left
     right: new Set(["d", "D", "ArrowRight"]), // right
-    start: new Set(["Enter"]), // pause
-    up: new Set(["w", "W", "ArrowUp"]), // [nothing]
+    start: new Set(["Enter"]), //                pause
+    up: new Set(["w", "W", "ArrowUp"]), //       -
   };
-  level: number;
-  score: number;
-  state: State;
-  time: number;
-  world: number;
+  level = 1;
+  score = 0;
+  state = Game.initialState;
+  time = Game.initialTime;
+  world = 1;
 
   get isPaused(): boolean {
-    return this.pauseTime !== null;
+    return this.pauseMs !== null;
   }
   get isStopped(): boolean {
-    return this.stopTime !== null;
+    return this.stopMs !== null;
   }
   get isTicking(): boolean {
     return !this.isLost && !this.isWon;
   }
 
   constructor(canvas: HTMLCanvasElement) {
-    this.coins = 0;
     this.context = canvas.getContext("2d")!;
-    this.isLost = false;
-    this.isWon = false;
-    this.level = 1;
-    this.score = 0;
-    this.state = Game.initialState;
-    this.time = Game.initialTime;
-    this.world = 1;
   }
 
   private lose = (): void => {
@@ -90,11 +83,27 @@ export class Game {
   };
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    //
+    for (const button of BUTTONS) {
+      if (this.keyBinding[button].has(e.key)) {
+        e.preventDefault();
+
+        if (button === "start") {
+          (this.isPaused ? this.unpause : this.pause)();
+        } else {
+          // @todo
+        }
+      }
+    }
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
-    //
+    for (const button of BUTTONS) {
+      if (this.keyBinding[button].has(e.key)) {
+        e.preventDefault();
+
+        // @todo
+      }
+    }
   };
 
   private render = (): void => {
@@ -103,7 +112,13 @@ export class Game {
 
   // @recursive
   private update = (): void => {
+    const now = Date.now();
+
     //
+
+    this.render();
+    this.prevUpdateMs = now;
+    this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
   private win = (): void => {
@@ -111,54 +126,74 @@ export class Game {
   };
 
   pause = (): void => {
-    this.pauseTime = performance.now();
+    const now = Date.now();
+
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+
+    this.pauseMs = now;
   };
 
   reset = (): void => {
+    const now = Date.now();
+
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+
     this.coins = 0;
     this.isLost = false;
     this.isWon = false;
     this.level = 1;
-    this.pauseTime = null;
+    this.pauseMs = null;
     this.score = 0;
     this.state = Game.initialState;
-    this.stopTime = null;
+    this.stopMs = null;
     this.time = Game.initialTime;
     this.world = 1;
+
+    this.context.canvas.focus();
+
+    this.prevUpdateMs = now;
+
+    this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
   start = (): void => {
+    const now = Date.now();
+
     this.context.canvas.addEventListener("keydown", this.onKeyDown);
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
     this.context.canvas.focus();
 
-    this.coins = 0;
-    this.isLost = false;
-    this.isWon = false;
-    this.level = 1;
-    this.prevUpdateTime = performance.now();
-    this.score = 0;
-    this.state = Game.initialState;
-    this.stopTime = null;
-    this.time = Game.initialTime;
-    this.world = 1;
+    this.prevUpdateMs = now;
 
-    this.update();
+    this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
   stop = (): void => {
+    const now = Date.now();
+
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+
     this.context.canvas.removeEventListener("keydown", this.onKeyDown);
     this.context.canvas.removeEventListener("keyup", this.onKeyUp);
 
-    this.pauseTime = null;
-    this.stopTime = performance.now();
+    this.pauseMs = null;
+    this.stopMs = now;
   };
 
   unpause = (): void => {
-    if (this.pauseTime !== null && this.prevUpdateTime !== null) {
-      this.prevUpdateTime =
-        performance.now() - (this.pauseTime - this.prevUpdateTime);
-      this.pauseTime = null;
+    const now = Date.now();
+
+    if (this.pauseMs !== null && this.prevUpdateMs !== null) {
+      this.prevUpdateMs = now - (this.pauseMs - this.prevUpdateMs);
+      this.pauseMs = null;
+
+      this.animationFrameRequest = requestAnimationFrame(this.update);
     }
   };
 }

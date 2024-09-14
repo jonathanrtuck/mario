@@ -1,12 +1,5 @@
 import { COLORS, GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
-import {
-  Bitmap,
-  CollidableEntity,
-  Color,
-  Entity,
-  MovableEntity,
-  Side,
-} from "@/types";
+import { Bitmap, CollidableEntity, Entity, MovableEntity, Side } from "@/types";
 
 export const clamp = (min: number, num: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
