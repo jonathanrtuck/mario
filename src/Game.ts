@@ -1,6 +1,6 @@
 import { COIN, X } from "@/bitmaps";
-import { BUTTONS, COLORS } from "@/constants";
-import { Mario, Wall } from "@/entities";
+import { BUTTONS, COLORS, TICK_INTERVAL } from "@/constants";
+import { Bush, Cloud, Hill, Mario, QuestionBlock, Wall } from "@/entities";
 import { Button, MS, State } from "@/types";
 import { gridUnits, isControllable, pixels } from "@/utils";
 
@@ -9,9 +9,16 @@ export class Game {
 
   static get initialState(): State {
     return {
-      entities: [new Wall(0, 0, 69, 4), new Mario(2.5625, 4, "small")].toSorted(
-        (a, b) => a.position.z - b.position.z
-      ),
+      entities: [
+        new Wall(0, 0, 69, 4),
+        new Hill(0, 4, "large"),
+        new Cloud(8, 12, "small"),
+        new Bush(11, 4, "large"),
+
+        new QuestionBlock(8, 7),
+
+        new Mario(2.5625, 4, "small"),
+      ].toSorted((a, b) => a.position.z - b.position.z),
       universe: {
         acceleration: {
           x: 0,
@@ -42,6 +49,7 @@ export class Game {
   private buttons = new Set<Button>();
   private context: CanvasRenderingContext2D;
   private pauseMs: MS | null = null;
+  private prevTickMs: MS | null = null;
   private prevUpdateMs: MS | null = null;
   private stopMs: MS | null = null;
 
@@ -82,7 +90,9 @@ export class Game {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        if (!this.buttons.has(button)) {
+        if (button === "start") {
+          (this.isPaused ? this.unpause : this.pause)();
+        } else if (!this.buttons.has(button)) {
           this.buttons.add(button);
 
           for (const entity of this.state.entities) {
@@ -195,6 +205,16 @@ export class Game {
     const now = Date.now();
     const elapsedMs = now - this.prevUpdateMs!;
 
+    // update time
+    if (now - this.prevTickMs! >= TICK_INTERVAL) {
+      this.prevTickMs = now;
+      this.time--;
+
+      if (this.time === 0) {
+        // @todo lose
+      }
+    }
+
     // @todo loop through each elapsedMs and detect collisions, update entities
 
     this.render();
@@ -232,6 +252,7 @@ export class Game {
 
     this.context.canvas.focus();
 
+    this.prevTickMs = now;
     this.prevUpdateMs = now;
     this.animationFrameRequest = requestAnimationFrame(this.update);
   };
@@ -243,6 +264,7 @@ export class Game {
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
     this.context.canvas.focus();
 
+    this.prevTickMs = now;
     this.prevUpdateMs = now;
     this.animationFrameRequest = requestAnimationFrame(this.update);
   };
@@ -264,8 +286,9 @@ export class Game {
   unpause = (): void => {
     const now = Date.now();
 
-    if (this.pauseMs !== null && this.prevUpdateMs !== null) {
-      this.prevUpdateMs = now - (this.pauseMs - this.prevUpdateMs);
+    if (this.pauseMs !== null) {
+      this.prevTickMs = now - (this.pauseMs - (this.prevTickMs ?? 0));
+      this.prevUpdateMs = now - (this.pauseMs - (this.prevUpdateMs ?? 0));
       this.animationFrameRequest = requestAnimationFrame(this.update);
       this.pauseMs = null;
     }
