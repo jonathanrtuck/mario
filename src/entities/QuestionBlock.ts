@@ -8,16 +8,14 @@ import { TICK_INTERVAL } from "@/constants";
 import { CollidableEntity, MS, Side } from "@/types";
 import { gridUnits, isControllable } from "@/utils";
 
-type Variant = "light" | "medium" | "dark";
-
 const VARIANT_CHANGE_INTERVAL: MS = TICK_INTERVAL / 3;
-const VARIANTS: Variant[] = [
-  "light",
-  "light",
-  "light",
-  "medium",
-  "dark",
-  "medium",
+const VARIANTS = [
+  QUESTION_BLOCK_LIGHT,
+  QUESTION_BLOCK_LIGHT,
+  QUESTION_BLOCK_LIGHT,
+  QUESTION_BLOCK_MEDIUM,
+  QUESTION_BLOCK_DARK,
+  QUESTION_BLOCK_MEDIUM,
 ];
 
 export class QuestionBlock implements CollidableEntity {
@@ -25,18 +23,9 @@ export class QuestionBlock implements CollidableEntity {
   private variantIndex = 0;
 
   private get bitmap(): OffscreenCanvas {
-    if (this.isDisabled) {
-      return QUESTION_BLOCK_DISABLED;
-    }
-
-    switch (VARIANTS[this.variantIndex]) {
-      case "dark":
-        return QUESTION_BLOCK_DARK;
-      case "medium":
-        return QUESTION_BLOCK_MEDIUM;
-      default:
-        return QUESTION_BLOCK_LIGHT;
-    }
+    return this.isDisabled
+      ? QUESTION_BLOCK_DISABLED
+      : VARIANTS[this.variantIndex];
   }
 
   isDisabled = false;
