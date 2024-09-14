@@ -1,5 +1,5 @@
 import { COLOR_VALUES, UPDATE_INTERVAL, UPDATES_PER_TICK } from "@/constants";
-import { Flag } from "@/entities";
+import { Flag, Goomba } from "@/entities";
 import {
   Acceleration,
   Bitmap,
@@ -241,7 +241,6 @@ export class Mario implements CollidableEntity, MovableEntity {
     right: true,
     top: true,
   };
-  elasticity = 0;
   friction = 3;
   isAccelerating = false;
   isControllable = true;
@@ -307,8 +306,7 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.isControllable = false;
     }
 
-    /*
-    if (entity instanceof [enemy]) {
+    if (entity instanceof Goomba) {
       lose();
 
       this.isControllable = false;
@@ -317,7 +315,6 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.velocity.y = 0;
       this.acceleration.y = ACCELERATION.y;
     }
-    */
 
     switch (side) {
       case "bottom":

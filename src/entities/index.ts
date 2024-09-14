@@ -4,6 +4,7 @@ export * from "./Bush";
 export * from "./Castle";
 export * from "./Cloud";
 export * from "./Flag";
+export * from "./Goomba";
 export * from "./Hill";
 export * from "./Mario";
 export * from "./Pipe";

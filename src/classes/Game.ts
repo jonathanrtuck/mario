@@ -15,6 +15,7 @@ import {
   Castle,
   Cloud,
   Flag,
+  Goomba,
   Hill,
   Mario,
   Pipe,
@@ -261,6 +262,22 @@ export class Game {
         new Flag(198.4375, 5),
         new Castle(202, 4),
         new Mario(2.5625, 4, "small"),
+        new Goomba(22, 4),
+        new Goomba(40, 4),
+        new Goomba(51, 4),
+        new Goomba(52.5, 4),
+        new Goomba(80, 12),
+        new Goomba(82, 12),
+        new Goomba(97, 4),
+        new Goomba(98.5, 4),
+        new Goomba(114, 4),
+        new Goomba(115.5, 4),
+        new Goomba(124, 4),
+        new Goomba(125.5, 4),
+        new Goomba(128, 4),
+        new Goomba(129.5, 4),
+        new Goomba(174, 4),
+        new Goomba(175.5, 4),
       ].toSorted(
         (a, b) => a.position.z + a.length.z - (b.position.z + b.length.z)
       ),
@@ -274,14 +291,14 @@ export class Game {
         length: {
           x: gridUnits(210),
           y: gridUnits(15),
-          z: 5,
+          z: 6,
         },
       },
       viewport: {
         length: {
           x: gridUnits(16),
           y: gridUnits(15),
-          z: 5,
+          z: 6,
         },
         position: {
           x: 0,
@@ -606,7 +623,9 @@ export class Game {
                     movableEntity.position.y - movablePosition.y;
 
                   collisionsBySide.push([
-                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    totalLengthDelta
+                      ? (prevLengthBetween / totalLengthDelta) * timeRemaining
+                      : 0,
                     "bottom",
                   ]);
                 }
@@ -625,7 +644,9 @@ export class Game {
                     movableEntity.position.x - movablePosition.x;
 
                   collisionsBySide.push([
-                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    totalLengthDelta
+                      ? (prevLengthBetween / totalLengthDelta) * timeRemaining
+                      : 0,
                     "left",
                   ]);
                 }
@@ -645,7 +666,9 @@ export class Game {
                     movableEntity.position.x - movablePosition.x;
 
                   collisionsBySide.push([
-                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    totalLengthDelta
+                      ? (prevLengthBetween / totalLengthDelta) * timeRemaining
+                      : 0,
                     "right",
                   ]);
                 }
@@ -665,7 +688,9 @@ export class Game {
                     movableEntity.position.y - movablePosition.y;
 
                   collisionsBySide.push([
-                    (prevLengthBetween / totalLengthDelta) * timeRemaining,
+                    totalLengthDelta
+                      ? (prevLengthBetween / totalLengthDelta) * timeRemaining
+                      : 0,
                     "top",
                   ]);
                 }
@@ -709,13 +734,12 @@ export class Game {
 
               if (prevCollision) {
                 const [, , prevSide, prevCollidableEntityIndex] = prevCollision;
+                const collidableEntity =
+                  collidableEntities[collidableEntityIndex];
+                const prevCollidableEntity =
+                  collidableEntities[prevCollidableEntityIndex];
 
                 if (prevSide === side) {
-                  const collidableEntity =
-                    collidableEntities[collidableEntityIndex];
-                  const prevCollidableEntity =
-                    collidableEntities[prevCollidableEntityIndex];
-
                   if (
                     !isMovable(collidableEntity) &&
                     !isMovable(prevCollidableEntity)
@@ -748,6 +772,8 @@ export class Game {
                     uniqueCollisions.push(collision);
                   }
                 } else {
+                  // @todo if collidableEntity !== prevCollidableEntity, but they have same y or x position, pick only one
+
                   uniqueCollisions.push(collision);
                 }
               } else {
@@ -785,29 +811,45 @@ export class Game {
                   movableEntity.acceleration.y = 0;
                   movableEntity.position.y =
                     collidableEntity.position.y + collidableEntity.length.y;
-                  movableEntity.velocity.y =
-                    -movableEntity.velocity.y * movableEntity.elasticity;
+                  movableEntity.velocity.y = 0;
+
+                  if (isMovable(collidableEntity)) {
+                    collidableEntity.acceleration.y = 0;
+                    collidableEntity.velocity.y = 0;
+                  }
                   break;
                 case "left":
                   movableEntity.acceleration.x = 0;
                   movableEntity.position.x =
                     collidableEntity.position.x + collidableEntity.length.x;
-                  movableEntity.velocity.x =
-                    -movableEntity.velocity.x * movableEntity.elasticity;
+                  movableEntity.velocity.x = 0;
+
+                  if (isMovable(collidableEntity)) {
+                    collidableEntity.acceleration.x = 0;
+                    collidableEntity.velocity.x = 0;
+                  }
                   break;
                 case "right":
                   movableEntity.acceleration.x = 0;
                   movableEntity.position.x =
                     collidableEntity.position.x - movableEntity.length.x;
-                  movableEntity.velocity.x =
-                    -movableEntity.velocity.x * movableEntity.elasticity;
+                  movableEntity.velocity.x = 0;
+
+                  if (isMovable(collidableEntity)) {
+                    collidableEntity.acceleration.x = 0;
+                    collidableEntity.velocity.x = 0;
+                  }
                   break;
                 case "top":
                   movableEntity.acceleration.y = 0;
                   movableEntity.position.y =
                     collidableEntity.position.y - movableEntity.length.y;
-                  movableEntity.velocity.y =
-                    -movableEntity.velocity.y * movableEntity.elasticity;
+                  movableEntity.velocity.y = 0;
+
+                  if (isMovable(collidableEntity)) {
+                    collidableEntity.acceleration.y = 0;
+                    collidableEntity.velocity.y = 0;
+                  }
                   break;
               }
 

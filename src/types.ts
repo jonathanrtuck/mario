@@ -39,7 +39,6 @@ export type Length = {
 
 export interface MovableEntity extends Entity {
   acceleration: Acceleration;
-  elasticity: number; // coefficient (>= 0)
   friction: number; // coefficient (>= 0)
   mass: number; // kg (>= 0)
   velocity: Velocity;
