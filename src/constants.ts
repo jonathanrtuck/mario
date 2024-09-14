@@ -24,15 +24,7 @@ export const COLORS = [
   "rgba(76, 36, 8, 255)", //     0xB brown dark
   "rgba(231, 62, 37, 255)", //   0xC red
 ] as const;
+export const PIXEL_LENGTH = 16;
+export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16;
 export const SIDES = ["bottom", "left", "right", "top"] as const;
-
-export const PIXEL_LENGTH = 16; // planckUnits
-export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16; // planckUnits
-
-export const RENDER_INTERVAL: MS = 1000 / 60; // 60hz
 export const TICK_INTERVAL: MS = 400;
-export const UPDATE_INTERVAL: MS = 1000 / 120; // 120hz
-
-export const RENDERS_PER_TICK = TICK_INTERVAL / RENDER_INTERVAL;
-export const UPDATES_PER_RENDER = RENDER_INTERVAL / UPDATE_INTERVAL;
-export const UPDATES_PER_TICK = TICK_INTERVAL / UPDATE_INTERVAL;

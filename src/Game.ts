@@ -1,36 +1,35 @@
 import { BUTTONS, COLORS } from "@/constants";
+import { Mario, Wall } from "@/entities";
 import { Button, MS, State } from "@/types";
-import { gridUnits } from "@/utils";
+import { gridUnits, isControllable } from "@/utils";
 
 export class Game {
   static initialTime = 400;
 
   static get initialState(): State {
     return {
-      entities: [],
+      entities: [new Wall(0, 0, 69, 4), new Mario(2.5625, 4, "small")].toSorted(
+        (a, b) => a.position.z - b.position.z
+      ),
       universe: {
         acceleration: {
           x: 0,
-          y: -1,
-          z: 0,
+          y: -1, // gravity
         },
         color: 0x4,
         length: {
           x: gridUnits(210),
           y: gridUnits(15),
-          z: 6,
         },
       },
       viewport: {
         length: {
           x: gridUnits(16),
           y: gridUnits(15),
-          z: 6,
         },
         position: {
           x: 0,
           y: gridUnits(2),
-          z: -4,
         },
       },
     };
@@ -85,7 +84,11 @@ export class Game {
         if (!this.buttons.has(button)) {
           this.buttons.add(button);
 
-          // @todo call ControllableEntity's `press` method
+          for (const entity of this.state.entities) {
+            if (isControllable(entity)) {
+              entity.press?.(button, this.buttons);
+            }
+          }
         }
       }
     }
@@ -99,7 +102,11 @@ export class Game {
         if (this.buttons.has(button)) {
           this.buttons.delete(button);
 
-          // @todo call ControllableEntity's `release` method
+          for (const entity of this.state.entities) {
+            if (isControllable(entity)) {
+              entity.release?.(button, this.buttons);
+            }
+          }
         }
       }
     }
@@ -118,7 +125,38 @@ export class Game {
     // @todo
 
     // render entities
-    // @todo
+    for (const entity of this.state.entities) {
+      // only render entities within viewport
+      if (
+        entity.position.x + entity.length.x <
+          this.state.viewport.position.x - gridUnits(1) ||
+        entity.position.x >
+          this.state.viewport.position.x +
+            this.state.viewport.length.x +
+            gridUnits(1) ||
+        entity.position.y + entity.length.y <
+          this.state.viewport.position.y - gridUnits(1) ||
+        entity.position.y >
+          this.state.viewport.position.y +
+            this.state.viewport.length.y +
+            gridUnits(1)
+      ) {
+        continue;
+      }
+
+      this.context.save();
+      this.context.translate(
+        entity.position.x - this.state.viewport.position.x,
+        this.state.viewport.length.y +
+          this.state.viewport.position.y -
+          entity.position.y -
+          entity.length.y
+      );
+
+      entity.render(this.context);
+
+      this.context.restore();
+    }
   };
 
   // @recursive

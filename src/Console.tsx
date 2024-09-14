@@ -1,6 +1,6 @@
 import { FunctionComponent, useEffect, useRef } from "react";
 
-import { Game } from "@/classes";
+import { Game } from "@/Game";
 
 export const Console: FunctionComponent = () => {
   const rootRef = useRef<HTMLCanvasElement>(null);

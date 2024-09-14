@@ -3,7 +3,6 @@ import { BUTTONS, SIDES } from "@/constants";
 export type Acceleration = {
   x: number;
   y: number;
-  z: number;
 };
 
 export type Bitmap = Color[][];
@@ -12,14 +11,14 @@ export type Button = (typeof BUTTONS)[number];
 
 export interface CollidableEntity extends Entity {
   collidableSides: Record<Side, boolean>;
-  collide?(side: Side, entity: CollidableEntity): void;
+  collide?(entity: CollidableEntity, side: Side): void;
 }
 
 export type Color = number;
 
 export interface ControllableEntity extends Entity {
-  press?(button: Button): void;
-  release?(button: Button): void;
+  press?(button: Button, buttons: Set<Button>): void;
+  release?(button: Button, buttons: Set<Button>): void;
 }
 
 export interface Entity {
@@ -31,7 +30,6 @@ export interface Entity {
 export type Length = {
   x: number;
   y: number;
-  z: number;
 };
 
 export interface MovableEntity extends Entity {
@@ -69,10 +67,9 @@ export type Universe = {
 export type Velocity = {
   x: number;
   y: number;
-  z: number;
 };
 
 export type Viewport = {
   length: Length;
-  position: Position;
+  position: Omit<Position, "z">;
 };
