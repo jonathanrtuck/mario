@@ -1,7 +1,12 @@
 import "setimmediate";
 
 import { COIN, X } from "@/bitmaps";
-import { BUTTONS, COLORS, TICK_INTERVAL, UPDATE_INTERVAL } from "@/constants";
+import {
+  BUTTONS,
+  COLORS,
+  UPDATE_INTERVAL,
+  UPDATES_PER_TICK,
+} from "@/constants";
 import {
   Block,
   Brick,
@@ -24,7 +29,7 @@ import {
   pixels,
 } from "@/utils";
 
-const UPDATES_PER_TICK = TICK_INTERVAL / UPDATE_INTERVAL;
+const EMPTY_BUTTONS = new Set<Button>();
 
 export class Game {
   static initialTime = 400;
@@ -307,7 +312,7 @@ export class Game {
 
   // @recursive
   // @see https://gameprogrammingpatterns.com/game-loop.html
-  private main = (): void => {
+  private loop = (): void => {
     if (this.isStopped) {
       return;
     }
@@ -325,13 +330,15 @@ export class Game {
         this.update();
       }
 
-      this.render();
+      this.render(this.lag);
     }
 
-    setImmediate(this.main);
+    // this prevents blocking the main thread, as opposed to something like `while (true) {…}`
+    // @todo move this into a webworker instead?
+    setImmediate(this.loop);
   };
 
-  private render = (): void => {
+  private render = (lag: MS): void => {
     this.context.reset();
 
     // render universe
@@ -393,12 +400,20 @@ export class Game {
         continue;
       }
 
+      let posX = entity.position.x;
+      let posY = entity.position.y;
+
+      if (isMovable(entity)) {
+        posX += Math.trunc(entity.velocity.x * lag);
+        posY += Math.trunc(entity.velocity.y * lag);
+      }
+
       this.context.save();
       this.context.translate(
-        entity.position.x - this.state.viewport.position.x,
+        posX - this.state.viewport.position.x,
         this.state.viewport.length.y +
           this.state.viewport.position.y -
-          entity.position.y -
+          posY -
           entity.length.y
       );
 
@@ -442,11 +457,30 @@ export class Game {
         movableEntity.acceleration.x * UPDATE_INTERVAL;
       movableEntity.velocity.y +=
         movableEntity.acceleration.y * UPDATE_INTERVAL;
+
+      // apply gravity
+      // movableEntity.velocity.y += this.state.universe.acceleration.y * UPDATE_INTERVAL;
     }
 
-    // collision detection
+    // @todo detect collisions, update entities
 
-    // update entities
+    // apply velocity
+    for (const movableEntity of movableEntities) {
+      // @todo clamp velocity
+
+      movableEntity.position.x += Math.trunc(
+        movableEntity.velocity.x * UPDATE_INTERVAL
+      );
+      movableEntity.position.y += Math.trunc(
+        movableEntity.velocity.y * UPDATE_INTERVAL
+      );
+    }
+
+    const buttons = this.isTicking ? this.buttons : EMPTY_BUTTONS;
+
+    for (const entity of entities) {
+      entity.update?.(buttons);
+    }
   };
 
   pause = (): void => {
@@ -478,7 +512,7 @@ export class Game {
     this.lag = 0;
     this.prevMs = performance.now();
 
-    this.main();
+    this.loop();
   };
 
   stop = (): void => {

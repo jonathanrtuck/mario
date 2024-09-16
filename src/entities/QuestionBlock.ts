@@ -5,28 +5,24 @@ import {
   QUESTION_BLOCK_MEDIUM,
 } from "@/bitmaps";
 import { Mario } from "@/entities";
-import { TICK_INTERVAL } from "@/constants";
-import { CollidableEntity, MS, Side } from "@/types";
+import { UPDATES_PER_TICK } from "@/constants";
+import { CollidableEntity, Side } from "@/types";
 import { gridUnits } from "@/utils";
 
-const VARIANT_CHANGE_INTERVAL: MS = TICK_INTERVAL / 3;
-const VARIANTS = [
-  QUESTION_BLOCK_LIGHT,
-  QUESTION_BLOCK_LIGHT,
-  QUESTION_BLOCK_LIGHT,
-  QUESTION_BLOCK_MEDIUM,
-  QUESTION_BLOCK_DARK,
-  QUESTION_BLOCK_MEDIUM,
-];
-
 export class QuestionBlock implements CollidableEntity {
-  private prevVariantChangeMs: MS = 0;
-  private variantIndex = 0;
+  private numUpdates = 0;
 
   private get bitmap(): OffscreenCanvas {
     return this.isDisabled
       ? QUESTION_BLOCK_DISABLED
-      : VARIANTS[this.variantIndex];
+      : [
+          QUESTION_BLOCK_LIGHT,
+          QUESTION_BLOCK_LIGHT,
+          QUESTION_BLOCK_LIGHT,
+          QUESTION_BLOCK_MEDIUM,
+          QUESTION_BLOCK_DARK,
+          QUESTION_BLOCK_MEDIUM,
+        ][Math.floor(this.numUpdates / (UPDATES_PER_TICK / 3))];
   }
 
   isDisabled = false;
@@ -62,24 +58,20 @@ export class QuestionBlock implements CollidableEntity {
   }
 
   render(context: CanvasRenderingContext2D): void {
-    /*
-    if (!this.isDisabled) {
-      const elapsedMs = now - this.prevVariantChangeMs;
-
-      if (elapsedMs >= VARIANT_CHANGE_INTERVAL) {
-        this.variantIndex++;
-
-        if (this.variantIndex === VARIANTS.length) {
-          this.variantIndex = 0;
-        }
-
-        this.prevVariantChangeMs = now;
-      }
-    }
-    */
-
     if (this.isVisible) {
       context.drawImage(this.bitmap, 0, 0, this.length.x, this.length.y);
+    }
+  }
+
+  update(): void {
+    if (this.isDisabled) {
+      return;
+    }
+
+    this.numUpdates++;
+
+    if (this.numUpdates === UPDATES_PER_TICK * 2) {
+      this.numUpdates = 0;
     }
   }
 }

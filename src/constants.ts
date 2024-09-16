@@ -29,3 +29,4 @@ export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16;
 export const SIDES = ["bottom", "left", "right", "top"] as const;
 export const TICK_INTERVAL: MS = 400;
 export const UPDATE_INTERVAL: MS = 10;
+export const UPDATES_PER_TICK = TICK_INTERVAL / UPDATE_INTERVAL;

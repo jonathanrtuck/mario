@@ -52,6 +52,7 @@ export class Mario implements CollidableEntity, MovableEntity {
   };
   facing: "left" | "right" = "right";
   isAccelerating = false;
+  isControllable = true;
   isCrouching = false;
   isJumping = false;
   isSliding = false;
