@@ -4,9 +4,10 @@ import {
   QUESTION_BLOCK_LIGHT,
   QUESTION_BLOCK_MEDIUM,
 } from "@/bitmaps";
+import { Mario } from "@/entities";
 import { TICK_INTERVAL } from "@/constants";
 import { CollidableEntity, MS, Side } from "@/types";
-import { gridUnits, isControllable } from "@/utils";
+import { gridUnits } from "@/utils";
 
 const VARIANT_CHANGE_INTERVAL: MS = TICK_INTERVAL / 3;
 const VARIANTS = [
@@ -55,12 +56,13 @@ export class QuestionBlock implements CollidableEntity {
   }
 
   collide(entity: CollidableEntity, side: Side): void {
-    if (!this.isDisabled && side === "bottom" && isControllable(entity)) {
+    if (!this.isDisabled && side === "bottom" && entity instanceof Mario) {
       this.isDisabled = true;
     }
   }
 
-  render(context: CanvasRenderingContext2D, now: MS): void {
+  render(context: CanvasRenderingContext2D): void {
+    /*
     if (!this.isDisabled) {
       const elapsedMs = now - this.prevVariantChangeMs;
 
@@ -74,6 +76,7 @@ export class QuestionBlock implements CollidableEntity {
         this.prevVariantChangeMs = now;
       }
     }
+    */
 
     if (this.isVisible) {
       context.drawImage(this.bitmap, 0, 0, this.length.x, this.length.y);

@@ -1,5 +1,7 @@
+import "setimmediate";
+
 import { COIN, X } from "@/bitmaps";
-import { BUTTONS, COLORS, TICK_INTERVAL } from "@/constants";
+import { BUTTONS, COLORS, UPDATE_INTERVAL } from "@/constants";
 import {
   Block,
   Brick,
@@ -14,7 +16,13 @@ import {
   Wall,
 } from "@/entities";
 import { Button, MS, State } from "@/types";
-import { gridUnits, isControllable, pixels } from "@/utils";
+import {
+  gridUnits,
+  gridUnitsPerSecondPerSecond,
+  isCollidable,
+  isMovable,
+  pixels,
+} from "@/utils";
 
 export class Game {
   static initialTime = 400;
@@ -216,7 +224,7 @@ export class Game {
       universe: {
         acceleration: {
           x: 0,
-          y: -1, // gravity
+          y: gridUnitsPerSecondPerSecond(-75), // gravity
         },
         color: 0x4,
         length: {
@@ -237,15 +245,12 @@ export class Game {
     };
   }
 
-  private animationFrameRequest: ReturnType<
-    typeof requestAnimationFrame
-  > | null = null;
   private buttons = new Set<Button>();
   private context: CanvasRenderingContext2D;
-  private pauseMs: MS | null = null;
-  private prevTickMs: MS | null = null;
-  private prevUpdateMs: MS | null = null;
-  private stopMs: MS | null = null;
+  private isPaused = false;
+  private isStopped = false;
+  private lag: MS = 0;
+  private prevMs: MS = performance.now();
 
   coins = 0;
   isLost = false;
@@ -265,16 +270,6 @@ export class Game {
   time = Game.initialTime;
   world = 1;
 
-  get isPaused(): boolean {
-    return this.pauseMs !== null;
-  }
-  get isStopped(): boolean {
-    return this.stopMs !== null;
-  }
-  get isTicking(): boolean {
-    return !this.isLost && !this.isWon;
-  }
-
   constructor(canvas: HTMLCanvasElement) {
     this.context = canvas.getContext("2d")!;
   }
@@ -286,14 +281,8 @@ export class Game {
 
         if (button === "start") {
           (this.isPaused ? this.unpause : this.pause)();
-        } else if (!this.buttons.has(button)) {
+        } else {
           this.buttons.add(button);
-
-          for (const entity of this.state.entities) {
-            if (isControllable(entity)) {
-              entity.press?.(button, this.buttons);
-            }
-          }
         }
       }
     }
@@ -304,20 +293,38 @@ export class Game {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        if (this.buttons.has(button)) {
-          this.buttons.delete(button);
-
-          for (const entity of this.state.entities) {
-            if (isControllable(entity)) {
-              entity.release?.(button, this.buttons);
-            }
-          }
-        }
+        this.buttons.delete(button);
       }
     }
   };
 
-  private render = (now: MS): void => {
+  // @recursive
+  // @see https://gameprogrammingpatterns.com/game-loop.html
+  private main = (): void => {
+    if (this.isStopped) {
+      return;
+    }
+
+    if (!this.isPaused) {
+      const now = performance.now();
+      const elapsedMs = now - this.prevMs;
+
+      this.prevMs = now;
+      this.lag += elapsedMs;
+
+      while (this.lag >= UPDATE_INTERVAL) {
+        this.lag -= UPDATE_INTERVAL;
+
+        this.update();
+      }
+
+      this.render();
+    }
+
+    setImmediate(this.main);
+  };
+
+  private render = (): void => {
     this.context.reset();
 
     // render universe
@@ -388,103 +395,56 @@ export class Game {
           entity.length.y
       );
 
-      entity.render(this.context, now);
+      entity.render(this.context);
 
       this.context.restore();
     }
   };
 
-  // @recursive
   private update = (): void => {
-    const now = Date.now();
-    const elapsedMs = now - this.prevUpdateMs!;
-
-    // update time
-    if (now - this.prevTickMs! >= TICK_INTERVAL) {
-      this.prevTickMs = now;
-      this.time--;
-
-      if (this.time === 0) {
-        // @todo lose
-      }
-    }
-
-    // @todo loop through each elapsedMs and detect collisions, update entities
-
-    this.render(now);
-    this.prevUpdateMs = now;
-    this.animationFrameRequest = requestAnimationFrame(this.update);
+    //
   };
 
   pause = (): void => {
-    const now = Date.now();
-
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
-
-    this.pauseMs = now;
+    this.isPaused = true;
   };
 
   reset = (): void => {
-    const now = Date.now();
-
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
-
     this.coins = 0;
     this.isLost = false;
+    this.isPaused = false;
     this.isWon = false;
+    this.lag = 0;
     this.level = 1;
-    this.pauseMs = null;
+    this.prevMs = performance.now();
     this.score = 0;
     this.state = Game.initialState;
-    this.stopMs = null;
     this.time = Game.initialTime;
     this.world = 1;
 
     this.context.canvas.focus();
-
-    this.prevTickMs = now;
-    this.prevUpdateMs = now;
-    this.animationFrameRequest = requestAnimationFrame(this.update);
   };
 
   start = (): void => {
-    const now = Date.now();
-
     this.context.canvas.addEventListener("keydown", this.onKeyDown);
     this.context.canvas.addEventListener("keyup", this.onKeyUp);
+
     this.context.canvas.focus();
 
-    this.prevTickMs = now;
-    this.prevUpdateMs = now;
-    this.animationFrameRequest = requestAnimationFrame(this.update);
+    this.lag = 0;
+    this.prevMs = performance.now();
+
+    this.main();
   };
 
   stop = (): void => {
-    const now = Date.now();
-
-    if (this.animationFrameRequest) {
-      cancelAnimationFrame(this.animationFrameRequest);
-    }
+    this.isStopped = true;
 
     this.context.canvas.removeEventListener("keydown", this.onKeyDown);
     this.context.canvas.removeEventListener("keyup", this.onKeyUp);
-
-    this.pauseMs = null;
-    this.stopMs = now;
   };
 
   unpause = (): void => {
-    const now = Date.now();
-
-    if (this.pauseMs !== null) {
-      this.prevTickMs = now - (this.pauseMs - (this.prevTickMs ?? 0));
-      this.prevUpdateMs = now - (this.pauseMs - (this.prevUpdateMs ?? 0));
-      this.animationFrameRequest = requestAnimationFrame(this.update);
-      this.pauseMs = null;
-    }
+    this.isPaused = false;
   };
 }

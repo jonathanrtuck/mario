@@ -16,15 +16,11 @@ export interface CollidableEntity extends Entity {
 
 export type Color = number;
 
-export interface ControllableEntity extends Entity {
-  press?(button: Button, buttons: Set<Button>): void;
-  release?(button: Button, buttons: Set<Button>): void;
-}
-
 export interface Entity {
   length: Length;
   position: Position;
-  render(context: CanvasRenderingContext2D, now: MS): void;
+  render(context: CanvasRenderingContext2D): void;
+  update?(buttons: Set<Button>): void;
 }
 
 export type Length = {
@@ -34,10 +30,10 @@ export type Length = {
 
 export interface MovableEntity extends Entity {
   acceleration: Acceleration;
-  friction: number;
   mass: number;
   velocity: Velocity;
   vmax: Velocity;
+  vmin?: Velocity;
 }
 
 export type MS = number;

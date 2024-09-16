@@ -1,12 +1,5 @@
 import { COLORS, GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
-import {
-  Bitmap,
-  CollidableEntity,
-  ControllableEntity,
-  Entity,
-  MovableEntity,
-  Side,
-} from "@/types";
+import { Bitmap, CollidableEntity, Entity, MovableEntity, Side } from "@/types";
 
 export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
   const numRows = bitmap.length;
@@ -37,12 +30,14 @@ export const flip = (bitmap: Bitmap): Bitmap =>
 export const gridUnits = (num: number): number =>
   Math.trunc(num * GRID_UNIT_LENGTH);
 
+export const gridUnitsPerSecond = (num: number): number =>
+  gridUnits(num) / 1000;
+
+export const gridUnitsPerSecondPerSecond = (num: number): number =>
+  gridUnits(num) / 1000 / 1000;
+
 export const isCollidable = (entity: Entity): entity is CollidableEntity =>
   (entity as CollidableEntity).collidableSides !== undefined;
-
-export const isControllable = (entity: Entity): entity is ControllableEntity =>
-  (entity as ControllableEntity).press !== undefined ||
-  (entity as ControllableEntity).release !== undefined;
 
 export const isOverlapByDimension = (
   aPosition: number,
