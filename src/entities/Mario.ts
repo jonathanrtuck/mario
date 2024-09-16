@@ -52,7 +52,6 @@ export class Mario implements CollidableEntity, MovableEntity {
   };
   facing: "left" | "right" = "right";
   isAccelerating = false;
-  isControllable = true;
   isCrouching = false;
   isJumping = false;
   isSliding = false;
@@ -106,6 +105,7 @@ export class Mario implements CollidableEntity, MovableEntity {
       case "right":
         break;
       case "top":
+        this.acceleration.y = 0;
         break;
     }
   }
@@ -121,6 +121,13 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
 
   update(buttons: Set<Button>): void {
-    //
+    this.isAccelerating = buttons.has("a");
+
+    if (buttons.has("left")) {
+      this.facing = "left";
+    }
+    if (buttons.has("right")) {
+      this.facing = "right";
+    }
   }
 }

@@ -20,12 +20,13 @@ import {
   QuestionBlock,
   Wall,
 } from "@/entities";
-import { Button, MS, State } from "@/types";
+import { Button, MS, Side, State } from "@/types";
 import {
   gridUnits,
   gridUnitsPerSecondPerSecond,
   isCollidable,
   isMovable,
+  oppositeSide,
   pixels,
 } from "@/utils";
 
@@ -256,6 +257,7 @@ export class Game {
   private context: CanvasRenderingContext2D;
   private isPaused = false;
   private isStopped = false;
+  private keys = new Set<string>();
   private lag: MS = 0;
   private numUpdatesSinceTick = 0;
   private prevMs: MS = performance.now();
@@ -287,25 +289,80 @@ export class Game {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
+    const { key } = e;
+
     for (const button of BUTTONS) {
-      if (this.keyBinding[button].has(e.key)) {
+      if (this.keyBinding[button].has(key)) {
         e.preventDefault();
 
-        if (button === "start") {
-          (this.isPaused ? this.unpause : this.pause)();
-        } else {
-          this.buttons.add(button);
+        if (!this.keys.has(key)) {
+          switch (button) {
+            case "a":
+            case "b":
+              this.buttons.add(button);
+              break;
+            case "down":
+            case "left":
+            case "right":
+            case "up":
+              if (!this.buttons.has(oppositeSide(button as Side) as Button)) {
+                this.buttons.add(button);
+              }
+              break;
+            case "start":
+              (this.isPaused ? this.unpause : this.pause)();
+              break;
+          }
+
+          this.keys.add(key);
         }
+
+        break;
       }
     }
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
+    const { key } = e;
+
     for (const button of BUTTONS) {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        this.buttons.delete(button);
+        if (this.keys.has(key)) {
+          switch (button) {
+            case "a":
+            case "b":
+              this.buttons.delete(button);
+              break;
+            case "down":
+            case "left":
+            case "right":
+            case "up":
+              this.buttons.delete(button);
+
+              for (const otherButton of BUTTONS) {
+                if (otherButton === button) {
+                  continue;
+                }
+
+                if (
+                  oppositeSide(button as Side) === otherButton &&
+                  this.keys.intersection(this.keyBinding[otherButton]).size
+                ) {
+                  this.buttons.add(otherButton);
+                }
+              }
+              break;
+            case "start":
+              (this.isPaused ? this.unpause : this.pause)();
+              break;
+          }
+
+          this.keys.delete(e.key);
+        }
+
+        break;
       }
     }
   };
