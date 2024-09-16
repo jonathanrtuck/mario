@@ -109,77 +109,6 @@ export class Mario implements CollidableEntity, MovableEntity {
     }
   }
 
-  press(button: Button, buttons: Set<Button>): void {
-    switch (button) {
-      case "a":
-        break;
-      case "b":
-        // jump
-        this.acceleration.y = ACCELERATION.y;
-        this.velocity.y = VELOCITY.y;
-        this.isJumping = true;
-
-        // @todo if has flower, throw fireball
-        break;
-      case "down":
-        if (!buttons.has("up")) {
-          this.isCrouching = true;
-        }
-        break;
-      case "left":
-        if (buttons.has("right")) {
-          this.acceleration.x = 0;
-        } else {
-          this.acceleration.x = -ACCELERATION.x;
-          this.facing = "left";
-        }
-        break;
-      case "right":
-        if (buttons.has("left")) {
-          this.acceleration.x = 0;
-        } else {
-          this.acceleration.x = ACCELERATION.x;
-          this.facing = "right";
-        }
-        break;
-      case "up":
-        break;
-    }
-  }
-
-  release(button: Button, buttons: Set<Button>): void {
-    switch (button) {
-      case "a":
-        break;
-      case "b":
-        this.acceleration.y = 0;
-        break;
-      case "down":
-        break;
-      case "left":
-        if (buttons.has("right")) {
-          this.acceleration.x = ACCELERATION.x;
-          this.facing = "right";
-        } else {
-          this.acceleration.x = 0;
-        }
-        break;
-      case "right":
-        if (buttons.has("left")) {
-          this.acceleration.x = -ACCELERATION.x;
-          this.facing = "left";
-        } else {
-          this.acceleration.x = 0;
-        }
-        break;
-      case "up":
-        if (!buttons.has("down")) {
-          this.isCrouching = true;
-        }
-        break;
-    }
-  }
-
   render(context: CanvasRenderingContext2D): void {
     context.drawImage(
       this.bitmap,
@@ -188,5 +117,9 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.length.x + pixels(4),
       this.length.y
     );
+  }
+
+  update(buttons: Set<Button>): void {
+    //
   }
 }

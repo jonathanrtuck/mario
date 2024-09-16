@@ -1,7 +1,7 @@
 import "setimmediate";
 
 import { COIN, X } from "@/bitmaps";
-import { BUTTONS, COLORS, UPDATE_INTERVAL } from "@/constants";
+import { BUTTONS, COLORS, TICK_INTERVAL, UPDATE_INTERVAL } from "@/constants";
 import {
   Block,
   Brick,
@@ -23,6 +23,8 @@ import {
   isMovable,
   pixels,
 } from "@/utils";
+
+const UPDATES_PER_TICK = TICK_INTERVAL / UPDATE_INTERVAL;
 
 export class Game {
   static initialTime = 400;
@@ -250,7 +252,12 @@ export class Game {
   private isPaused = false;
   private isStopped = false;
   private lag: MS = 0;
+  private numUpdatesSinceTick = 0;
   private prevMs: MS = performance.now();
+
+  private get isTicking(): boolean {
+    return !this.isLost && !this.isWon;
+  }
 
   coins = 0;
   isLost = false;
@@ -402,7 +409,44 @@ export class Game {
   };
 
   private update = (): void => {
-    //
+    // update time
+    if (this.isTicking) {
+      if (this.numUpdatesSinceTick === UPDATES_PER_TICK) {
+        this.numUpdatesSinceTick = 0;
+        this.time--;
+
+        if (this.time === 0) {
+          // @todo lose
+        }
+      } else {
+        this.numUpdatesSinceTick++;
+      }
+    }
+
+    // only update entities within viewport
+    const entities = this.state.entities.filter(
+      (entity) =>
+        entity.position.x <
+          this.state.viewport.position.x +
+            this.state.viewport.length.x +
+            gridUnits(2) &&
+        entity.position.x + entity.length.x >
+          this.state.viewport.position.x - gridUnits(2)
+    );
+    const collidableEntities = entities.filter(isCollidable);
+    const movableEntities = entities.filter(isMovable);
+
+    // apply acceleration
+    for (const movableEntity of movableEntities) {
+      movableEntity.velocity.x +=
+        movableEntity.acceleration.x * UPDATE_INTERVAL;
+      movableEntity.velocity.y +=
+        movableEntity.acceleration.y * UPDATE_INTERVAL;
+    }
+
+    // collision detection
+
+    // update entities
   };
 
   pause = (): void => {
