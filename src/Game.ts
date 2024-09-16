@@ -289,13 +289,11 @@ export class Game {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    const { key } = e;
-
     for (const button of BUTTONS) {
-      if (this.keyBinding[button].has(key)) {
+      if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        if (!this.keys.has(key)) {
+        if (!this.keys.has(e.key)) {
           switch (button) {
             case "a":
             case "b":
@@ -314,7 +312,7 @@ export class Game {
               break;
           }
 
-          this.keys.add(key);
+          this.keys.add(e.key);
         }
 
         break;
@@ -323,13 +321,11 @@ export class Game {
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
-    const { key } = e;
-
     for (const button of BUTTONS) {
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
-        if (this.keys.has(key)) {
+        if (this.keys.has(e.key)) {
           switch (button) {
             case "a":
             case "b":
