@@ -1,9 +1,21 @@
 import {
+  MARIO_HANGING_LEFT_SMALL,
+  MARIO_HANGING_RIGHT_SMALL,
+  MARIO_JUMPING_LEFT_SMALL,
+  MARIO_JUMPING_RIGHT_SMALL,
+  MARIO_SLIDING_LEFT_SMALL,
+  MARIO_SLIDING_RIGHT_SMALL,
   MARIO_STANDING_LEFT_SMALL,
   MARIO_STANDING_RIGHT_SMALL,
+  MARIO_WALKING_LEFT_SMALL_A,
+  MARIO_WALKING_LEFT_SMALL_B,
+  MARIO_WALKING_LEFT_SMALL_C,
+  MARIO_WALKING_RIGHT_SMALL_A,
+  MARIO_WALKING_RIGHT_SMALL_B,
+  MARIO_WALKING_RIGHT_SMALL_C,
 } from "@/bitmaps";
+import { UPDATE_INTERVAL } from "@/constants";
 import {
-  Acceleration,
   Button,
   CollidableEntity,
   MovableEntity,
@@ -17,15 +29,6 @@ import {
   pixels,
 } from "@/utils";
 
-const ACCELERATION: Acceleration = {
-  x: gridUnitsPerSecondPerSecond(13.125),
-  y: gridUnitsPerSecondPerSecond(13.125),
-};
-const VELOCITY: Velocity = {
-  x: gridUnitsPerSecond(1),
-  y: gridUnitsPerSecond(15.75), // @todo
-};
-
 // @see https://www.researchgate.net/publication/314374307_You_Say_Jump_I_Say_How_High_Operationalising_the_Game_Feel_of_Jumping
 export class Mario implements CollidableEntity, MovableEntity {
   private get bitmap(): OffscreenCanvas {
@@ -34,10 +37,28 @@ export class Mario implements CollidableEntity, MovableEntity {
       case "large":
         return MARIO_STANDING_RIGHT_SMALL;
       default:
+        if (this.isJumping) {
+          return this.facing === "left"
+            ? MARIO_JUMPING_LEFT_SMALL
+            : MARIO_JUMPING_RIGHT_SMALL;
+        }
+
+        if (this.isSliding) {
+          return this.facing === "left"
+            ? MARIO_SLIDING_LEFT_SMALL
+            : MARIO_SLIDING_RIGHT_SMALL;
+        }
+
         return this.facing === "left"
           ? MARIO_STANDING_LEFT_SMALL
           : MARIO_STANDING_RIGHT_SMALL;
     }
+  }
+  private get vmax(): Velocity {
+    return {
+      x: gridUnitsPerSecond(6 * (this.isAccelerating ? 2 : 1)),
+      y: gridUnitsPerSecond(17.25),
+    };
   }
 
   acceleration = {
@@ -71,18 +92,6 @@ export class Mario implements CollidableEntity, MovableEntity {
   get mass() {
     return this.size === "large" ? 155 : 77.5;
   }
-  get vmax() {
-    return {
-      x: gridUnitsPerSecond(6 * (this.isAccelerating ? 2 : 1)),
-      y: gridUnitsPerSecond(17.25),
-    };
-  }
-  get vmin() {
-    return {
-      x: 1,
-      y: gridUnitsPerSecond(8),
-    };
-  }
 
   constructor(gridX: number, gridY: number, size: "small" | "large") {
     this.position = {
@@ -96,13 +105,15 @@ export class Mario implements CollidableEntity, MovableEntity {
   collide(entity: CollidableEntity, side: Side): void {
     switch (side) {
       case "bottom":
+        this.isJumping = false;
         this.acceleration.y = 0;
         this.velocity.y = 0;
-        this.isJumping = false;
         break;
       case "left":
+        this.velocity.x = 0;
         break;
       case "right":
+        this.velocity.x = 0;
         break;
       case "top":
         this.acceleration.y = 0;
@@ -120,14 +131,76 @@ export class Mario implements CollidableEntity, MovableEntity {
     );
   }
 
-  update(buttons: Set<Button>): void {
+  update(
+    time: number,
+    numUpdatesSinceTick: number,
+    buttons: Set<Button>
+  ): void {
     this.isAccelerating = buttons.has("a");
+    this.isSliding = false;
 
     if (buttons.has("left")) {
       this.facing = "left";
+      this.acceleration.x = gridUnitsPerSecondPerSecond(-13.125);
+
+      if (this.velocity.x > 0) {
+        // @todo && isTouchingBottom
+        this.isSliding = true;
+      }
+    } else if (this.velocity.x < 0) {
+      if (
+        this.velocity.x >
+        gridUnitsPerSecondPerSecond(-13.125) * UPDATE_INTERVAL
+      ) {
+        this.acceleration.x = 0;
+        this.velocity.x = 0;
+      } else {
+        this.acceleration.x = gridUnitsPerSecondPerSecond(13.125);
+      }
     }
+
     if (buttons.has("right")) {
       this.facing = "right";
+      this.acceleration.x = gridUnitsPerSecondPerSecond(13.125);
+
+      if (this.velocity.x < 0) {
+        // @todo && isTouchingBottom
+        this.isSliding = true;
+      }
+    } else if (this.velocity.x > 0) {
+      if (
+        this.velocity.x <
+        gridUnitsPerSecondPerSecond(13.125) * UPDATE_INTERVAL
+      ) {
+        this.acceleration.x = 0;
+        this.velocity.x = 0;
+      } else {
+        this.acceleration.x = gridUnitsPerSecondPerSecond(-13.125);
+      }
+    }
+
+    if (buttons.has("b")) {
+      if (!this.isJumping) {
+        this.isJumping = true;
+        this.acceleration.y = gridUnitsPerSecondPerSecond(13.125);
+        this.velocity.y = gridUnitsPerSecond(15.75); // @todo based on horizontal velocity
+      }
+
+      // @todo if has flower, throw fireball
+    }
+
+    if (
+      this.isJumping &&
+      (!buttons.has("b") || this.velocity.y < gridUnitsPerSecond(8))
+    ) {
+      this.acceleration.y = 0;
+    }
+
+    if (this.velocity.x > this.vmax.x) {
+      this.acceleration.x = gridUnitsPerSecondPerSecond(-13.125);
+    }
+    if (this.velocity.x < -this.vmax.x) {
+      this.acceleration.x = gridUnitsPerSecondPerSecond(13.125);
     }
   }
 }

@@ -1,6 +1,9 @@
 import { COLORS, GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
 import { Bitmap, CollidableEntity, Entity, MovableEntity, Side } from "@/types";
 
+export const clamp = (num: number, min: number, max: number): number =>
+  num <= min ? min : num >= max ? max : num;
+
 export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
   const numRows = bitmap.length;
   const numCols = bitmap[0]?.length ?? 0;

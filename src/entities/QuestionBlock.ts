@@ -10,20 +10,7 @@ import { CollidableEntity, Side } from "@/types";
 import { gridUnits } from "@/utils";
 
 export class QuestionBlock implements CollidableEntity {
-  private numUpdates = 0;
-
-  private get bitmap(): OffscreenCanvas {
-    return this.isDisabled
-      ? QUESTION_BLOCK_DISABLED
-      : [
-          QUESTION_BLOCK_LIGHT,
-          QUESTION_BLOCK_LIGHT,
-          QUESTION_BLOCK_LIGHT,
-          QUESTION_BLOCK_MEDIUM,
-          QUESTION_BLOCK_DARK,
-          QUESTION_BLOCK_MEDIUM,
-        ][Math.floor(this.numUpdates / (UPDATES_PER_TICK / 3))];
-  }
+  private bitmap = QUESTION_BLOCK_LIGHT;
 
   isDisabled = false;
   isVisible: boolean;
@@ -63,15 +50,13 @@ export class QuestionBlock implements CollidableEntity {
     }
   }
 
-  update(): void {
-    if (this.isDisabled) {
-      return;
-    }
-
-    this.numUpdates++;
-
-    if (this.numUpdates === UPDATES_PER_TICK * 2) {
-      this.numUpdates = 0;
-    }
+  update(time: number, numUpdatesSinceTick: number): void {
+    this.bitmap = this.isDisabled
+      ? QUESTION_BLOCK_DISABLED
+      : time % 2 === 0
+      ? QUESTION_BLOCK_LIGHT
+      : [QUESTION_BLOCK_MEDIUM, QUESTION_BLOCK_DARK, QUESTION_BLOCK_MEDIUM][
+          Math.floor(numUpdatesSinceTick / (UPDATES_PER_TICK / 3))
+        ];
   }
 }

@@ -20,11 +20,11 @@ import {
   QuestionBlock,
   Wall,
 } from "@/entities";
-import { Button, MS, Side, State } from "@/types";
+import { Button, Entity, MS, Side, State } from "@/types";
 import {
+  clamp,
   gridUnits,
   gridUnitsPerSecondPerSecond,
-  isCollidable,
   isMovable,
   oppositeSide,
   pixels,
@@ -258,9 +258,9 @@ export class Game {
   private isPaused = false;
   private isStopped = false;
   private keys = new Set<string>();
-  private lag: MS = 0;
   private numUpdatesSinceTick = 0;
-  private prevMs: MS = performance.now();
+  private prevLoopMs: MS = performance.now();
+  private updateLagMs: MS = 0;
 
   private get isTicking(): boolean {
     return !this.isLost && !this.isWon;
@@ -289,7 +289,9 @@ export class Game {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    for (const button of BUTTONS) {
+    for (let i = 0; i !== BUTTONS.length; i++) {
+      const button = BUTTONS[i];
+
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
@@ -321,7 +323,9 @@ export class Game {
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
-    for (const button of BUTTONS) {
+    for (let i = 0; i !== BUTTONS.length; i++) {
+      const button = BUTTONS[i];
+
       if (this.keyBinding[button].has(e.key)) {
         e.preventDefault();
 
@@ -337,7 +341,9 @@ export class Game {
             case "up":
               this.buttons.delete(button);
 
-              for (const otherButton of BUTTONS) {
+              for (let j = 0; j !== BUTTONS.length; j++) {
+                const otherButton = BUTTONS[j];
+
                 if (otherButton === button) {
                   continue;
                 }
@@ -372,18 +378,18 @@ export class Game {
 
     if (!this.isPaused) {
       const now = performance.now();
-      const elapsedMs = now - this.prevMs;
+      const elapsedMs = now - this.prevLoopMs;
 
-      this.prevMs = now;
-      this.lag += elapsedMs;
+      this.prevLoopMs = now;
+      this.updateLagMs += elapsedMs;
 
-      while (this.lag >= UPDATE_INTERVAL) {
-        this.lag -= UPDATE_INTERVAL;
+      while (this.updateLagMs >= UPDATE_INTERVAL) {
+        this.updateLagMs -= UPDATE_INTERVAL;
 
         this.update();
       }
 
-      this.render(this.lag);
+      this.render();
     }
 
     // this prevents blocking the main thread, as opposed to something like `while (true) {…}`
@@ -391,7 +397,7 @@ export class Game {
     setImmediate(this.loop);
   };
 
-  private render = (lag: MS): void => {
+  private render = (): void => {
     this.context.reset();
 
     // render universe
@@ -434,8 +440,10 @@ export class Game {
     this.context.restore();
 
     // render entities
-    for (const entity of this.state.entities) {
-      // only render entities within viewport
+    for (let i = 0; i !== this.state.entities.length; i++) {
+      const entity = this.state.entities[i];
+
+      // only render entities within viewport, including a buffer to account for entities that may draw outside of their hitbox
       if (
         entity.position.x + entity.length.x <
           this.state.viewport.position.x - gridUnits(1) ||
@@ -453,20 +461,12 @@ export class Game {
         continue;
       }
 
-      let posX = entity.position.x;
-      let posY = entity.position.y;
-
-      if (isMovable(entity)) {
-        posX += Math.trunc(entity.velocity.x * lag);
-        posY += Math.trunc(entity.velocity.y * lag);
-      }
-
       this.context.save();
       this.context.translate(
-        posX - this.state.viewport.position.x,
+        entity.position.x - this.state.viewport.position.x,
         this.state.viewport.length.y +
           this.state.viewport.position.y -
-          posY -
+          entity.position.y -
           entity.length.y
       );
 
@@ -479,60 +479,101 @@ export class Game {
   private update = (): void => {
     // update time
     if (this.isTicking) {
+      this.numUpdatesSinceTick++;
+
       if (this.numUpdatesSinceTick === UPDATES_PER_TICK) {
         this.numUpdatesSinceTick = 0;
         this.time--;
 
         if (this.time === 0) {
-          // @todo lose
+          this.isLost = true;
         }
-      } else {
-        this.numUpdatesSinceTick++;
       }
     }
 
+    const buttons = this.isTicking ? this.buttons : EMPTY_BUTTONS;
+    const entities: Entity[] = [];
+
     // only update entities within viewport
-    const entities = this.state.entities.filter(
-      (entity) =>
+    for (let i = 0; i !== this.state.entities.length; i++) {
+      const entity = this.state.entities[i];
+
+      if (
         entity.position.x <
           this.state.viewport.position.x +
             this.state.viewport.length.x +
             gridUnits(2) &&
         entity.position.x + entity.length.x >
           this.state.viewport.position.x - gridUnits(2)
-    );
-    const collidableEntities = entities.filter(isCollidable);
-    const movableEntities = entities.filter(isMovable);
+      ) {
+        entities.push(entity);
+      }
+    }
 
     // apply acceleration
-    for (const movableEntity of movableEntities) {
-      movableEntity.velocity.x +=
-        movableEntity.acceleration.x * UPDATE_INTERVAL;
-      movableEntity.velocity.y +=
-        movableEntity.acceleration.y * UPDATE_INTERVAL;
+    for (let i = 0; i !== this.state.entities.length; i++) {
+      const entity = this.state.entities[i];
 
-      // apply gravity
-      // movableEntity.velocity.y += this.state.universe.acceleration.y * UPDATE_INTERVAL;
+      if (isMovable(entity)) {
+        entity.velocity.x += entity.acceleration.x * UPDATE_INTERVAL;
+        entity.velocity.y += entity.acceleration.y * UPDATE_INTERVAL;
+
+        // apply gravity
+        // movableEntity.velocity.y += this.state.universe.acceleration.y * UPDATE_INTERVAL;
+      }
     }
 
-    // @todo detect collisions, update entities
+    // @todo collision detection
 
-    // apply velocity
-    for (const movableEntity of movableEntities) {
-      // @todo clamp velocity
+    for (let i = 0; i !== this.state.entities.length; i++) {
+      const entity = this.state.entities[i];
 
-      movableEntity.position.x += Math.trunc(
-        movableEntity.velocity.x * UPDATE_INTERVAL
-      );
-      movableEntity.position.y += Math.trunc(
-        movableEntity.velocity.y * UPDATE_INTERVAL
-      );
-    }
+      if (isMovable(entity)) {
+        // apply velocity
+        entity.position.x += Math.trunc(entity.velocity.x * UPDATE_INTERVAL);
+        entity.position.y += Math.trunc(entity.velocity.y * UPDATE_INTERVAL);
+      }
 
-    const buttons = this.isTicking ? this.buttons : EMPTY_BUTTONS;
+      // update viewport
+      if (entity instanceof Mario) {
+        const entityCenterX = entity.position.x + entity.length.x / 2;
+        const viewportCenterX =
+          this.state.viewport.position.x + this.state.viewport.length.x / 2;
+        const maxViewportPositionX =
+          this.state.universe.length.x - this.state.viewport.length.x;
 
-    for (const entity of entities) {
-      entity.update?.(buttons);
+        // follow entity with viewport
+        if (entityCenterX > viewportCenterX) {
+          this.state.viewport.position.x = clamp(
+            entityCenterX - this.state.viewport.length.x / 2,
+            this.state.viewport.position.x,
+            maxViewportPositionX
+          );
+        }
+
+        const minPositionX = this.state.viewport.position.x;
+        const maxPositionX =
+          this.state.viewport.position.x +
+          this.state.viewport.length.x -
+          entity.length.x;
+
+        // prevent entity from overflowing viewport
+        if (entity.position.x < minPositionX) {
+          entity.position.x = minPositionX;
+
+          if (entity.velocity.x < 0) {
+            entity.velocity.x = 0;
+          }
+        } else if (entity.position.x > maxPositionX) {
+          entity.position.x = maxPositionX;
+
+          if (entity.velocity.x > 0) {
+            entity.velocity.x = 0;
+          }
+        }
+      }
+
+      entity.update?.(this.time, this.numUpdatesSinceTick, buttons);
     }
   };
 
@@ -545,12 +586,12 @@ export class Game {
     this.isLost = false;
     this.isPaused = false;
     this.isWon = false;
-    this.lag = 0;
     this.level = 1;
-    this.prevMs = performance.now();
+    this.prevLoopMs = performance.now();
     this.score = 0;
     this.state = Game.initialState;
     this.time = Game.initialTime;
+    this.updateLagMs = 0;
     this.world = 1;
 
     this.context.canvas.focus();
@@ -562,8 +603,7 @@ export class Game {
 
     this.context.canvas.focus();
 
-    this.lag = 0;
-    this.prevMs = performance.now();
+    this.prevLoopMs = performance.now();
 
     this.loop();
   };

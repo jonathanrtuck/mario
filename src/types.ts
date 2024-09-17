@@ -20,7 +20,11 @@ export interface Entity {
   length: Length;
   position: Position;
   render(context: CanvasRenderingContext2D): void;
-  update?(buttons: Set<Button>): void;
+  update?(
+    time: number,
+    numUpdatesSinceTick: number,
+    buttons: Set<Button>
+  ): void;
 }
 
 export type Length = {
@@ -32,8 +36,6 @@ export interface MovableEntity extends Entity {
   acceleration: Acceleration;
   mass: number;
   velocity: Velocity;
-  vmax: Velocity;
-  vmin?: Velocity;
 }
 
 export type MS = number;
