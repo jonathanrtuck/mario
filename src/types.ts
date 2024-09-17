@@ -36,8 +36,6 @@ export interface MovableEntity extends Entity {
 
 export type MS = number;
 
-export type Neighbors = Record<Side, CollidableEntity[]>;
-
 export type Position = {
   x: number;
   y: number;
@@ -46,24 +44,7 @@ export type Position = {
 
 export type Side = (typeof SIDES)[number];
 
-export type State = {
-  entities: Entity[];
-  universe: Universe;
-  viewport: Viewport;
-};
-
-export type Universe = {
-  acceleration: Acceleration;
-  color: Color;
-  length: Length;
-};
-
 export type Velocity = {
   x: number;
   y: number;
-};
-
-export type Viewport = {
-  length: Length;
-  position: Omit<Position, "z">;
 };

@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { Console } from "@/Console";
+import { Console } from "@/components";
 
 import "./index.css";
 
