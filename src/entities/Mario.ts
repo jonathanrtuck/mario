@@ -143,9 +143,10 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.facing = "left";
       this.acceleration.x = gridUnitsPerSecondPerSecond(-13.125);
 
+      // @todo && isTouchingBottom
       if (this.velocity.x > 0) {
-        // @todo && isTouchingBottom
         this.isSliding = true;
+        this.acceleration.x = gridUnitsPerSecondPerSecond(-30);
       }
     } else if (this.velocity.x < 0) {
       if (
@@ -163,9 +164,10 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.facing = "right";
       this.acceleration.x = gridUnitsPerSecondPerSecond(13.125);
 
+      // @todo && isTouchingBottom
       if (this.velocity.x < 0) {
-        // @todo && isTouchingBottom
         this.isSliding = true;
+        this.acceleration.x = gridUnitsPerSecondPerSecond(30);
       }
     } else if (this.velocity.x > 0) {
       if (

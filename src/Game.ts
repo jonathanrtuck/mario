@@ -440,6 +440,22 @@ export class Game {
     this.context.restore();
 
     // render entities
+    let offsetX = 0;
+    for (let i = 0; i !== this.state.entities.length; i++) {
+      const entity = this.state.entities[i];
+
+      if (entity instanceof Mario) {
+        if (
+          entity.velocity.x > 0 &&
+          entity.position.x + entity.length.x / 2 ===
+            this.state.viewport.position.x + this.state.viewport.length.x / 2
+        ) {
+          offsetX = entity.velocity.x * this.updateLagMs;
+        }
+
+        break;
+      }
+    }
     for (let i = 0; i !== this.state.entities.length; i++) {
       const entity = this.state.entities[i];
 
@@ -461,12 +477,20 @@ export class Game {
         continue;
       }
 
+      let positionX = entity.position.x;
+      let positionY = entity.position.y;
+
+      if (isMovable(entity)) {
+        positionX += entity.velocity.x * this.updateLagMs;
+        positionY += entity.velocity.y * this.updateLagMs;
+      }
+
       this.context.save();
       this.context.translate(
-        entity.position.x - this.state.viewport.position.x,
+        positionX - this.state.viewport.position.x - offsetX,
         this.state.viewport.length.y +
           this.state.viewport.position.y -
-          entity.position.y -
+          positionY -
           entity.length.y
       );
 
@@ -519,7 +543,7 @@ export class Game {
         entity.velocity.y += entity.acceleration.y * UPDATE_INTERVAL;
 
         // apply gravity
-        // movableEntity.velocity.y += this.state.universe.acceleration.y * UPDATE_INTERVAL;
+        // entity.velocity.y += this.state.universe.acceleration.y * UPDATE_INTERVAL;
       }
     }
 
