@@ -24,9 +24,11 @@ export const COLORS = [
   "rgba(76, 36, 8, 255)", //     0xB brown dark
   "rgba(231, 62, 37, 255)", //   0xC red
 ] as const;
+export const SIDES = ["bottom", "left", "right", "top"] as const;
+
 export const PIXEL_LENGTH = 16;
 export const GRID_UNIT_LENGTH = PIXEL_LENGTH * 16;
-export const SIDES = ["bottom", "left", "right", "top"] as const;
+
+export const FRAME_INTERVAL: MS = 10;
 export const TICK_INTERVAL: MS = 400;
-export const UPDATE_INTERVAL: MS = 10;
-export const UPDATES_PER_TICK = TICK_INTERVAL / UPDATE_INTERVAL;
+export const FRAMES_PER_TICK = TICK_INTERVAL / FRAME_INTERVAL;

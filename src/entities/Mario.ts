@@ -1,10 +1,10 @@
 import {
-  MARIO_HANGING_LEFT_SMALL,
-  MARIO_HANGING_RIGHT_SMALL,
+  MARIO_CLIMBING_LEFT_SMALL,
+  MARIO_CLIMBING_RIGHT_SMALL,
   MARIO_JUMPING_LEFT_SMALL,
   MARIO_JUMPING_RIGHT_SMALL,
-  MARIO_SLIDING_LEFT_SMALL,
-  MARIO_SLIDING_RIGHT_SMALL,
+  MARIO_SKIDDING_LEFT_SMALL,
+  MARIO_SKIDDING_RIGHT_SMALL,
   MARIO_STANDING_LEFT_SMALL,
   MARIO_STANDING_RIGHT_SMALL,
   MARIO_WALKING_LEFT_SMALL_A,
@@ -14,7 +14,7 @@ import {
   MARIO_WALKING_RIGHT_SMALL_B,
   MARIO_WALKING_RIGHT_SMALL_C,
 } from "@/bitmaps";
-import { UPDATE_INTERVAL } from "@/constants";
+import { FRAME_INTERVAL } from "@/constants";
 import {
   Button,
   CollidableEntity,
@@ -37,16 +37,22 @@ export class Mario implements CollidableEntity, MovableEntity {
       case "large":
         return MARIO_STANDING_RIGHT_SMALL;
       default:
+        if (this.isClimbing) {
+          return this.facing === "left"
+            ? MARIO_CLIMBING_LEFT_SMALL
+            : MARIO_CLIMBING_RIGHT_SMALL;
+        }
+
         if (this.isJumping) {
           return this.facing === "left"
             ? MARIO_JUMPING_LEFT_SMALL
             : MARIO_JUMPING_RIGHT_SMALL;
         }
 
-        if (this.isSliding) {
+        if (this.isSkidding) {
           return this.facing === "left"
-            ? MARIO_SLIDING_LEFT_SMALL
-            : MARIO_SLIDING_RIGHT_SMALL;
+            ? MARIO_SKIDDING_LEFT_SMALL
+            : MARIO_SKIDDING_RIGHT_SMALL;
         }
 
         return this.facing === "left"
@@ -73,9 +79,10 @@ export class Mario implements CollidableEntity, MovableEntity {
   };
   facing: "left" | "right" = "right";
   isAccelerating = false;
+  isClimbing = false;
   isCrouching = false;
   isJumping = false;
-  isSliding = false;
+  isSkidding = false;
   position;
   size: "small" | "large";
   velocity = {
@@ -131,13 +138,9 @@ export class Mario implements CollidableEntity, MovableEntity {
     );
   }
 
-  update(
-    time: number,
-    numUpdatesSinceTick: number,
-    buttons: Set<Button>
-  ): void {
+  update(frame: number, buttons: Set<Button>): void {
     this.isAccelerating = buttons.has("a");
-    this.isSliding = false;
+    this.isSkidding = false;
 
     if (buttons.has("left")) {
       this.facing = "left";
@@ -145,13 +148,13 @@ export class Mario implements CollidableEntity, MovableEntity {
 
       // @todo && isTouchingBottom
       if (this.velocity.x > 0) {
-        this.isSliding = true;
+        this.isSkidding = true;
         this.acceleration.x = gridUnitsPerSecondPerSecond(-30);
       }
     } else if (this.velocity.x < 0) {
       if (
         this.velocity.x >
-        gridUnitsPerSecondPerSecond(-13.125) * UPDATE_INTERVAL
+        gridUnitsPerSecondPerSecond(-13.125) * FRAME_INTERVAL
       ) {
         this.acceleration.x = 0;
         this.velocity.x = 0;
@@ -166,13 +169,13 @@ export class Mario implements CollidableEntity, MovableEntity {
 
       // @todo && isTouchingBottom
       if (this.velocity.x < 0) {
-        this.isSliding = true;
+        this.isSkidding = true;
         this.acceleration.x = gridUnitsPerSecondPerSecond(30);
       }
     } else if (this.velocity.x > 0) {
       if (
         this.velocity.x <
-        gridUnitsPerSecondPerSecond(13.125) * UPDATE_INTERVAL
+        gridUnitsPerSecondPerSecond(13.125) * FRAME_INTERVAL
       ) {
         this.acceleration.x = 0;
         this.velocity.x = 0;

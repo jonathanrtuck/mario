@@ -5,7 +5,7 @@ import {
   QUESTION_BLOCK_MEDIUM,
 } from "@/bitmaps";
 import { Mario } from "@/entities";
-import { UPDATES_PER_TICK } from "@/constants";
+import { FRAMES_PER_TICK } from "@/constants";
 import { CollidableEntity, Side } from "@/types";
 import { gridUnits } from "@/utils";
 
@@ -50,13 +50,15 @@ export class QuestionBlock implements CollidableEntity {
     }
   }
 
-  update(time: number, numUpdatesSinceTick: number): void {
+  update(frame: number): void {
     this.bitmap = this.isDisabled
       ? QUESTION_BLOCK_DISABLED
-      : time % 2 === 0
+      : Math.floor(frame / FRAMES_PER_TICK) % 2 === 0
       ? QUESTION_BLOCK_LIGHT
       : [QUESTION_BLOCK_MEDIUM, QUESTION_BLOCK_DARK, QUESTION_BLOCK_MEDIUM][
-          Math.floor(numUpdatesSinceTick / (UPDATES_PER_TICK / 3))
+          Math.abs(
+            Math.trunc((frame % FRAMES_PER_TICK) / (FRAMES_PER_TICK / 3))
+          )
         ];
   }
 }

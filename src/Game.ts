@@ -1,12 +1,7 @@
 import "setimmediate";
 
 import { COIN, X } from "@/bitmaps";
-import {
-  BUTTONS,
-  COLORS,
-  UPDATE_INTERVAL,
-  UPDATES_PER_TICK,
-} from "@/constants";
+import { BUTTONS, COLORS, FRAME_INTERVAL, FRAMES_PER_TICK } from "@/constants";
 import {
   Block,
   Brick,
@@ -30,10 +25,8 @@ import {
   pixels,
 } from "@/utils";
 
-const EMPTY_BUTTONS = new Set<Button>();
-
 export class Game {
-  static initialTime = 400;
+  static initialFrame = 400 * FRAMES_PER_TICK;
 
   static get initialState(): State {
     return {
@@ -255,18 +248,14 @@ export class Game {
 
   private buttons = new Set<Button>();
   private context: CanvasRenderingContext2D;
+  private frameLagMs: MS = 0;
   private isPaused = false;
   private isStopped = false;
   private keys = new Set<string>();
-  private numUpdatesSinceTick = 0;
   private prevLoopMs: MS = performance.now();
-  private updateLagMs: MS = 0;
-
-  private get isTicking(): boolean {
-    return !this.isLost && !this.isWon;
-  }
 
   coins = 0;
+  frame = Game.initialFrame;
   isLost = false;
   isWon = false;
   keyBinding: Record<Button, Set<string>> = {
@@ -281,7 +270,6 @@ export class Game {
   level = 1;
   score = 0;
   state = Game.initialState;
-  time = Game.initialTime;
   world = 1;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -381,10 +369,10 @@ export class Game {
       const elapsedMs = now - this.prevLoopMs;
 
       this.prevLoopMs = now;
-      this.updateLagMs += elapsedMs;
+      this.frameLagMs += elapsedMs;
 
-      while (this.updateLagMs >= UPDATE_INTERVAL) {
-        this.updateLagMs -= UPDATE_INTERVAL;
+      while (this.frameLagMs >= FRAME_INTERVAL) {
+        this.frameLagMs -= FRAME_INTERVAL;
 
         this.update();
       }
@@ -432,7 +420,9 @@ export class Game {
     this.context.translate(gridUnits(3) + pixels(10), 0);
     this.context.fillText("TIME", 0, 0);
     this.context.fillText(
-      String(this.time).padStart(3, "0"),
+      String(
+        this.frame > 0 ? Math.floor(this.frame / FRAMES_PER_TICK) : 0
+      ).padStart(3, "0"),
       pixels(6),
       pixels(9)
     );
@@ -450,7 +440,7 @@ export class Game {
           entity.position.x + entity.length.x / 2 ===
             this.state.viewport.position.x + this.state.viewport.length.x / 2
         ) {
-          offsetX = entity.velocity.x * this.updateLagMs;
+          offsetX = Math.trunc(entity.velocity.x * this.frameLagMs);
         }
 
         break;
@@ -481,8 +471,8 @@ export class Game {
       let positionY = entity.position.y;
 
       if (isMovable(entity)) {
-        positionX += entity.velocity.x * this.updateLagMs;
-        positionY += entity.velocity.y * this.updateLagMs;
+        positionX += Math.trunc(entity.velocity.x * this.frameLagMs);
+        positionY += Math.trunc(entity.velocity.y * this.frameLagMs);
       }
 
       this.context.save();
@@ -501,21 +491,12 @@ export class Game {
   };
 
   private update = (): void => {
-    // update time
-    if (this.isTicking) {
-      this.numUpdatesSinceTick++;
+    this.frame--;
 
-      if (this.numUpdatesSinceTick === UPDATES_PER_TICK) {
-        this.numUpdatesSinceTick = 0;
-        this.time--;
-
-        if (this.time === 0) {
-          this.isLost = true;
-        }
-      }
+    if (this.frame === 0) {
+      this.isLost = true;
     }
 
-    const buttons = this.isTicking ? this.buttons : EMPTY_BUTTONS;
     const entities: Entity[] = [];
 
     // only update entities within viewport
@@ -539,8 +520,8 @@ export class Game {
       const entity = this.state.entities[i];
 
       if (isMovable(entity)) {
-        entity.velocity.x += entity.acceleration.x * UPDATE_INTERVAL;
-        entity.velocity.y += entity.acceleration.y * UPDATE_INTERVAL;
+        entity.velocity.x += entity.acceleration.x * FRAME_INTERVAL;
+        entity.velocity.y += entity.acceleration.y * FRAME_INTERVAL;
 
         // apply gravity
         // entity.velocity.y += this.state.universe.acceleration.y * UPDATE_INTERVAL;
@@ -554,8 +535,8 @@ export class Game {
 
       if (isMovable(entity)) {
         // apply velocity
-        entity.position.x += Math.trunc(entity.velocity.x * UPDATE_INTERVAL);
-        entity.position.y += Math.trunc(entity.velocity.y * UPDATE_INTERVAL);
+        entity.position.x += Math.trunc(entity.velocity.x * FRAME_INTERVAL);
+        entity.position.y += Math.trunc(entity.velocity.y * FRAME_INTERVAL);
       }
 
       // update viewport
@@ -597,7 +578,7 @@ export class Game {
         }
       }
 
-      entity.update?.(this.time, this.numUpdatesSinceTick, buttons);
+      entity.update?.(this.frame, this.buttons);
     }
   };
 
@@ -607,6 +588,8 @@ export class Game {
 
   reset = (): void => {
     this.coins = 0;
+    this.frame = Game.initialFrame;
+    this.frameLagMs = 0;
     this.isLost = false;
     this.isPaused = false;
     this.isWon = false;
@@ -614,8 +597,6 @@ export class Game {
     this.prevLoopMs = performance.now();
     this.score = 0;
     this.state = Game.initialState;
-    this.time = Game.initialTime;
-    this.updateLagMs = 0;
     this.world = 1;
 
     this.context.canvas.focus();
