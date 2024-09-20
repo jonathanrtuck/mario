@@ -18,6 +18,7 @@ import { FRAME_INTERVAL } from "@/constants";
 import {
   Button,
   CollidableEntity,
+  Collision,
   MovableEntity,
   Side,
   Velocity,
@@ -60,12 +61,6 @@ export class Mario implements CollidableEntity, MovableEntity {
           : MARIO_STANDING_RIGHT_SMALL;
     }
   }
-  private get vmax(): Velocity {
-    return {
-      x: gridUnitsPerSecond(6 * (this.isAccelerating ? 2 : 1)),
-      y: gridUnitsPerSecond(17.25),
-    };
-  }
 
   acceleration = {
     x: 0,
@@ -83,8 +78,12 @@ export class Mario implements CollidableEntity, MovableEntity {
   isCrouching = false;
   isJumping = false;
   isSkidding = false;
-  position;
-  size: "small" | "large";
+  position = {
+    x: 0,
+    y: 0,
+    z: 0,
+  };
+  size: "small" | "large" = "small";
   velocity = {
     x: 0,
     y: 0,
@@ -99,17 +98,16 @@ export class Mario implements CollidableEntity, MovableEntity {
   get mass() {
     return this.size === "large" ? 155 : 77.5;
   }
-
-  constructor(gridX: number, gridY: number, size: "small" | "large") {
-    this.position = {
-      x: gridUnits(gridX),
-      y: gridUnits(gridY),
-      z: 0,
+  get vmax(): Velocity {
+    return {
+      x: gridUnitsPerSecond(6 * (this.isAccelerating ? 2 : 1)),
+      y: gridUnitsPerSecond(17.25),
     };
-    this.size = size;
   }
 
-  collide(entity: CollidableEntity, side: Side): void {
+  collide(collisions: Collision[]): void {
+    console.debug(collisions);
+    /*
     switch (side) {
       case "bottom":
         this.isJumping = false;
@@ -126,6 +124,7 @@ export class Mario implements CollidableEntity, MovableEntity {
         this.acceleration.y = 0;
         break;
     }
+    */
   }
 
   render(context: CanvasRenderingContext2D): void {
@@ -136,6 +135,19 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.length.x + pixels(4),
       this.length.y
     );
+  }
+
+  reset(gridX: number, gridY: number): void {
+    this.facing = "right";
+    this.isAccelerating = false;
+    this.isClimbing = false;
+    this.isCrouching = false;
+    this.isJumping = false;
+    this.isSkidding = false;
+    this.position.x = gridUnits(gridX);
+    this.position.y = gridUnits(gridY);
+    this.velocity.x = 0;
+    this.velocity.y = 0;
   }
 
   update(frame: number, buttons: Set<Button>): void {

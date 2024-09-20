@@ -4,8 +4,26 @@ import { COIN, X } from "@/bitmaps";
 import { Level } from "@/classes";
 import { BUTTONS, COLORS, FRAME_INTERVAL, FRAMES_PER_TICK } from "@/constants";
 import { Mario } from "@/entities";
-import { Button, Entity, Length, MS, Side } from "@/types";
-import { clamp, gridUnits, isMovable, oppositeSide, pixels } from "@/utils";
+import {
+  Button,
+  CollidableEntity,
+  Collision,
+  Entity,
+  Length,
+  MovableEntity,
+  MS,
+  Position,
+  Side,
+} from "@/types";
+import {
+  clamp,
+  getCollision,
+  gridUnits,
+  isCollidable,
+  isMovable,
+  opposite,
+  pixels,
+} from "@/utils";
 
 export class Game {
   private buttons = new Set<Button>();
@@ -16,6 +34,7 @@ export class Game {
   private keys = new Set<string>();
   private prevLoopMs: MS = performance.now();
 
+  mario = new Mario();
   coins = 0;
   keyBinding: Record<Button, Set<string>> = {
     a: new Set(["Shift", "z", "Z"]), //          run
@@ -30,7 +49,8 @@ export class Game {
     x: gridUnits(16),
     y: gridUnits(15),
   };
-  level = new Level();
+  level = new Level(this.mario);
+  // lives = 3;
   score = 0;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -57,7 +77,7 @@ export class Game {
             case "left":
             case "right":
             case "up":
-              if (!this.buttons.has(oppositeSide(button as Side) as Button)) {
+              if (!this.buttons.has(opposite(button as Side) as Button)) {
                 this.buttons.add(button);
               }
               break;
@@ -101,7 +121,7 @@ export class Game {
                 }
 
                 if (
-                  oppositeSide(button as Side) === otherButton &&
+                  opposite(button as Side) === otherButton &&
                   this.keys.intersection(this.keyBinding[otherButton]).size
                 ) {
                   this.buttons.add(otherButton);
@@ -190,22 +210,13 @@ export class Game {
     this.context.restore();
 
     // render entities
-    let offsetX = 0;
-    for (let i = 0; i !== this.level.entities.length; i++) {
-      const entity = this.level.entities[i];
+    const frameLagOffsetX =
+      this.mario.velocity.x > 0 &&
+      this.mario.position.x + this.mario.length.x / 2 ===
+        this.level.position.x + this.length.x / 2
+        ? Math.trunc(this.mario.velocity.x * this.frameLagMs)
+        : 0;
 
-      if (entity instanceof Mario) {
-        if (
-          entity.velocity.x > 0 &&
-          entity.position.x + entity.length.x / 2 ===
-            this.level.position.x + this.length.x / 2
-        ) {
-          offsetX = Math.trunc(entity.velocity.x * this.frameLagMs);
-        }
-
-        break;
-      }
-    }
     for (let i = 0; i !== this.level.entities.length; i++) {
       const entity = this.level.entities[i];
 
@@ -232,7 +243,7 @@ export class Game {
 
       this.context.save();
       this.context.translate(
-        positionX - this.level.position.x - offsetX,
+        positionX - this.level.position.x - frameLagOffsetX,
         this.length.y + this.level.position.y - positionY - entity.length.y
       );
 
@@ -256,10 +267,10 @@ export class Game {
 
     const entities: Entity[] = [];
 
-    // only update entities within viewport
     for (let i = 0; i !== this.level.entities.length; i++) {
       const entity = this.level.entities[i];
 
+      // only update entities within viewport
       if (
         entity.position.x <
           this.level.position.x + this.length.x + gridUnits(2) &&
@@ -267,69 +278,203 @@ export class Game {
           this.level.position.x - gridUnits(2)
       ) {
         entities.push(entity);
-      }
-    }
 
-    // apply acceleration
-    for (let i = 0; i !== this.level.entities.length; i++) {
-      const entity = this.level.entities[i];
+        if (isMovable(entity)) {
+          // apply acceleration
+          entity.velocity.x += entity.acceleration.x * FRAME_INTERVAL;
+          entity.velocity.y += entity.acceleration.y * FRAME_INTERVAL;
 
-      if (isMovable(entity)) {
-        entity.velocity.x += entity.acceleration.x * FRAME_INTERVAL;
-        entity.velocity.y += entity.acceleration.y * FRAME_INTERVAL;
-
-        // apply gravity
-        // entity.velocity.y += this.state.universe.acceleration.y * UPDATE_INTERVAL;
-      }
-    }
-
-    // @todo collision detection
-
-    for (let i = 0; i !== this.level.entities.length; i++) {
-      const entity = this.level.entities[i];
-
-      if (isMovable(entity)) {
-        // apply velocity
-        entity.position.x += Math.trunc(entity.velocity.x * FRAME_INTERVAL);
-        entity.position.y += Math.trunc(entity.velocity.y * FRAME_INTERVAL);
-      }
-
-      // update viewport
-      if (entity instanceof Mario) {
-        const entityCenterX = entity.position.x + entity.length.x / 2;
-        const viewportCenterX = this.level.position.x + this.length.x / 2;
-        const maxViewportPositionX = this.level.length.x - this.length.x;
-
-        // follow entity with viewport
-        if (entityCenterX > viewportCenterX) {
-          this.level.position.x = clamp(
-            entityCenterX - this.length.x / 2,
-            this.level.position.x,
-            maxViewportPositionX
+          // apply gravity
+          entity.velocity.y = clamp(
+            entity.velocity.y + this.level.acceleration.y * FRAME_INTERVAL,
+            -(entity.vmax?.y ?? Infinity),
+            Infinity
           );
         }
+      }
+    }
 
-        const minPositionX = this.level.position.x;
-        const maxPositionX =
-          this.level.position.x + this.length.x - entity.length.x;
+    let collisionsByEntity = new Map<MovableEntity, Collision[]>();
+    let remainingMs = FRAME_INTERVAL;
 
-        // prevent entity from overflowing viewport
-        if (entity.position.x < minPositionX) {
-          entity.position.x = minPositionX;
+    do {
+      collisionsByEntity = new Map();
 
-          if (entity.velocity.x < 0) {
-            entity.velocity.x = 0;
-          }
-        } else if (entity.position.x > maxPositionX) {
-          entity.position.x = maxPositionX;
+      const projectedPositions = new Array<Position>(entities.length);
 
-          if (entity.velocity.x > 0) {
-            entity.velocity.x = 0;
+      for (let i = 0; i !== entities.length; i++) {
+        const entity = entities[i];
+
+        // apply velocity
+        projectedPositions[i] = isMovable(entity)
+          ? {
+              x:
+                entity.position.x + Math.trunc(entity.velocity.x * remainingMs),
+              y:
+                entity.position.y + Math.trunc(entity.velocity.y * remainingMs),
+              z: entity.position.z,
+            }
+          : entity.position;
+      }
+
+      // collision detection
+      for (let i = 0; i !== entities.length; i++) {
+        const entity = entities[i];
+
+        if (isMovable(entity) && isCollidable(entity)) {
+          for (let j = i + 1; j < entities.length; j++) {
+            const otherEntity = entities[j];
+
+            if (!isCollidable(otherEntity)) {
+              continue;
+            }
+
+            const collision = getCollision(
+              entity,
+              projectedPositions[i],
+              otherEntity,
+              projectedPositions[j]
+            );
+
+            if (collision !== null) {
+              collisionsByEntity.get(entity)?.push(collision) ??
+                collisionsByEntity.set(entity, [collision]);
+            }
           }
         }
       }
 
-      entity.update?.(this.level.frame, this.buttons);
+      if (collisionsByEntity.size) {
+        let earliestCollisionTime = remainingMs;
+
+        // get earliest collision(s) time
+        collisionsByEntity.forEach((collisions) => {
+          for (let i = 0; i !== collisions.length; i++) {
+            if (collisions[i].time < earliestCollisionTime) {
+              earliestCollisionTime = collisions[i].time;
+            }
+          }
+        });
+
+        // update entities' positions up to earliest collision(s)
+        for (let i = 0; i !== entities.length; i++) {
+          const entity = entities[i];
+
+          if (isMovable(entity)) {
+            entity.position = {
+              x:
+                entity.position.x +
+                Math.trunc(entity.velocity.x * earliestCollisionTime),
+              y:
+                entity.position.y +
+                Math.trunc(entity.velocity.y * earliestCollisionTime),
+              z: entity.position.z,
+            };
+          }
+        }
+
+        // call relevant entities' `collide` method
+        for (let i = 0; i !== entities.length; i++) {
+          const entity = entities[i];
+
+          if (!isCollidable(entity)) {
+            continue;
+          }
+
+          const earliestCollisions: Collision[] = [];
+
+          if (isMovable(entity)) {
+            const entityCollisions = collisionsByEntity.get(entity);
+
+            if (entityCollisions) {
+              for (let j = 0; j !== entityCollisions.length; j++) {
+                if (entityCollisions[j].time === earliestCollisionTime) {
+                  earliestCollisions.push(entityCollisions[j]);
+                }
+              }
+            }
+          }
+
+          // eslint-disable-next-line no-loop-func
+          collisionsByEntity.forEach((collisions, movableEntity) => {
+            if (
+              (movableEntity as Entity) === (entity as Entity) ||
+              !isCollidable(movableEntity) ||
+              collisions.length === 0
+            ) {
+              return;
+            }
+
+            for (let j = 0; j !== collisions.length; j++) {
+              if (collisions[j].time === earliestCollisionTime) {
+                const sides = new Set<Side>();
+
+                collisions[j].sides.forEach((side) => {
+                  sides.add(opposite(side));
+                });
+
+                earliestCollisions.push({
+                  entity: movableEntity,
+                  sides,
+                  time: earliestCollisionTime,
+                });
+              }
+            }
+          });
+
+          if (earliestCollisions.length !== 0) {
+            entity.collide?.(earliestCollisions);
+          }
+        }
+
+        remainingMs -= earliestCollisionTime;
+      } else {
+        for (let i = 0; i !== entities.length; i++) {
+          const entity = entities[i];
+
+          if (isMovable(entity)) {
+            entity.position = projectedPositions[i];
+          }
+        }
+
+        remainingMs = 0;
+      }
+    } while (remainingMs > 0);
+
+    // update entities
+    for (let i = 0; i !== entities.length; i++) {
+      entities[i].update?.(this.level.frame, this.buttons);
+    }
+
+    // follow mario with viewport
+    if (
+      this.mario.position.x + this.mario.length.x / 2 >
+      this.level.position.x + this.length.x / 2
+    ) {
+      this.level.position.x = clamp(
+        this.mario.position.x + this.mario.length.x / 2 - this.length.x / 2,
+        this.level.position.x,
+        this.level.length.x - this.length.x
+      );
+    }
+
+    // prevent mario from horizontally overflowing viewport
+    if (this.mario.position.x < this.level.position.x) {
+      this.mario.position.x = this.level.position.x;
+
+      if (this.mario.velocity.x < 0) {
+        this.mario.velocity.x = 0;
+      }
+    } else if (
+      this.mario.position.x >
+      this.level.position.x + this.length.x - this.mario.length.x
+    ) {
+      this.mario.position.x =
+        this.level.position.x + this.length.x - this.mario.length.x;
+
+      if (this.mario.velocity.x > 0) {
+        this.mario.velocity.x = 0;
+      }
     }
   };
 
@@ -338,10 +483,11 @@ export class Game {
   };
 
   reset = (): void => {
+    this.mario = new Mario();
     this.coins = 0;
     this.frameLagMs = 0;
     this.isPaused = false;
-    this.level = new Level();
+    this.level = new Level(this.mario);
     this.prevLoopMs = performance.now();
     this.score = 0;
 

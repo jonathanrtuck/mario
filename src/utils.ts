@@ -1,5 +1,13 @@
 import { COLORS, GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
-import { Bitmap, CollidableEntity, Entity, MovableEntity, Side } from "@/types";
+import {
+  Bitmap,
+  CollidableEntity,
+  Collision,
+  Entity,
+  MovableEntity,
+  Position,
+  Side,
+} from "@/types";
 
 export const clamp = (num: number, min: number, max: number): number =>
   num <= min ? min : num >= max ? max : num;
@@ -30,6 +38,21 @@ export const drawBitmap = (bitmap: Bitmap): OffscreenCanvas => {
 export const flip = (bitmap: Bitmap): Bitmap =>
   bitmap.map((row) => row.toReversed());
 
+export const getCollision = (
+  movableEntity: MovableEntity,
+  movableEntityProjectedPosition: Position,
+  collidableEntity: CollidableEntity,
+  collidableEntityProjectedPosition: Position
+): Collision | null => {
+  if (movableEntity.position.z !== collidableEntity.position.z) {
+    return null;
+  }
+
+  // @todo
+
+  return null;
+};
+
 export const gridUnits = (num: number): number =>
   Math.trunc(num * GRID_UNIT_LENGTH);
 
@@ -42,18 +65,10 @@ export const gridUnitsPerSecondPerSecond = (num: number): number =>
 export const isCollidable = (entity: Entity): entity is CollidableEntity =>
   (entity as CollidableEntity).collidableSides !== undefined;
 
-export const isOverlapByDimension = (
-  aPosition: number,
-  aLength: number,
-  bPosition: number,
-  bLength: number
-): boolean =>
-  !(aPosition + aLength <= bPosition || aPosition >= bPosition + bLength);
-
 export const isMovable = (entity: Entity): entity is MovableEntity =>
   (entity as MovableEntity).velocity !== undefined;
 
-export const oppositeSide = (side: Side): Side => {
+export const opposite = (side: Side): Side => {
   switch (side) {
     case "bottom":
       return "top";

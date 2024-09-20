@@ -11,8 +11,14 @@ export type Button = (typeof BUTTONS)[number];
 
 export interface CollidableEntity extends Entity {
   collidableSides: Record<Side, boolean>;
-  collide?(entity: CollidableEntity, side: Side): void;
+  collide?(collisions: Collision[]): void;
 }
+
+export type Collision = {
+  entity: CollidableEntity;
+  sides: Set<Side>;
+  time: MS;
+};
 
 export type Color = number;
 
@@ -32,6 +38,7 @@ export interface MovableEntity extends Entity {
   acceleration: Acceleration;
   mass: number;
   velocity: Velocity;
+  vmax?: Velocity;
 }
 
 export type MS = number;

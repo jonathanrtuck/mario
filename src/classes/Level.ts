@@ -17,7 +17,7 @@ import { gridUnits, gridUnitsPerSecondPerSecond } from "@/utils";
 export class Level {
   acceleration: Acceleration = {
     x: 0,
-    y: gridUnitsPerSecondPerSecond(-75), // gravity
+    y: 0, // gridUnitsPerSecondPerSecond(-75), // gravity
   };
   color: Color = 0x4;
   entities: Entity[] = [
@@ -209,8 +209,6 @@ export class Level {
     new Cloud(211, 13, "small"),
     new Bush(215, 4, "small"),
     new Cloud(219, 12, "large"),
-
-    new Mario(2.5625, 4, "small"),
   ].toSorted((a, b) => a.position.z - b.position.z);
   frame = 0;
   isLost = false;
@@ -226,4 +224,10 @@ export class Level {
   };
   time = 400;
   world = 1;
+
+  constructor(mario: Mario) {
+    mario.reset(2.5625, 4);
+
+    this.entities.push(mario);
+  }
 }
