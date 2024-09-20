@@ -6,7 +6,6 @@ import { BUTTONS, COLORS, FRAME_INTERVAL, FRAMES_PER_TICK } from "@/constants";
 import { Mario } from "@/entities";
 import {
   Button,
-  CollidableEntity,
   Collision,
   Entity,
   Length,

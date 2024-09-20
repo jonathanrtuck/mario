@@ -44,7 +44,17 @@ export const getCollision = (
   collidableEntity: CollidableEntity,
   collidableEntityProjectedPosition: Position
 ): Collision | null => {
-  if (movableEntity.position.z !== collidableEntity.position.z) {
+  if (
+    movableEntity.position.z !== collidableEntity.position.z ||
+    movableEntityProjectedPosition.x + movableEntity.length.x <=
+      collidableEntityProjectedPosition.x ||
+    movableEntityProjectedPosition.x >=
+      collidableEntityProjectedPosition.x + collidableEntity.length.x ||
+    movableEntityProjectedPosition.y + movableEntity.length.y <=
+      collidableEntityProjectedPosition.y ||
+    movableEntityProjectedPosition.y >=
+      collidableEntityProjectedPosition.y + collidableEntity.length.y
+  ) {
     return null;
   }
 

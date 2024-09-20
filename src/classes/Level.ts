@@ -17,7 +17,7 @@ import { gridUnits, gridUnitsPerSecondPerSecond } from "@/utils";
 export class Level {
   acceleration: Acceleration = {
     x: 0,
-    y: 0, // gridUnitsPerSecondPerSecond(-75), // gravity
+    y: gridUnitsPerSecondPerSecond(-75), // gravity
   };
   color: Color = 0x4;
   entities: Entity[] = [

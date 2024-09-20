@@ -106,25 +106,24 @@ export class Mario implements CollidableEntity, MovableEntity {
   }
 
   collide(collisions: Collision[]): void {
-    console.debug(collisions);
-    /*
-    switch (side) {
-      case "bottom":
+    for (let i = 0; i !== collisions.length; i++) {
+      const { entity, sides, time } = collisions[i];
+
+      if (sides.has("bottom")) {
         this.isJumping = false;
         this.acceleration.y = 0;
         this.velocity.y = 0;
-        break;
-      case "left":
+      }
+      if (sides.has("left")) {
         this.velocity.x = 0;
-        break;
-      case "right":
+      }
+      if (sides.has("right")) {
         this.velocity.x = 0;
-        break;
-      case "top":
+      }
+      if (sides.has("top")) {
         this.acceleration.y = 0;
-        break;
+      }
     }
-    */
   }
 
   render(context: CanvasRenderingContext2D): void {
