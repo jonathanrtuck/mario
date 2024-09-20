@@ -321,10 +321,10 @@ export class Game {
         const entity = entities[i];
 
         if (isMovable(entity) && isCollidable(entity)) {
-          for (let j = i + 1; j < entities.length; j++) {
+          for (let j = 0; j < entities.length; j++) {
             const otherEntity = entities[j];
 
-            if (!isCollidable(otherEntity)) {
+            if (otherEntity === entity || !isCollidable(otherEntity)) {
               continue;
             }
 

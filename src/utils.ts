@@ -1,4 +1,9 @@
-import { COLORS, GRID_UNIT_LENGTH, PIXEL_LENGTH } from "@/constants";
+import {
+  COLORS,
+  FRAME_INTERVAL,
+  GRID_UNIT_LENGTH,
+  PIXEL_LENGTH,
+} from "@/constants";
 import {
   Bitmap,
   CollidableEntity,
@@ -45,6 +50,7 @@ export const getCollision = (
   collidableEntityProjectedPosition: Position
 ): Collision | null => {
   if (
+    !isCollidable(movableEntity) ||
     movableEntity.position.z !== collidableEntity.position.z ||
     movableEntityProjectedPosition.x + movableEntity.length.x <=
       collidableEntityProjectedPosition.x ||
@@ -58,9 +64,125 @@ export const getCollision = (
     return null;
   }
 
-  // @todo
+  const sides = new Set<Side>();
+  let earliestTime = FRAME_INTERVAL;
 
-  return null;
+  // bottom
+  if (
+    movableEntity.collidableSides.bottom &&
+    collidableEntity.collidableSides.top &&
+    movableEntity.position.y >=
+      collidableEntity.position.y + collidableEntity.length.y &&
+    movableEntityProjectedPosition.y <
+      collidableEntityProjectedPosition.y + collidableEntity.length.y
+  ) {
+    const prevLengthBetween =
+      movableEntity.position.y -
+      (collidableEntity.position.y + collidableEntity.length.y);
+    const totalLengthDelta =
+      movableEntity.position.y - movableEntityProjectedPosition.y;
+    const time = totalLengthDelta
+      ? (prevLengthBetween / totalLengthDelta) * FRAME_INTERVAL
+      : 0;
+
+    if (time < earliestTime) {
+      earliestTime = time;
+      sides.clear();
+      sides.add("bottom");
+    } else if (time === earliestTime) {
+      sides.add("bottom");
+    }
+  }
+  // left
+  if (
+    movableEntity.collidableSides.left &&
+    collidableEntity.collidableSides.right &&
+    movableEntity.position.x >=
+      collidableEntity.position.x + collidableEntity.length.x &&
+    movableEntityProjectedPosition.x <
+      collidableEntityProjectedPosition.x + collidableEntity.length.x
+  ) {
+    const prevLengthBetween =
+      movableEntity.position.x -
+      (collidableEntity.position.x + collidableEntity.length.x);
+    const totalLengthDelta =
+      movableEntity.position.x - movableEntityProjectedPosition.x;
+    const time = totalLengthDelta
+      ? (prevLengthBetween / totalLengthDelta) * FRAME_INTERVAL
+      : 0;
+
+    if (time < earliestTime) {
+      earliestTime = time;
+      sides.clear();
+      sides.add("left");
+    } else if (time === earliestTime) {
+      sides.add("left");
+    }
+  }
+  // right
+  if (
+    movableEntity.collidableSides.right &&
+    collidableEntity.collidableSides.left &&
+    movableEntity.position.x + movableEntity.length.x <=
+      collidableEntity.position.x &&
+    movableEntityProjectedPosition.x + movableEntity.length.x >
+      collidableEntityProjectedPosition.x
+  ) {
+    const prevLengthBetween =
+      movableEntity.position.x +
+      movableEntity.length.x -
+      collidableEntity.position.x;
+    const totalLengthDelta =
+      movableEntity.position.x - movableEntityProjectedPosition.x;
+    const time = totalLengthDelta
+      ? (prevLengthBetween / totalLengthDelta) * FRAME_INTERVAL
+      : 0;
+
+    if (time < earliestTime) {
+      earliestTime = time;
+      sides.clear();
+      sides.add("right");
+    } else if (time === earliestTime) {
+      sides.add("right");
+    }
+  }
+  // top
+  if (
+    movableEntity.collidableSides.top &&
+    collidableEntity.collidableSides.bottom &&
+    movableEntity.position.y + movableEntity.length.y <=
+      collidableEntity.position.y &&
+    movableEntityProjectedPosition.y + movableEntity.length.y >
+      collidableEntityProjectedPosition.y
+  ) {
+    const prevLengthBetween =
+      movableEntity.position.y +
+      movableEntity.length.y -
+      collidableEntity.position.y;
+    const totalLengthDelta =
+      movableEntity.position.y - movableEntityProjectedPosition.y;
+    const time = totalLengthDelta
+      ? (prevLengthBetween / totalLengthDelta) * FRAME_INTERVAL
+      : 0;
+
+    if (time < earliestTime) {
+      earliestTime = time;
+      sides.clear();
+      sides.add("top");
+    } else if (time === earliestTime) {
+      sides.add("top");
+    }
+  }
+
+  if (!sides.size) {
+    return null;
+  }
+
+  return {
+    entity: collidableEntity,
+    sides,
+    time: earliestTime,
+  };
 };
 
 export const gridUnits = (num: number): number =>

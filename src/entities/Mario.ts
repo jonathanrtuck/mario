@@ -77,7 +77,9 @@ export class Mario implements CollidableEntity, MovableEntity {
   isClimbing = false;
   isCrouching = false;
   isJumping = false;
+  isPressingB = false;
   isSkidding = false;
+  isTouchingBottom = false;
   position = {
     x: 0,
     y: 0,
@@ -111,6 +113,7 @@ export class Mario implements CollidableEntity, MovableEntity {
 
       if (sides.has("bottom")) {
         this.isJumping = false;
+        this.isTouchingBottom = true;
         this.acceleration.y = 0;
         this.velocity.y = 0;
       }
@@ -157,10 +160,12 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.facing = "left";
       this.acceleration.x = gridUnitsPerSecondPerSecond(-13.125);
 
-      // @todo && isTouchingBottom
       if (this.velocity.x > 0) {
-        this.isSkidding = true;
         this.acceleration.x = gridUnitsPerSecondPerSecond(-30);
+
+        if (this.isTouchingBottom) {
+          this.isSkidding = true;
+        }
       }
     } else if (this.velocity.x < 0) {
       if (
@@ -178,10 +183,12 @@ export class Mario implements CollidableEntity, MovableEntity {
       this.facing = "right";
       this.acceleration.x = gridUnitsPerSecondPerSecond(13.125);
 
-      // @todo && isTouchingBottom
       if (this.velocity.x < 0) {
-        this.isSkidding = true;
         this.acceleration.x = gridUnitsPerSecondPerSecond(30);
+
+        if (this.isTouchingBottom) {
+          this.isSkidding = true;
+        }
       }
     } else if (this.velocity.x > 0) {
       if (
@@ -196,7 +203,7 @@ export class Mario implements CollidableEntity, MovableEntity {
     }
 
     if (buttons.has("b")) {
-      if (!this.isJumping) {
+      if (!this.isJumping && !this.isPressingB) {
         this.isJumping = true;
         this.acceleration.y = gridUnitsPerSecondPerSecond(13.125);
         this.velocity.y = gridUnitsPerSecond(15.75); // @todo based on horizontal velocity
@@ -218,5 +225,8 @@ export class Mario implements CollidableEntity, MovableEntity {
     if (this.velocity.x < -this.vmax.x) {
       this.acceleration.x = gridUnitsPerSecondPerSecond(13.125);
     }
+
+    this.isPressingB = buttons.has("b");
+    this.isTouchingBottom = false;
   }
 }
